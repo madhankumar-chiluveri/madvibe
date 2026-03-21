@@ -9,15 +9,18 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useAppStore } from "@/store/app.store";
 import { useTheme } from "next-themes";
+import { cn, sanitizeForConvex } from "@/lib/utils";
 
 interface BlockNoteEditorProps {
   pageId: Id<"pages">;
   editable?: boolean;
+  isFullWidth?: boolean;
 }
 
 export function BlockNoteEditor({
   pageId,
   editable = true,
+  isFullWidth = false,
 }: BlockNoteEditorProps) {
   const { resolvedTheme } = useTheme();
   const { maddyEnabled, geminiApiKey } = useAppStore();
@@ -74,7 +77,7 @@ export function BlockNoteEditor({
           blocks: [
             {
               type: "document",
-              content: editorBlocks,
+              content: sanitizeForConvex(editorBlocks),
               sortOrder: 1000,
               properties: {},
             },
@@ -87,7 +90,7 @@ export function BlockNoteEditor({
   }, [editor, pageId, replaceAll]);
 
   return (
-    <div className="blocknote-wrapper w-full min-h-[calc(100vh-200px)]">
+    <div className={cn("blocknote-wrapper w-full min-h-[calc(100vh-200px)]", isFullWidth && "full-width-editor")}>
       <BlockNoteView
         editor={editor}
         theme={resolvedTheme === "dark" ? "dark" : "light"}

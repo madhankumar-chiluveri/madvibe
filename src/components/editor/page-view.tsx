@@ -31,7 +31,7 @@ export function PageView({ page }: PageViewProps) {
       <div className={cn(page.isFullWidth ? "max-w-none" : "max-w-3xl mx-auto")}>
         <PageHeader page={page} />
         <div className="mt-4">
-          <BlockNoteEditor pageId={page._id} />
+          <BlockNoteEditor pageId={page._id} isFullWidth={page.isFullWidth} />
         </div>
       </div>
     </div>

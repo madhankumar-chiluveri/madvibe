@@ -26,15 +26,22 @@ export interface SelectOption {
   color: string;
 }
 
+export interface PropertyConfig {
+  options?: SelectOption[];
+  format?: string;
+  width?: number;
+  wrap?: boolean;
+  frozen?: boolean;
+  showPageIcon?: boolean;
+  relation?: { databaseId: Id<"databases"> };
+}
+
 export interface PropertySchema {
   id: string;
   name: string;
   type: PropertyType;
-  config: {
-    options?: SelectOption[];
-    format?: string;
-    relation?: { databaseId: Id<"databases"> };
-  };
+  config?: PropertyConfig;
+  options?: SelectOption[];
 }
 
 export interface Database {

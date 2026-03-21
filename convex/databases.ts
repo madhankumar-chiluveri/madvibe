@@ -155,3 +155,66 @@ export const createView = mutation({
     });
   },
 });
+
+export const importCsv = mutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+    name: v.string(),
+    properties: v.array(v.any()), // e.g. [{id: "col1", name: "Column 1", type: "text"}]
+    rows: v.array(v.any()),       // array of objects mapping prop IDs to values
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // 1. Create a Database Page natively
+    const pageId = await ctx.db.insert("pages", {
+      workspaceId: args.workspaceId,
+      parentId: null,
+      type: "database",
+      title: args.name,
+      isFullWidth: true,
+      isFavourite: false,
+      isArchived: false,
+      sortOrder: Date.now(),
+      createdBy: userId,
+      updatedAt: Date.now(),
+    });
+
+    // 2. Create the Database record
+    const databaseId = await ctx.db.insert("databases", {
+      pageId,
+      name: args.name,
+      properties: args.properties,
+      defaultViewId: undefined,
+    });
+
+    // 3. Create a Default View (Table)
+    const viewId = await ctx.db.insert("views", {
+      databaseId,
+      name: "Table View",
+      type: "table",
+      filters: null,
+      sorts: [],
+      groupBy: null,
+      visibleProperties: args.properties.map((p) => p.id),
+      cardCoverPropertyId: null,
+    });
+
+    // Link the view
+    await ctx.db.patch(databaseId, { defaultViewId: viewId });
+
+    // 4. Insert all rows
+    for (let i = 0; i < args.rows.length; i++) {
+        await ctx.db.insert("rows", {
+          databaseId,
+          pageId: null, // intentionally null to avoid huge page tables, unless user explicitly opens row
+          data: args.rows[i],
+          sortOrder: i * 1000,
+          isArchived: false,
+        });
+    }
+
+    return pageId;
+  },
+});

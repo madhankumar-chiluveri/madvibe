@@ -7,6 +7,7 @@ export const create = mutation({
     workspaceId: v.id("workspaces"),
     parentId: v.optional(v.union(v.id("pages"), v.null())),
     type: v.optional(v.union(v.literal("document"), v.literal("database"), v.literal("dashboard"))),
+    isSpaceRoot: v.optional(v.boolean()),
     title: v.optional(v.string()),
     icon: v.optional(v.string()),
   },
@@ -25,8 +26,9 @@ export const create = mutation({
       workspaceId: args.workspaceId,
       parentId: args.parentId ?? null,
       type: args.type ?? "document",
+      isSpaceRoot: args.isSpaceRoot ?? false,
       title: args.title ?? "Untitled",
-      icon: null,
+      icon: args.icon ?? null,
       coverImage: null,
       isFullWidth: false,
       isFavourite: false,
@@ -42,8 +44,94 @@ export const create = mutation({
     // Create initial empty block
     await ctx.db.insert("blocks", {
       pageId,
-      type: "paragraph",
-      content: { type: "doc", content: [{ type: "paragraph" }] },
+      type: "document",
+      content: [{ type: "paragraph", content: [] }],
+      parentBlockId: null,
+      sortOrder: 1000,
+      properties: {},
+      updatedAt: Date.now(),
+    });
+
+    return pageId;
+  },
+});
+
+export const createSpace = mutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+    title: v.string(),
+    icon: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const siblings = await ctx.db
+      .query("pages")
+      .withIndex("by_workspaceId", (q) => q.eq("workspaceId", args.workspaceId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("parentId"), null),
+          q.eq(q.field("isArchived"), false),
+          q.eq(q.field("isSpaceRoot"), true)
+        )
+      )
+      .collect();
+
+    const maxOrder = siblings.reduce((max, page) => Math.max(max, page.sortOrder), 0);
+
+    const pageId = await ctx.db.insert("pages", {
+      workspaceId: args.workspaceId,
+      parentId: null,
+      type: "dashboard",
+      isSpaceRoot: true,
+      title: args.title,
+      icon: args.icon ?? null,
+      coverImage: null,
+      isFullWidth: true,
+      isFavourite: false,
+      isArchived: false,
+      archivedAt: null,
+      sortOrder: maxOrder + 1000,
+      createdBy: userId,
+      updatedAt: Date.now(),
+      maddyTags: [],
+      maddySuggested: [],
+    });
+
+    await ctx.db.insert("blocks", {
+      pageId,
+      type: "document",
+      content: [
+        {
+          type: "heading",
+          props: { level: 1 },
+          content: [{ type: "text", text: `${args.title} Home`, styles: {} }],
+          children: [],
+        },
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "Use this space to keep project notes, tasks, databases, and decisions isolated from the rest of your knowledge base.",
+              styles: {},
+            },
+          ],
+          children: [],
+        },
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "Create a task tracker, a project brief, meeting notes, or let Maddy build a starter page for you.",
+              styles: {},
+            },
+          ],
+          children: [],
+        },
+      ],
       parentBlockId: null,
       sortOrder: 1000,
       properties: {},
@@ -108,11 +196,24 @@ export const restore = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    await ctx.db.patch(args.id, {
-      isArchived: false,
-      archivedAt: null,
-      updatedAt: Date.now(),
-    });
+    const recursiveRestore = async (pageId: any) => {
+      const children = await ctx.db
+        .query("pages")
+        .withIndex("by_parentId", (q) => q.eq("parentId", pageId))
+        .collect();
+
+      await ctx.db.patch(pageId, {
+        isArchived: false,
+        archivedAt: null,
+        updatedAt: Date.now(),
+      });
+
+      for (const child of children) {
+        await recursiveRestore(child._id);
+      }
+    };
+
+    await recursiveRestore(args.id);
   },
 });
 
@@ -183,6 +284,27 @@ export const list = query({
         q.and(
           q.eq(q.field("parentId"), args.parentId ?? null),
           q.eq(q.field("isArchived"), false)
+        )
+      )
+      .order("asc")
+      .collect();
+  },
+});
+
+export const listSpaceRoots = query({
+  args: { workspaceId: v.id("workspaces") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    return await ctx.db
+      .query("pages")
+      .withIndex("by_workspaceId", (q) => q.eq("workspaceId", args.workspaceId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("parentId"), null),
+          q.eq(q.field("isArchived"), false),
+          q.eq(q.field("isSpaceRoot"), true)
         )
       )
       .order("asc")

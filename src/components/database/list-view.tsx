@@ -1,101 +1,123 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
+import { Plus, Trash2 } from "lucide-react";
+
 import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import type { Id } from "../../../convex/_generated/dataModel";
+import { normalizeValueForProperty, getDefaultValueForProperty, normalizeProperties } from "./database-utils";
 import { PropertyCell } from "./property-cell";
 
 interface ListViewProps {
   database: any;
   pageId: Id<"pages">;
+  rows: any[] | undefined;
 }
 
-export function ListView({ database, pageId }: ListViewProps) {
-  const rows = useQuery(api.databases.listRows, { databaseId: database._id });
+export function ListView({ database, rows }: ListViewProps) {
   const addRow = useMutation(api.databases.addRow);
   const updateRow = useMutation(api.databases.updateRow);
   const deleteRow = useMutation(api.databases.deleteRow);
 
-  const titleProp = database.properties?.find((p: any) => p.type === "title");
-  const secondaryProps = database.properties?.filter(
-    (p: any) => p.type !== "title"
-  ) ?? [];
+  const properties = normalizeProperties(database.properties ?? []);
+  const titleProperty = properties.find((property) => property.type === "title");
+  const secondaryProperties = properties.filter((property) => property.type !== "title");
 
   const handleAddRow = async () => {
-    const initialData: Record<string, any> = {};
-    for (const prop of database.properties) {
-      initialData[prop.id] = prop.type === "title" ? "Untitled" : null;
+    const initialData: Record<string, unknown> = {};
+    for (const property of properties) {
+      initialData[property.id] = getDefaultValueForProperty(property);
     }
+
     await addRow({ databaseId: database._id, data: initialData });
   };
 
   return (
-    <div className="space-y-1 pt-2">
+    <div className="space-y-2 pt-2">
       {rows === undefined ? (
-        <p className="text-muted-foreground text-sm py-4">Loading…</p>
+        <p className="py-4 text-sm text-zinc-500">Loading...</p>
       ) : rows.length === 0 ? (
-        <p className="text-muted-foreground text-sm py-4 text-center">
+        <div className="rounded-[24px] border border-dashed border-white/10 bg-black/20 px-6 py-12 text-center text-sm text-zinc-500">
           No items yet.
-        </p>
+        </div>
       ) : (
         rows.map((row: any) => (
           <div
             key={row._id}
-            className="flex items-start gap-4 px-2 py-2 rounded-lg hover:bg-accent/30 group transition-colors border-b last:border-b-0"
+            className="group rounded-[22px] border border-white/8 bg-black/20 px-3 py-3 transition-colors hover:bg-black/30"
           >
-            {/* Title */}
-            <div className="flex-1 min-w-0">
-              {titleProp ? (
-                <PropertyCell
-                  property={titleProp}
-                  value={row.data?.[titleProp.id]}
-                  onChange={(val) =>
-                    updateRow({
-                      id: row._id,
-                      data: { ...row.data, [titleProp.id]: val },
-                    })
-                  }
-                />
-              ) : (
-                <span className="text-sm font-medium">Row</span>
-              )}
+            <div className="flex items-start gap-4">
+              <div className="min-w-0 flex-1">
+                {titleProperty ? (
+                  <PropertyCell
+                    property={titleProperty}
+                    value={row.data?.[titleProperty.id]}
+                    rowCreatedAt={row._creationTime}
+                    fullWidth
+                    onChange={(nextValue) =>
+                      updateRow({
+                        id: row._id,
+                        data: {
+                          ...row.data,
+                          [titleProperty.id]: normalizeValueForProperty(titleProperty, nextValue),
+                        },
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="text-sm font-medium text-zinc-100">Row</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 opacity-0 transition hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
+                onClick={() => deleteRow({ id: row._id })}
+                aria-label="Delete row"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Secondary props */}
-            <div className="flex items-center gap-3 flex-wrap">
-              {secondaryProps.slice(0, 4).map((prop: any) => (
-                <PropertyCell
-                  key={prop.id}
-                  property={prop}
-                  value={row.data?.[prop.id]}
-                  onChange={(val) =>
-                    updateRow({
-                      id: row._id,
-                      data: { ...row.data, [prop.id]: val },
-                    })
-                  }
-                />
-              ))}
-            </div>
-
-            {/* Delete */}
-            <button
-              className="w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
-              onClick={() => deleteRow({ id: row._id })}
-            >
-              ×
-            </button>
+            {secondaryProperties.length > 0 && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {secondaryProperties.slice(0, 6).map((property) => (
+                  <div
+                    key={property.id}
+                    className="rounded-[18px] border border-white/6 bg-[#151412] p-1.5"
+                  >
+                    <div className="px-2 pb-0.5 pt-1 text-[11px] uppercase tracking-[0.16em] text-zinc-500">
+                      {property.name}
+                    </div>
+                    <PropertyCell
+                      property={property}
+                      value={row.data?.[property.id]}
+                      rowCreatedAt={row._creationTime}
+                      fullWidth
+                      onChange={(nextValue) =>
+                        updateRow({
+                          id: row._id,
+                          data: {
+                            ...row.data,
+                            [property.id]: normalizeValueForProperty(property, nextValue),
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))
       )}
 
       <button
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-2"
+        type="button"
+        className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
         onClick={handleAddRow}
       >
-        <Plus className="w-3.5 h-3.5" />
+        <Plus className="h-3.5 w-3.5" />
         New item
       </button>
     </div>

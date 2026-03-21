@@ -10,11 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { AppIcon } from "@/components/ui/app-icon";
 import { cn, ACCENT_COLORS } from "@/lib/utils";
 import {
   Palette,
   Type,
-  Sparkles,
   Bell,
   Shield,
   Download,
@@ -73,7 +73,7 @@ export default function SettingsPage() {
 
   const navItems: { id: Section; label: string; icon: React.ReactNode }[] = [
     { id: "appearance", label: "Appearance", icon: <Palette className="w-4 h-4" /> },
-    { id: "maddy", label: "Maddy AI", icon: <Sparkles className="w-4 h-4" /> },
+    { id: "maddy", label: "Maddy AI", icon: <AppIcon className="w-4 h-4 rounded-md" /> },
     { id: "keyboard", label: "Keyboard shortcuts", icon: <Keyboard className="w-4 h-4" /> },
     { id: "account", label: "Account", icon: <Shield className="w-4 h-4" /> },
   ];

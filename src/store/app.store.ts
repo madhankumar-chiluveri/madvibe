@@ -6,22 +6,27 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Id } from "../../convex/_generated/dataModel";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 
-// ── Types ────────────────────────────────────────────────────
+type ActiveModule = "overview" | "news" | "kb" | "finance" | "ai";
+type FinanceTab = "dashboard" | "transactions" | "budget" | "investments" | "reports";
+type NewsCategory = "for_you" | "ai_ml" | "tech_it" | "productivity" | "must_know" | "general" | null;
+
 interface AppState {
-  // ── Workspace ────────────────────────────────────────────
   currentWorkspaceId: Id<"workspaces"> | null;
   setCurrentWorkspaceId: (id: Id<"workspaces"> | null) => void;
 
-  // ── Sidebar ──────────────────────────────────────────────
+  activeModule: ActiveModule;
+  setActiveModule: (m: ActiveModule) => void;
+
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (v: boolean) => void;
   toggleSidebar: () => void;
 
-  // ── Command palette ──────────────────────────────────────
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (v: boolean) => void;
 
-  // ── Theme / appearance ───────────────────────────────────
+  quickCaptureOpen: boolean;
+  setQuickCaptureOpen: (v: boolean) => void;
+
   theme: Theme;
   setTheme: (t: Theme) => void;
   accentColor: AccentColor;
@@ -29,42 +34,52 @@ interface AppState {
   fontFamily: FontFamily;
   setFontFamily: (f: FontFamily) => void;
 
-  // ── Maddy ────────────────────────────────────────────────
   maddyEnabled: boolean;
   setMaddyEnabled: (v: boolean) => void;
   geminiApiKey: string;
   setGeminiApiKey: (k: string) => void;
 
-  // ── Recent pages ─────────────────────────────────────────
   recentPageIds: Id<"pages">[];
   addRecentPage: (id: Id<"pages">) => void;
 
-  // ── Sidebar expanded state ───────────────────────────────
   expandedPageIds: string[];
   toggleExpanded: (id: string) => void;
   setExpanded: (id: string, v: boolean) => void;
   isExpanded: (id: string) => boolean;
+
+  focusActive: boolean;
+  focusMinutes: number;
+  focusStartedAt: number | null;
+  startFocus: () => void;
+  stopFocus: () => void;
+  setFocusMinutes: (m: number) => void;
+
+  newsCategory: NewsCategory;
+  setNewsCategory: (c: NewsCategory) => void;
+
+  financeTab: FinanceTab;
+  setFinanceTab: (t: FinanceTab) => void;
 }
 
-// ── Store ─────────────────────────────────────────────────────
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Workspace
       currentWorkspaceId: null,
       setCurrentWorkspaceId: (id) => set({ currentWorkspaceId: id }),
 
-      // Sidebar
+      activeModule: "overview",
+      setActiveModule: (m) => set({ activeModule: m }),
+
       sidebarCollapsed: false,
       setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
-      toggleSidebar: () =>
-        set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 
-      // Command palette
       commandPaletteOpen: false,
       setCommandPaletteOpen: (v) => set({ commandPaletteOpen: v }),
 
-      // Theme
+      quickCaptureOpen: false,
+      setQuickCaptureOpen: (v) => set({ quickCaptureOpen: v }),
+
       theme: "system",
       setTheme: (t) => set({ theme: t }),
       accentColor: "violet",
@@ -72,20 +87,17 @@ export const useAppStore = create<AppState>()(
       fontFamily: "default",
       setFontFamily: (f) => set({ fontFamily: f }),
 
-      // Maddy
       maddyEnabled: true,
       setMaddyEnabled: (v) => set({ maddyEnabled: v }),
       geminiApiKey: "",
       setGeminiApiKey: (k) => set({ geminiApiKey: k }),
 
-      // Recent
       recentPageIds: [],
       addRecentPage: (id) => {
         const current = get().recentPageIds.filter((p) => p !== id);
         set({ recentPageIds: [id, ...current].slice(0, 20) });
       },
 
-      // Expanded sidebar items
       expandedPageIds: [],
       toggleExpanded: (id) => {
         const ids = get().expandedPageIds;
@@ -104,15 +116,28 @@ export const useAppStore = create<AppState>()(
         });
       },
       isExpanded: (id) => get().expandedPageIds.includes(id),
+
+      focusActive: false,
+      focusMinutes: 25,
+      focusStartedAt: null,
+      startFocus: () => set({ focusActive: true, focusStartedAt: Date.now() }),
+      stopFocus: () => set({ focusActive: false, focusStartedAt: null }),
+      setFocusMinutes: (m) => set({ focusMinutes: m }),
+
+      newsCategory: null,
+      setNewsCategory: (c) => set({ newsCategory: c }),
+
+      financeTab: "dashboard",
+      setFinanceTab: (t) => set({ financeTab: t }),
     }),
     {
       name: "madverse-app-state",
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? localStorage : ({} as Storage)
       ),
-      // Only persist non-sensitive, non-function fields
       partialize: (s) => ({
         currentWorkspaceId: s.currentWorkspaceId,
+        activeModule: s.activeModule,
         sidebarCollapsed: s.sidebarCollapsed,
         theme: s.theme,
         accentColor: s.accentColor,
@@ -121,6 +146,9 @@ export const useAppStore = create<AppState>()(
         geminiApiKey: s.geminiApiKey,
         recentPageIds: s.recentPageIds,
         expandedPageIds: s.expandedPageIds,
+        focusMinutes: s.focusMinutes,
+        newsCategory: s.newsCategory,
+        financeTab: s.financeTab,
       }),
     }
   )

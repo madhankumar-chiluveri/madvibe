@@ -183,6 +183,56 @@ export const inlineCommand = action({
   },
 });
 
+// ---- Generate a project starter page ----
+export const generateProjectStarter = action({
+  args: {
+    projectName: v.string(),
+    brief: v.string(),
+    geminiApiKey: v.string(),
+  },
+  handler: async (_ctx, args) => {
+    const prompt = `You are Maddy, an AI project planning assistant.
+
+Create a practical markdown starter page for this project.
+Project name: ${args.projectName}
+Brief: ${args.brief}
+
+Use this structure:
+# Project Name
+## Mission
+## Success Criteria
+## Scope
+## Milestones
+## Risks
+## First Tasks
+## Notes
+
+Be concrete, concise, and useful. Return only markdown.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${args.geminiApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.5,
+            maxOutputTokens: 1400,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data: any = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  },
+});
+
 // ---- Generate embedding for semantic search ----
 export const generateEmbedding = action({
   args: {

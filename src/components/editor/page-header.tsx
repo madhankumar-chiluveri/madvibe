@@ -6,14 +6,12 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AppIcon } from "@/components/ui/app-icon";
 import { useAppStore } from "@/store/app.store";
 import { cn } from "@/lib/utils";
 import {
   MoreHorizontal,
-  Star,
-  StarOff,
   Smile,
-  ImageIcon,
   Maximize2,
   Minimize2,
   Wand2,
@@ -173,11 +171,11 @@ export function PageHeader({ page }: PageHeaderProps) {
           >
             {page.isFavourite ? (
               <>
-                <StarOff className="w-3.5 h-3.5" /> Unfavourite
+                <AppIcon className="w-3.5 h-3.5 rounded-sm" /> Unfavourite
               </>
             ) : (
               <>
-                <Star className="w-3.5 h-3.5" /> Favourite
+                <AppIcon className="w-3.5 h-3.5 rounded-sm" /> Favourite
               </>
             )}
           </button>

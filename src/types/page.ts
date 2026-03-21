@@ -11,6 +11,7 @@ export interface Page {
   workspaceId: Id<"workspaces">;
   parentId: Id<"pages"> | null;
   type: PageType;
+  isSpaceRoot?: boolean;
   title: string;
   icon: string | null;
   coverImage: string | null;
@@ -38,6 +39,7 @@ export interface CreatePageInput {
   workspaceId: Id<"workspaces">;
   parentId?: Id<"pages"> | null;
   type?: PageType;
+  isSpaceRoot?: boolean;
   title?: string;
   icon?: string;
 }

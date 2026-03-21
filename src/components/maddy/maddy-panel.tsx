@@ -5,10 +5,10 @@ import { useAction, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useAppStore } from "@/store/app.store";
 import { Button } from "@/components/ui/button";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
-  Sparkles,
   X,
   Loader2,
   Wand2,
@@ -250,7 +250,7 @@ export function MaddyPanel({ open, onClose }: MaddyPanelProps) {
 
         {messages.length === 0 && tab !== "page" && !loading && (
           <div className="text-center py-8">
-            <Sparkles className="w-8 h-8 mx-auto text-foreground mb-2" />
+            <AppIcon className="w-8 h-8 rounded-xl mx-auto mb-2" />
             <p className="text-xs text-muted-foreground">
               {tab === "chat"
                 ? "Ask Maddy anything about your notes"

@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles } from "lucide-react";
 
 export default function RootPage() {
   const { isAuthenticated, isLoading } = useConvexAuth();

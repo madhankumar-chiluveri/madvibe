@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AppIcon } from "@/components/ui/app-icon";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const { signIn } = useAuthActions();
@@ -62,7 +63,7 @@ export default function LoginPage() {
           </p>
           <div className="space-y-4 text-white/70 text-sm max-w-sm mx-auto">
             <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3 backdrop-blur">
-              <span className="text-lg">✦</span>
+              <AppIcon className="w-4 h-4 rounded-md" />
               <span>Maddy AI organises your thoughts automatically</span>
             </div>
             <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3 backdrop-blur">
@@ -193,9 +194,7 @@ export default function LoginPage() {
       {redirecting && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 maddy-gradient-bg rounded-2xl flex items-center justify-center animate-pulse">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
+            <AppIcon className="w-12 h-12 animate-pulse" />
             <p className="text-sm font-medium">Redirecting to workspace...</p>
           </div>
         </div>

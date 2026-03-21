@@ -51,7 +51,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-1 py-1 rounded-md hover:bg-accent/50 transition-colors flex-1 min-w-0">
+        <button className="flex items-center gap-2 px-1.5 py-1.5 rounded-md hover:bg-accent/50 data-[state=open]:bg-accent/70 transition-colors flex-1 min-w-0">
           <Avatar className="w-6 h-6 shrink-0">
             <AvatarImage src={(user as any)?.image} />
             <AvatarFallback className="text-xs bg-foreground text-background">
@@ -67,20 +67,40 @@ export function UserMenu() {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {(user as any)?.email}
-            </p>
+      <DropdownMenuContent
+        align="start"
+        side="bottom"
+        sideOffset={8}
+        collisionPadding={16}
+        className="w-[320px] max-w-[calc(100vw-1.5rem)] rounded-xl border-border/70 bg-popover/95 p-2 shadow-2xl backdrop-blur-xl"
+      >
+        <DropdownMenuLabel className="font-normal px-2 py-2">
+          <div className="flex items-center gap-3">
+            <Avatar className="w-9 h-9 shrink-0">
+              <AvatarImage src={(user as any)?.image} />
+              <AvatarFallback className="text-sm bg-muted text-foreground">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-none truncate">
+                {workspace?.name ?? "MADVERSE"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 truncate">
+                {(user as any)?.email}
+              </p>
+            </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/workspace/settings")}>
+        <DropdownMenuItem
+          className="h-9 rounded-md"
+          onClick={() => router.push("/workspace/settings")}
+        >
           <Settings className="w-4 h-4 mr-2" /> Settings
         </DropdownMenuItem>
         <DropdownMenuItem
+          className="h-9 rounded-md"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
           {theme === "dark" ? (
@@ -94,7 +114,7 @@ export function UserMenu() {
         <DropdownMenuItem
           disabled={isSigningOut}
           onClick={handleSignOut}
-          className="text-destructive focus:text-destructive disabled:opacity-60"
+          className="h-9 rounded-md text-destructive focus:text-destructive disabled:opacity-60"
         >
           {isSigningOut ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />

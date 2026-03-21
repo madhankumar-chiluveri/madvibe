@@ -23,13 +23,12 @@ import {
   FileText,
   Database,
   LayoutDashboard,
-  Star,
   Clock,
   Plus,
   Settings,
   Trash2,
-  Sparkles,
 } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { toast } from "sonner";
 
 export function CommandPalette() {
@@ -152,7 +151,7 @@ export function CommandPalette() {
                     )}
                     <span className="flex-1 truncate">{page.title || "Untitled"}</span>
                     {page.isFavourite && (
-                      <Star className="w-3 h-3 text-foreground ml-2 shrink-0" />
+                      <AppIcon className="w-3 h-3 rounded-sm ml-2" />
                     )}
                   </CommandItem>
                 ))}

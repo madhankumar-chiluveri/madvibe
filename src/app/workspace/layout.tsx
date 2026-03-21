@@ -5,9 +5,8 @@ import { useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { useAppStore } from "@/store/app.store";
-import { cn } from "@/lib/utils";
-import { Loader2, Sparkles } from "lucide-react";
 
 export default function WorkspaceLayout({
   children,
@@ -16,7 +15,6 @@ export default function WorkspaceLayout({
 }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const router = useRouter();
-  const { sidebarCollapsed } = useAppStore();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -39,11 +37,19 @@ export default function WorkspaceLayout({
 
   return (
     <div className="h-screen flex overflow-hidden bg-background">
+      {/* Desktop sidebar — hidden on mobile */}
       <Sidebar />
-      <main className="flex-1 overflow-y-auto transition-all duration-200 min-w-0">
+
+      {/* Main content — add bottom padding on mobile for nav bar */}
+      <main className="flex-1 overflow-y-auto min-w-0 pb-16 md:pb-0">
         {children}
       </main>
+
+      {/* Overlays */}
       <CommandPalette />
+
+      {/* Mobile bottom nav — hidden on desktop */}
+      <MobileNav />
     </div>
   );
 }

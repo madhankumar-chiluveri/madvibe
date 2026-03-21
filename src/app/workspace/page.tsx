@@ -1,97 +1,157 @@
-"use client";
+import { Bot, Database, FileText, FolderKanban, FolderOpen, Sparkles } from "lucide-react";
 
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { useRouter } from "next/navigation";
-import { useAppStore } from "@/store/app.store";
-import { Button } from "@/components/ui/button";
-import { Plus, FileText, Database, LayoutDashboard, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+const quickStarts = [
+  {
+    title: "Empty page",
+    description: "Start with a blank note for research, specs, or decisions.",
+    icon: FileText,
+  },
+  {
+    title: "Empty database",
+    description: "Create a table you can shape into tasks, assets, or tracking data.",
+    icon: Database,
+  },
+  {
+    title: "Build with Maddy",
+    description: "Generate a structured project starter from a short brief.",
+    icon: Bot,
+  },
+];
+
+const templates = [
+  "Tasks Tracker",
+  "Sprint Board",
+  "Project Brief",
+  "Meeting Notes",
+];
 
 export default function WorkspacePage() {
-  const router = useRouter();
-  const { currentWorkspaceId } = useAppStore();
-  const createPage = useMutation(api.pages.create);
-
-  const handleCreate = async (type: "document" | "database" | "dashboard") => {
-    if (!currentWorkspaceId) {
-      toast.error("No workspace selected");
-      return;
-    }
-    try {
-      const id = await createPage({
-        workspaceId: currentWorkspaceId,
-        parentId: null,
-        type,
-        title: "Untitled",
-      });
-      router.push(`/workspace/${id}`);
-    } catch {
-      toast.error("Failed to create page");
-    }
-  };
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-8 px-8">
-      <div className="text-center">
-        <img src="/app-icon.png" alt="MADVERSE" className="w-16 h-16 rounded-3xl mx-auto mb-4" />
-        <h1 className="text-3xl font-bold mb-2">Welcome to MADVERSE</h1>
-        <p className="text-muted-foreground max-w-sm">
-          Your AI-powered knowledge OS. Create a page to get started.
-        </p>
-      </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_28%),linear-gradient(180deg,#151412_0%,#0f0e0d_100%)] px-6 py-10 text-zinc-100 md:px-10">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <section className="rounded-[30px] border border-white/10 bg-black/20 p-8 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
+              <FolderOpen className="h-6 w-6 text-zinc-100" />
+            </div>
 
-       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
-        <CreateCard
-          icon={<FileText className="w-6 h-6 text-foreground" />}
-          title="New document"
-          description="Write notes, ideas, or plans"
-          onClick={() => handleCreate("document")}
-        />
-        <CreateCard
-          icon={<Database className="w-6 h-6 text-foreground" />}
-          title="New database"
-          description="Track tasks, projects, or data"
-          onClick={() => handleCreate("database")}
-        />
-        <CreateCard
-          icon={<LayoutDashboard className="w-6 h-6 text-foreground" />}
-          title="New dashboard"
-          description="Create an overview or hub"
-          onClick={() => handleCreate("dashboard")}
-        />
-      </div>
+            <div className="max-w-3xl space-y-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.22em] text-zinc-500">
+                  Knowledge Base
+                </p>
+                <h1 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white">
+                  Organize work by project spaces
+                </h1>
+              </div>
 
-      <p className="text-xs text-muted-foreground">
-        Press <kbd className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">⌘K</kbd> to search or create pages
-      </p>
+              <p className="max-w-2xl text-sm leading-6 text-zinc-400">
+                Use the sidebar to create a dedicated space for each project. Every space gets its
+                own home page and keeps project tasks, notes, databases, and decisions separated
+                from the rest of your knowledge base.
+              </p>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-zinc-300">
+                  General for loose notes
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-zinc-300">
+                  Spaces for project isolation
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-zinc-300">
+                  Add new opens templates
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[26px] border border-white/10 bg-[#161513] p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <FolderKanban className="h-5 w-5 text-zinc-200" />
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-100">How spaces work</h2>
+                <p className="text-sm text-zinc-500">A cleaner project structure for your KB.</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-sm text-zinc-400">
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                <p className="font-medium text-zinc-100">1. Create a space from the sidebar</p>
+                <p className="mt-1">
+                  Use the <span className="text-zinc-200">Space</span> action or the plus icon in
+                  the Spaces header to create a project space.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                <p className="font-medium text-zinc-100">2. Add pages, databases, or starters</p>
+                <p className="mt-1">
+                  Each space has an <span className="text-zinc-200">Add new</span> flow for empty
+                  items, Maddy-generated pages, and project templates.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                <p className="font-medium text-zinc-100">3. Keep project context isolated</p>
+                <p className="mt-1">
+                  Tasks, notes, and databases stay grouped under the project space instead of mixing
+                  with everything else in General.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-[26px] border border-white/10 bg-[#161513] p-6">
+              <div className="mb-4 flex items-center gap-3">
+                <Sparkles className="h-5 w-5 text-amber-300" />
+                <div>
+                  <h2 className="text-lg font-semibold text-zinc-100">Quick starts</h2>
+                  <p className="text-sm text-zinc-500">Available from Add new inside each space.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {quickStarts.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.title}
+                      className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-4"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+                        <Icon className="h-4 w-4 text-zinc-100" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-zinc-100">{item.title}</p>
+                        <p className="mt-1 text-sm text-zinc-400">{item.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-white/10 bg-[#161513] p-6">
+              <h2 className="text-lg font-semibold text-zinc-100">Project templates</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Ready-made starters for common project workflows.
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {templates.map((template) => (
+                  <span
+                    key={template}
+                    className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-zinc-300"
+                  >
+                    {template}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
-  );
-}
-
-function CreateCard({
-  icon,
-  title,
-  description,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-accent/30 transition-all text-left group"
-    >
-      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-accent transition-colors">
-        {icon}
-      </div>
-      <div>
-        <p className="font-medium text-sm">{title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-      </div>
-    </button>
   );
 }
