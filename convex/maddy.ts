@@ -3,14 +3,41 @@ import { action, internalMutation, query } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+type MaddyPagePreview = {
+  title: string;
+  contentPreview: string;
+};
+
+type GeminiGenerateContentResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+};
+
+type MaddyEmbeddingRecord = {
+  _id: unknown;
+  vector: number[];
+  contentHash: string;
+};
+
+type VectorSearchMatch = {
+  _id: any;
+};
+
 // ---- Auto-tag page with Maddy ----
 export const tagPage = action({
   args: {
     pageId: v.id("pages"),
     geminiApiKey: v.string(),
   },
-  handler: async (ctx, args) => {
-    const page = await ctx.runQuery(internal.maddy.getPageForMaddy, { pageId: args.pageId });
+  handler: async (ctx, args): Promise<{ tags: string[] }> => {
+    const page = await ctx.runQuery(api.maddy.getPageForMaddy, {
+      pageId: args.pageId,
+    }) as MaddyPagePreview | null;
     if (!page) throw new Error("Page not found");
 
     const prompt = `You are Maddy, an AI knowledge organiser. Given the following note/page content, generate 3-7 relevant tags that categorise this content. Return ONLY a JSON array of tag strings, no explanation.
@@ -38,7 +65,7 @@ Return format: ["tag1", "tag2", "tag3"]`;
 
       if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
 
-      const data = await response.json();
+      const data = await response.json() as GeminiGenerateContentResponse;
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
 
       // Extract JSON array from response
@@ -64,8 +91,10 @@ export const summarisePage = action({
     pageId: v.id("pages"),
     geminiApiKey: v.string(),
   },
-  handler: async (ctx, args) => {
-    const page = await ctx.runQuery(internal.maddy.getPageForMaddy, { pageId: args.pageId });
+  handler: async (ctx, args): Promise<string> => {
+    const page = await ctx.runQuery(api.maddy.getPageForMaddy, {
+      pageId: args.pageId,
+    }) as MaddyPagePreview | null;
     if (!page) throw new Error("Page not found");
 
     const prompt = `Summarise the following content in 3-5 concise bullet points. Be direct and capture the key insights.
@@ -88,7 +117,7 @@ Return bullet points starting with •`;
     );
 
     if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-    const data = await response.json();
+    const data = await response.json() as GeminiGenerateContentResponse;
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
   },
 });
@@ -99,8 +128,10 @@ export const extractTasks = action({
     pageId: v.id("pages"),
     geminiApiKey: v.string(),
   },
-  handler: async (ctx, args) => {
-    const page = await ctx.runQuery(internal.maddy.getPageForMaddy, { pageId: args.pageId });
+  handler: async (ctx, args): Promise<string[]> => {
+    const page = await ctx.runQuery(api.maddy.getPageForMaddy, {
+      pageId: args.pageId,
+    }) as MaddyPagePreview | null;
     if (!page) throw new Error("Page not found");
 
     const prompt = `Extract all actionable tasks and to-dos from the following content. Return a JSON array of task strings.
@@ -123,7 +154,7 @@ Return format: ["task 1", "task 2", "task 3"]`;
     );
 
     if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-    const data = await response.json();
+    const data = await response.json() as GeminiGenerateContentResponse;
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
     const match = text.match(/\[[\s\S]*\]/);
     return match ? JSON.parse(match[0]) : [];
@@ -145,7 +176,7 @@ export const inlineCommand = action({
     targetLanguage: v.optional(v.string()),
     geminiApiKey: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<string> => {
     let prompt = "";
     switch (args.command) {
       case "explain":
@@ -178,7 +209,7 @@ export const inlineCommand = action({
     );
 
     if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-    const data = await response.json();
+    const data = await response.json() as GeminiGenerateContentResponse;
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
   },
 });
@@ -190,7 +221,7 @@ export const generateProjectStarter = action({
     brief: v.string(),
     geminiApiKey: v.string(),
   },
-  handler: async (_ctx, args) => {
+  handler: async (_ctx, args): Promise<string> => {
     const prompt = `You are Maddy, an AI project planning assistant.
 
 Create a practical markdown starter page for this project.
@@ -228,7 +259,7 @@ Be concrete, concise, and useful. Return only markdown.`;
       throw new Error(`Gemini API error: ${response.status}`);
     }
 
-    const data: any = await response.json();
+    const data = await response.json() as GeminiGenerateContentResponse;
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
   },
 });
@@ -239,15 +270,19 @@ export const generateEmbedding = action({
     pageId: v.id("pages"),
     geminiApiKey: v.string(),
   },
-  handler: async (ctx, args) => {
-    const page = await ctx.runQuery(internal.maddy.getPageForMaddy, { pageId: args.pageId });
+  handler: async (ctx, args): Promise<void> => {
+    const page = await ctx.runQuery(api.maddy.getPageForMaddy, {
+      pageId: args.pageId,
+    }) as MaddyPagePreview | null;
     if (!page) return;
 
     const textToEmbed = `${page.title}\n${page.contentPreview}`.slice(0, 2000);
     const contentHash = await hashString(textToEmbed);
 
     // Check if already embedded with same content
-    const existing = await ctx.runQuery(internal.maddy.getEmbedding, { pageId: args.pageId });
+    const existing = await ctx.runQuery(api.maddy.getEmbedding, {
+      pageId: args.pageId,
+    }) as MaddyEmbeddingRecord | null;
     if (existing?.contentHash === contentHash) return;
 
     const response = await fetch(
@@ -263,7 +298,7 @@ export const generateEmbedding = action({
     );
 
     if (!response.ok) throw new Error(`Gemini Embedding API error: ${response.status}`);
-    const data = await response.json();
+    const data = await response.json() as { embedding?: { values?: number[] } };
     const vector: number[] = data.embedding?.values ?? [];
 
     if (vector.length > 0) {
@@ -284,7 +319,7 @@ export const semanticSearch = action({
     geminiApiKey: v.string(),
     limit: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any[]> => {
     if (!args.query.trim()) return [];
 
     const response = await fetch(
@@ -300,7 +335,7 @@ export const semanticSearch = action({
     );
 
     if (!response.ok) return [];
-    const data = await response.json();
+    const data = await response.json() as { embedding?: { values?: number[] } };
     const queryVector: number[] = data.embedding?.values ?? [];
 
     if (queryVector.length === 0) return [];
@@ -308,13 +343,13 @@ export const semanticSearch = action({
     const results = await ctx.vectorSearch("maddyEmbeddings", "by_vector", {
       vector: queryVector,
       limit: args.limit ?? 10,
-    });
+    }) as VectorSearchMatch[];
 
     const pageIds = results.map((r) => r._id);
-    const pages = await ctx.runQuery(internal.maddy.getPagesByEmbeddingIds, {
+    const pages = await ctx.runQuery(api.maddy.getPagesByEmbeddingIds, {
       embeddingIds: pageIds,
       workspaceId: args.workspaceId,
-    });
+    }) as any[];
 
     return pages;
   },
@@ -327,17 +362,21 @@ export const getRelatedPages = action({
     workspaceId: v.id("workspaces"),
     geminiApiKey: v.string(),
   },
-  handler: async (ctx, args) => {
-    const page = await ctx.runQuery(internal.maddy.getPageForMaddy, { pageId: args.pageId });
+  handler: async (ctx, args): Promise<any[]> => {
+    const page = await ctx.runQuery(api.maddy.getPageForMaddy, {
+      pageId: args.pageId,
+    }) as MaddyPagePreview | null;
     if (!page) return [];
 
-    const existing = await ctx.runQuery(internal.maddy.getEmbedding, { pageId: args.pageId });
+    const existing = await ctx.runQuery(api.maddy.getEmbedding, {
+      pageId: args.pageId,
+    }) as MaddyEmbeddingRecord | null;
     if (!existing || existing.vector.length === 0) return [];
 
     const results = await ctx.vectorSearch("maddyEmbeddings", "by_vector", {
       vector: existing.vector,
       limit: 8,
-    });
+    }) as VectorSearchMatch[];
 
     // Exclude the current page
     const filteredIds = results
@@ -345,10 +384,10 @@ export const getRelatedPages = action({
       .slice(0, 5)
       .map((r) => r._id);
 
-    const pages = await ctx.runQuery(internal.maddy.getPagesByEmbeddingIds, {
+    const pages = await ctx.runQuery(api.maddy.getPagesByEmbeddingIds, {
       embeddingIds: filteredIds,
       workspaceId: args.workspaceId,
-    });
+    }) as any[];
 
     return pages;
   },
@@ -357,7 +396,7 @@ export const getRelatedPages = action({
 // ---- Internal helpers ----
 export const getPageForMaddy = query({
   args: { pageId: v.id("pages") },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<MaddyPagePreview | null> => {
     const page = await ctx.db.get(args.pageId);
     if (!page) return null;
 
@@ -439,7 +478,7 @@ export const upsertEmbedding = internalMutation({
 
 export const getEmbedding = query({
   args: { pageId: v.id("pages") },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any | null> => {
     return await ctx.db
       .query("maddyEmbeddings")
       .withIndex("by_pageId", (q) => q.eq("pageId", args.pageId))
@@ -452,8 +491,8 @@ export const getPagesByEmbeddingIds = query({
     embeddingIds: v.array(v.id("maddyEmbeddings")),
     workspaceId: v.id("workspaces"),
   },
-  handler: async (ctx, args) => {
-    const results = [];
+  handler: async (ctx, args): Promise<any[]> => {
+    const results: any[] = [];
     for (const embId of args.embeddingIds) {
       const emb = await ctx.db.get(embId);
       if (!emb) continue;
@@ -485,7 +524,7 @@ export const organiseWorkspace = action({
     })),
     geminiApiKey: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<any[]> => {
     if (args.pageList.length === 0) return [];
 
     const pageListText = args.pageList
@@ -516,7 +555,7 @@ Return [] if the structure looks fine. Return ONLY a valid JSON array.`;
         }
       );
       if (!response.ok) return [];
-      const data = await response.json();
+      const data = await response.json() as GeminiGenerateContentResponse;
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
       const match = text.match(/\[[\s\S]*\]/);
       if (!match) return [];

@@ -7,14 +7,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import Script from "next/script";
-import { Roboto_Serif } from "next/font/google";
-
-const robotoSerif = Roboto_Serif({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-roboto-serif",
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "MADVERSE — AI-Powered BRAIN OS",
@@ -46,7 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <ConvexAuthNextjsServerProvider>
-      <html lang="en" suppressHydrationWarning className={robotoSerif.variable}>
+      <html lang="en" suppressHydrationWarning>
         <head>
           <script
             dangerouslySetInnerHTML={{
