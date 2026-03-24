@@ -426,7 +426,7 @@ export default function LedgerPage() {
           </h1>
         </div>
         {/* Tab bar — scrollable on mobile */}
-        <div className="max-w-5xl mx-auto px-4 pb-2">
+        <div className="max-w-5xl mx-auto px-4 pb-2 md:hidden">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => (
               <button
@@ -447,10 +447,10 @@ export default function LedgerPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4 md:py-6">
-        {ledgerTab === "dashboard" && <DashboardTab />}
-        {ledgerTab === "transactions" && <TransactionsTab />}
-        {ledgerTab === "budget" && <BudgetTab />}
-        {ledgerTab === "investments" && <InvestmentsTab />}
+        <div className={ledgerTab !== "dashboard" ? "hidden" : ""}><DashboardTab /></div>
+        <div className={ledgerTab !== "transactions" ? "hidden" : ""}><TransactionsTab /></div>
+        <div className={ledgerTab !== "budget" ? "hidden" : ""}><BudgetTab /></div>
+        <div className={ledgerTab !== "investments" ? "hidden" : ""}><InvestmentsTab /></div>
       </div>
     </div>
   );

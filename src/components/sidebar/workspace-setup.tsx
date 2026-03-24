@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
 
 export function WorkspaceSetup() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function WorkspaceSetup() {
       const id = await createWorkspace({ name: name.trim() });
       setCurrentWorkspaceId(id);
       toast.success("Workspace created!");
-      router.push("/workspace/brain");
+      router.replace(DEFAULT_WORKSPACE_ROUTE);
     } catch (err: any) {
       toast.error(err.message ?? "Failed to create workspace");
     } finally {
@@ -35,7 +36,7 @@ export function WorkspaceSetup() {
 
   return (
     <div className="w-60 shrink-0 h-full border-r bg-sidebar flex flex-col items-center justify-center p-6">
-      <img src="/app-icon.svg" alt="MADVERSE" className="w-12 h-12 rounded-2xl mb-4" />
+      <img src="/app-icon.svg" alt="MadVibe" className="w-12 h-12 rounded-2xl mb-4" />
       <h2 className="text-base font-semibold mb-1">Create your workspace</h2>
       <p className="text-xs text-muted-foreground text-center mb-6">
         Give your BRAIN a name

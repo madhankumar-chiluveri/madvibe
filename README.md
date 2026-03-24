@@ -1,8 +1,8 @@
-# MADVERSE — AI-Powered Personal Knowledge OS
+# MadVibe — AI-Powered Personal Knowledge OS
 
 > Your second brain, supercharged by Maddy AI.
 
-![MADVERSE](https://img.shields.io/badge/MADVERSE-AI--Knowledge--OS-7c3aed?style=for-the-badge)
+![MadVibe](https://img.shields.io/badge/MadVibe-AI--Knowledge--OS-7c3aed?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
 ![Convex](https://img.shields.io/badge/Convex-Real--time-ff6b35?style=for-the-badge)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript)
@@ -95,7 +95,7 @@ Visit [http://localhost:3000](http://localhost:3000)
 ## 📁 Project Structure
 
 ```
-madverse/
+madvibe/
 ├── convex/                    # Convex backend
 │   ├── schema.ts              # Database schema
 │   ├── auth.ts                # Authentication

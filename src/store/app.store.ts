@@ -7,6 +7,13 @@ import { Id } from "../../convex/_generated/dataModel";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 
 type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "ai";
+export type MaddyPanelTab = "chat" | "search" | "page";
+export type MaddyProvider =
+  | "gemini"
+  | "openai"
+  | "anthropic"
+  | "groq"
+  | "openrouter";
 type LedgerTab = "dashboard" | "transactions" | "budget" | "investments" | "reports";
 type FeedCategory = "for_you" | "ai_ml" | "tech_it" | "productivity" | "must_know" | "general" | null;
 
@@ -17,9 +24,9 @@ interface AppState {
   activeModule: ActiveModule;
   setActiveModule: (m: ActiveModule) => void;
 
-  sidebarCollapsed: boolean;
-  setSidebarCollapsed: (v: boolean) => void;
-  toggleSidebar: () => void;
+  contextPaneCollapsed: boolean;
+  setContextPaneCollapsed: (v: boolean) => void;
+  toggleContextPaneCollapsed: () => void;
 
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (v: boolean) => void;
@@ -29,6 +36,13 @@ interface AppState {
 
   quickCaptureOpen: boolean;
   setQuickCaptureOpen: (v: boolean) => void;
+
+  maddyPanelOpen: boolean;
+  maddyPanelTab: MaddyPanelTab;
+  setMaddyPanelOpen: (v: boolean) => void;
+  setMaddyPanelTab: (tab: MaddyPanelTab) => void;
+  openMaddyPanel: (tab?: MaddyPanelTab) => void;
+  closeMaddyPanel: () => void;
 
   theme: Theme;
   setTheme: (t: Theme) => void;
@@ -41,6 +55,18 @@ interface AppState {
   setMaddyEnabled: (v: boolean) => void;
   geminiApiKey: string;
   setGeminiApiKey: (k: string) => void;
+  openaiApiKey: string;
+  setOpenaiApiKey: (k: string) => void;
+  anthropicApiKey: string;
+  setAnthropicApiKey: (k: string) => void;
+  groqApiKey: string;
+  setGroqApiKey: (k: string) => void;
+  openrouterApiKey: string;
+  setOpenrouterApiKey: (k: string) => void;
+  maddyDefaultProvider: MaddyProvider;
+  setMaddyDefaultProvider: (provider: MaddyProvider) => void;
+  maddyDefaultModel: string;
+  setMaddyDefaultModel: (model: string) => void;
 
   recentPageIds: Id<"pages">[];
   addRecentPage: (id: Id<"pages">) => void;
@@ -73,9 +99,10 @@ export const useAppStore = create<AppState>()(
       activeModule: "overview",
       setActiveModule: (m) => set({ activeModule: m }),
 
-      sidebarCollapsed: false,
-      setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
-      toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      contextPaneCollapsed: false,
+      setContextPaneCollapsed: (v) => set({ contextPaneCollapsed: v }),
+      toggleContextPaneCollapsed: () =>
+        set((s) => ({ contextPaneCollapsed: !s.contextPaneCollapsed })),
 
       commandPaletteOpen: false,
       setCommandPaletteOpen: (v) => set({ commandPaletteOpen: v }),
@@ -85,6 +112,13 @@ export const useAppStore = create<AppState>()(
 
       quickCaptureOpen: false,
       setQuickCaptureOpen: (v) => set({ quickCaptureOpen: v }),
+
+      maddyPanelOpen: false,
+      maddyPanelTab: "chat",
+      setMaddyPanelOpen: (v) => set({ maddyPanelOpen: v }),
+      setMaddyPanelTab: (tab) => set({ maddyPanelTab: tab }),
+      openMaddyPanel: (tab = "chat") => set({ maddyPanelOpen: true, maddyPanelTab: tab }),
+      closeMaddyPanel: () => set({ maddyPanelOpen: false }),
 
       theme: "system",
       setTheme: (t) => set({ theme: t }),
@@ -97,6 +131,18 @@ export const useAppStore = create<AppState>()(
       setMaddyEnabled: (v) => set({ maddyEnabled: v }),
       geminiApiKey: "",
       setGeminiApiKey: (k) => set({ geminiApiKey: k }),
+      openaiApiKey: "",
+      setOpenaiApiKey: (k) => set({ openaiApiKey: k }),
+      anthropicApiKey: "",
+      setAnthropicApiKey: (k) => set({ anthropicApiKey: k }),
+      groqApiKey: "",
+      setGroqApiKey: (k) => set({ groqApiKey: k }),
+      openrouterApiKey: "",
+      setOpenrouterApiKey: (k) => set({ openrouterApiKey: k }),
+      maddyDefaultProvider: "gemini",
+      setMaddyDefaultProvider: (provider) => set({ maddyDefaultProvider: provider }),
+      maddyDefaultModel: "gemini-1.5-flash-latest",
+      setMaddyDefaultModel: (model) => set({ maddyDefaultModel: model }),
 
       recentPageIds: [],
       addRecentPage: (id) => {
@@ -137,8 +183,8 @@ export const useAppStore = create<AppState>()(
       setLedgerTab: (t) => set({ ledgerTab: t }),
     }),
     {
-      name: "madverse-app-state",
-      version: 2,
+      name: "madvibe-app-state",
+      version: 3,
       migrate: (persistedState: any) => {
         if (!persistedState || typeof persistedState !== "object") {
           return persistedState;
@@ -157,6 +203,8 @@ export const useAppStore = create<AppState>()(
         return {
           ...state,
           activeModule,
+          contextPaneCollapsed:
+            state.contextPaneCollapsed ?? state.sidebarCollapsed ?? false,
           feedCategory: state.feedCategory ?? state.newsCategory ?? null,
           ledgerTab: state.ledgerTab ?? state.financeTab ?? "dashboard",
         };
@@ -167,12 +215,18 @@ export const useAppStore = create<AppState>()(
       partialize: (s) => ({
         currentWorkspaceId: s.currentWorkspaceId,
         activeModule: s.activeModule,
-        sidebarCollapsed: s.sidebarCollapsed,
+        contextPaneCollapsed: s.contextPaneCollapsed,
         theme: s.theme,
         accentColor: s.accentColor,
         fontFamily: s.fontFamily,
         maddyEnabled: s.maddyEnabled,
         geminiApiKey: s.geminiApiKey,
+        openaiApiKey: s.openaiApiKey,
+        anthropicApiKey: s.anthropicApiKey,
+        groqApiKey: s.groqApiKey,
+        openrouterApiKey: s.openrouterApiKey,
+        maddyDefaultProvider: s.maddyDefaultProvider,
+        maddyDefaultModel: s.maddyDefaultModel,
         recentPageIds: s.recentPageIds,
         expandedPageIds: s.expandedPageIds,
         focusMinutes: s.focusMinutes,

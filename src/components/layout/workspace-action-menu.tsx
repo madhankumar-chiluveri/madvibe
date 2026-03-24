@@ -28,15 +28,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app.store";
 
-function ActionCard({
+type ActionTone = "neutral" | "amber" | "blue" | "emerald";
+
+function ActionTile({
   icon: Icon,
   label,
-  description,
+  meta,
   onClick,
   disabled = false,
   badge,
@@ -44,11 +50,11 @@ function ActionCard({
 }: {
   icon: LucideIcon;
   label: string;
-  description: string;
+  meta: string;
   onClick: () => void;
   disabled?: boolean;
   badge?: string | null;
-  tone?: "neutral" | "amber" | "blue" | "emerald";
+  tone?: ActionTone;
 }) {
   return (
     <button
@@ -56,47 +62,56 @@ function ActionCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "group relative overflow-hidden rounded-[20px] border p-4 text-left transition-all",
+        "group relative flex min-h-[92px] flex-col justify-between overflow-hidden rounded-[18px] border px-3 py-3.5 text-left transition-all",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
         disabled
-          ? "cursor-not-allowed border-white/6 bg-white/[0.02] text-zinc-600"
-          : "border-white/8 bg-white/[0.03] text-zinc-100 hover:-translate-y-0.5 hover:border-white/12 hover:bg-white/[0.05]",
-        tone === "amber" && !disabled && "hover:border-amber-400/20 hover:bg-amber-400/[0.08]",
-        tone === "blue" && !disabled && "hover:border-sky-400/20 hover:bg-sky-400/[0.08]",
-        tone === "emerald" && !disabled && "hover:border-emerald-400/20 hover:bg-emerald-400/[0.08]"
+          ? "cursor-not-allowed border-white/6 bg-white/[0.02] text-zinc-600 shadow-none"
+          : "border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:-translate-y-px hover:border-white/12 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))]",
+        tone === "amber" &&
+          !disabled &&
+          "hover:border-amber-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_28px_rgba(120,85,18,0.14)]",
+        tone === "blue" &&
+          !disabled &&
+          "hover:border-sky-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_28px_rgba(34,94,147,0.14)]",
+        tone === "emerald" &&
+          !disabled &&
+          "hover:border-emerald-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_28px_rgba(17,94,73,0.14)]"
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <span
           className={cn(
-            "flex h-11 w-11 items-center justify-center rounded-[14px] border text-zinc-100 transition-colors",
-            disabled
-              ? "border-white/6 bg-white/[0.02] text-zinc-600"
-              : "border-white/8 bg-black/25 group-hover:border-white/12"
+            "flex h-9 w-9 items-center justify-center rounded-[12px] border transition-colors",
+            disabled && "border-white/6 bg-white/[0.02] text-zinc-600",
+            !disabled &&
+              tone === "neutral" &&
+              "border-white/10 bg-black/24 text-zinc-100 group-hover:border-white/14",
+            !disabled &&
+              tone === "amber" &&
+              "border-amber-400/16 bg-amber-400/[0.08] text-amber-100 group-hover:border-amber-300/26",
+            !disabled &&
+              tone === "blue" &&
+              "border-sky-400/16 bg-sky-400/[0.08] text-sky-100 group-hover:border-sky-300/26",
+            !disabled &&
+              tone === "emerald" &&
+              "border-emerald-400/16 bg-emerald-400/[0.08] text-emerald-100 group-hover:border-emerald-300/26"
           )}
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-4 w-4" />
         </span>
+
         {badge ? (
-          <span className="rounded-full border border-amber-400/20 bg-amber-400/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200">
+          <span className="rounded-full border border-amber-400/18 bg-amber-400/[0.1] px-2 py-0.5 text-[10px] font-semibold text-amber-200">
             {badge}
           </span>
         ) : null}
       </div>
 
-      <div className="mt-4">
-        <div className="text-sm font-semibold">{label}</div>
-        <p className="mt-1 text-xs leading-5 text-zinc-500">{description}</p>
-      </div>
-
-      <div
-        className={cn(
-          "mt-4 inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 transition-colors",
-          !disabled && "group-hover:text-zinc-300"
-        )}
-      >
-        Open
-        <ChevronRight className="h-3.5 w-3.5" />
+      <div className="mt-4 min-w-0">
+        <div className="truncate text-sm font-semibold tracking-[-0.01em] text-white">
+          {label}
+        </div>
+        <p className="mt-1 text-[11px] leading-4 text-zinc-500">{meta}</p>
       </div>
     </button>
   );
@@ -118,7 +133,10 @@ export function WorkspaceActionMenu() {
   const createSpace = useMutation(api.pages.createSpace);
 
   const resolvedWorkspaceId = useMemo<Id<"workspaces"> | null>(() => {
-    if (currentWorkspaceId && workspaces.some((workspace: any) => workspace._id === currentWorkspaceId)) {
+    if (
+      currentWorkspaceId &&
+      workspaces.some((workspace: any) => workspace._id === currentWorkspaceId)
+    ) {
       return currentWorkspaceId;
     }
 
@@ -126,7 +144,9 @@ export function WorkspaceActionMenu() {
   }, [currentWorkspaceId, workspaces]);
 
   const currentWorkspace = useMemo(
-    () => workspaces.find((workspace: any) => workspace._id === resolvedWorkspaceId) ?? null,
+    () =>
+      workspaces.find((workspace: any) => workspace._id === resolvedWorkspaceId) ??
+      null,
     [resolvedWorkspaceId, workspaces]
   );
 
@@ -135,6 +155,8 @@ export function WorkspaceActionMenu() {
     resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
   );
   const overdueCount = reminderSummary?.overdue ?? 0;
+  const actionsDisabled = !resolvedWorkspaceId;
+  const workspaceLabel = currentWorkspace?.name ?? "Workspace";
 
   const closeMenu = () => setOpen(false);
 
@@ -196,8 +218,6 @@ export function WorkspaceActionMenu() {
     }
   };
 
-  const actionsDisabled = !resolvedWorkspaceId;
-
   return (
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -205,74 +225,76 @@ export function WorkspaceActionMenu() {
           <button
             type="button"
             aria-label="Open workspace actions"
-            className="group pointer-events-auto relative inline-flex h-11 items-center gap-2 rounded-full border border-white/10 bg-[#161513]/82 px-3.5 text-zinc-100 shadow-[0_16px_44px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all hover:border-white/16 hover:bg-[#1b1a18]/92"
+            className="group pointer-events-auto relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#161513]/90 text-zinc-100 shadow-[0_14px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-all hover:border-white/16 hover:bg-[#1a1917]"
           >
-            <span className="hidden text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-500 sm:inline">
-              Actions
-            </span>
-            <span className="relative flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
-              <MoreHorizontal className="h-4 w-4" />
-              {overdueCount > 0 ? (
-                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.6)]" />
-              ) : null}
-            </span>
+            <MoreHorizontal className="h-4 w-4" />
+            {overdueCount > 0 ? (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[9px] font-semibold leading-none text-black shadow-[0_0_18px_rgba(251,191,36,0.45)]">
+                {overdueCount > 9 ? "9+" : overdueCount}
+              </span>
+            ) : null}
           </button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
           align="end"
-          sideOffset={14}
-          className="w-[380px] rounded-[26px] border-white/10 bg-[#151412]/96 p-2 text-zinc-100 shadow-[0_28px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl"
+          sideOffset={12}
+          className="w-[332px] rounded-[22px] border-white/10 bg-[#141311]/96 p-2 text-zinc-100 shadow-[0_28px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl"
         >
-          <div className="rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-white">Workspace actions</div>
-                <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  {currentWorkspace?.name ? `${currentWorkspace.name} shortcuts` : "Keep core workspace actions close at hand."}
-                </p>
+          <div className="rounded-[18px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                  Workspace
+                </div>
+                <div className="mt-1 truncate text-sm font-semibold tracking-[-0.01em] text-white">
+                  {workspaceLabel}
+                </div>
               </div>
               {overdueCount > 0 ? (
-                <span className="rounded-full border border-amber-400/18 bg-amber-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200">
+                <span className="shrink-0 rounded-full border border-amber-400/18 bg-amber-400/[0.1] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-200">
                   {overdueCount} overdue
                 </span>
               ) : null}
             </div>
+            <p className="mt-2 text-[11px] leading-4 text-zinc-500">
+              Quick access to the actions you actually use.
+            </p>
           </div>
 
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <ActionCard
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <ActionTile
               icon={BellRing}
               label="Reminders"
-              description={
+              meta={
                 overdueCount > 0
-                  ? `${overdueCount} overdue reminder${overdueCount === 1 ? "" : "s"} waiting for you.`
-                  : "Review upcoming and overdue reminders in one place."
+                  ? `${overdueCount} overdue waiting`
+                  : "Upcoming and overdue"
               }
               badge={overdueCount > 0 ? `${overdueCount}` : null}
               onClick={handleOpenReminders}
               tone="amber"
             />
-            <ActionCard
+            <ActionTile
               icon={Plus}
               label="New"
-              description="Open the starter catalog for a fresh page or database."
+              meta="Page or database"
               onClick={handleOpenCreateItem}
               disabled={actionsDisabled}
               tone="blue"
             />
-            <ActionCard
+            <ActionTile
               icon={FolderPlus}
               label="Space"
-              description="Create a dedicated project space with its own home."
+              meta="Dedicated project home"
               onClick={handleOpenCreateSpace}
               disabled={actionsDisabled}
               tone="emerald"
             />
-            <ActionCard
+            <ActionTile
               icon={FileUp}
               label="Import"
-              description="Bring in Markdown notes or CSV databases without leaving the page."
+              meta="Markdown or CSV"
               onClick={handleOpenImport}
               disabled={actionsDisabled}
             />
@@ -282,7 +304,7 @@ export function WorkspaceActionMenu() {
             type="button"
             onClick={handleOpenTrash}
             className={cn(
-              "mt-2 flex w-full items-center gap-3 rounded-[20px] border px-4 py-3 text-left transition-colors",
+              "mt-2 flex w-full items-center gap-3 rounded-[16px] border px-3 py-2.5 text-left transition-colors",
               pathname === "/workspace/trash"
                 ? "border-red-400/16 bg-red-400/[0.08] text-red-100"
                 : "border-white/8 bg-white/[0.03] text-zinc-200 hover:border-red-400/16 hover:bg-red-400/[0.08] hover:text-red-100"
@@ -290,22 +312,24 @@ export function WorkspaceActionMenu() {
           >
             <span
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-[14px] border",
+                "flex h-8 w-8 items-center justify-center rounded-[11px] border",
                 pathname === "/workspace/trash"
                   ? "border-red-400/16 bg-red-400/[0.08]"
                   : "border-white/8 bg-black/20"
               )}
             >
-              <Trash2 className="h-4.5 w-4.5" />
+              <Trash2 className="h-4 w-4" />
             </span>
+
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">
+              <span className="block text-sm font-semibold tracking-[-0.01em]">
                 {pathname === "/workspace/trash" ? "Trash open" : "Trash"}
               </span>
-              <span className="mt-1 block text-xs leading-5 text-zinc-500">
-                Review recently deleted pages, spaces, and databases.
+              <span className="mt-0.5 block text-[11px] text-zinc-500">
+                Deleted pages and spaces
               </span>
             </span>
+
             <ChevronRight className="h-4 w-4 text-zinc-500" />
           </button>
         </DropdownMenuContent>
@@ -319,7 +343,8 @@ export function WorkspaceActionMenu() {
           <DialogHeader>
             <DialogTitle>Create a new project space</DialogTitle>
             <DialogDescription className="text-zinc-400">
-              Each space gets its own home page and isolated pages, notes, and databases.
+              Each space gets its own home page and isolated pages, notes, and
+              databases.
             </DialogDescription>
           </DialogHeader>
 

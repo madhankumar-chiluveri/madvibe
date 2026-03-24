@@ -1,6 +1,6 @@
 {
-  "name": "MADVERSE",
-  "short_name": "MADVERSE",
+  "name": "MadVibe",
+  "short_name": "MadVibe",
   "description": "AI-Powered Personal Knowledge OS",
   "start_url": "/",
   "display": "standalone",
@@ -21,9 +21,18 @@
       "short_name": "New",
       "description": "Create a new page",
       "url": "/workspace?new=true",
-      "icons": [{ "src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [
+        {
+          "src": "/app-icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
     }
   ],
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "screenshots": []
 }

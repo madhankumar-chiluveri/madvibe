@@ -14,7 +14,7 @@ export interface QueuedMutation {
   retryCount: number;
 }
 
-const DB_NAME = "madverse-offline";
+const DB_NAME = "madvibe-offline";
 const STORE_NAME = "mutation-queue";
 const DB_VERSION = 1;
 
@@ -73,8 +73,8 @@ class OfflineService {
       const store = tx.objectStore(STORE_NAME);
       const req =
         op === "add" ? store.add(value) :
-        op === "delete" ? store.delete(value as string) :
-        store.clear();
+          op === "delete" ? store.delete(value as string) :
+            store.clear();
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });

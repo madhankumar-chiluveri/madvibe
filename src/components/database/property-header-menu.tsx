@@ -490,16 +490,17 @@ function PropertyFormulaDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Edit formula"
-        className="max-w-3xl border-white/10 bg-[#141311] text-zinc-100 sm:rounded-2xl"
+        className="grid max-h-[min(88vh,760px)] max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-white/10 bg-[#141311] p-0 text-zinc-100 sm:rounded-2xl"
       >
-        <DialogHeader>
+        <DialogHeader className="shrink-0 border-b border-white/10 px-5 py-4 pr-14">
           <DialogTitle className="text-zinc-100">Configure formula</DialogTitle>
           <DialogDescription className="text-zinc-400">
             Build a computed field for {propertyName || "this property"} using other columns.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-h-0 overflow-y-auto px-5 py-4">
+          <div className="space-y-3.5">
           <div className="space-y-2">
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
               Expression
@@ -513,11 +514,11 @@ function PropertyFormulaDialog({
                 }))
               }
               placeholder='Example: RENEWS_IN(PROP("Claude Renewal"))'
-              className="min-h-[132px] border-white/10 bg-[#181715] text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-1 focus-visible:ring-white/15"
+              className="min-h-[112px] max-h-[24vh] resize-y border-white/10 bg-[#181715] text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-1 focus-visible:ring-white/15 sm:min-h-[124px]"
             />
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-2.5 md:grid-cols-2">
             <div className="space-y-2">
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
                 Result type
@@ -571,7 +572,7 @@ function PropertyFormulaDialog({
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
               Quick templates
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid content-start gap-2.5 md:grid-cols-3">
               {FORMULA_PRESETS.map((preset) => (
                 <button
                   key={preset.label}
@@ -589,7 +590,7 @@ function PropertyFormulaDialog({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-300">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-sm text-zinc-300">
             <div className="font-medium text-zinc-100">Supported helpers</div>
             <div className="mt-2 leading-6 text-zinc-400">
               Use <code>PROP("Column Name")</code> to reference another field.
@@ -601,8 +602,9 @@ function PropertyFormulaDialog({
             </div>
           </div>
         </div>
+        </div>
 
-        <DialogFooter className="flex items-center justify-between gap-2 sm:justify-between">
+        <DialogFooter className="shrink-0 border-t border-white/10 px-5 py-3 sm:justify-between">
           <Button
             type="button"
             variant="ghost"

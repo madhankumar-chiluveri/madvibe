@@ -1,44 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
-import { useAppStore } from "@/store/app.store";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { AppIcon } from "@/components/ui/app-icon";
-import { UserMenu } from "./user-menu";
-import { WorkspaceSetup } from "./workspace-setup";
 import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
+import { useMutation, useQuery } from "convex/react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Archive,
+  BookOpen,
   ChevronDown,
   ChevronRight,
-  FileText,
   Database,
+  FileText,
+  FolderOpen,
+  Home,
   LayoutDashboard,
+  MoreHorizontal,
+  Newspaper,
+  PanelLeft,
+  PanelLeftClose,
   Plus,
   Search,
-  PanelLeftClose,
-  PanelLeft,
-  MoreHorizontal,
-  Archive,
-  Newspaper,
-  Wallet,
+  Settings,
   Sparkles,
-  BookOpen,
-  Zap,
-  Home,
-  FolderOpen,
+  Wallet,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
+import { CreateSpaceItemModal } from "@/components/modals/create-space-item-modal";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -47,35 +47,169 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { MaddyPanel } from "@/components/maddy/maddy-panel";
-import { CreateSpaceItemModal } from "@/components/modals/create-space-item-modal";
+import { cn } from "@/lib/utils";
+import { useAppStore } from "@/store/app.store";
+import { UserMenu } from "./user-menu";
+import { WorkspaceSetup } from "./workspace-setup";
 
-// ── Module Tab ────────────────────────────────────────────────────────────────
 const MODULES = [
   { id: "overview" as const, label: "Overview", icon: LayoutDashboard, href: "/workspace/overview" },
-  { id: "feed" as const,     label: "FEED",      icon: Newspaper,       href: "/workspace/feed" },
-  { id: "brain" as const,    label: "BRAIN",     icon: BookOpen,        href: "/workspace/brain" },
-  { id: "ledger" as const,   label: "LEDGER",    icon: Wallet,          href: "/workspace/ledger" },
-  { id: "ai" as const,       label: "Maddy AI",  icon: Sparkles,        href: "/workspace/ai" },
+  { id: "feed" as const, label: "Feed", icon: Newspaper, href: "/workspace/feed" },
+  { id: "brain" as const, label: "Brain", icon: BookOpen, href: "/workspace/brain" },
+  { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
+  { id: "ai" as const, label: "Maddy AI", icon: Sparkles, href: "/workspace/ai" },
 ] as const;
 
-function ModuleTabs() {
+const FEED_PANE_ITEMS = [
+  { id: null, label: "For You", icon: Sparkles },
+  { id: "ai_ml", label: "AI & ML", icon: BookOpen },
+  { id: "tech_it", label: "Tech & IT", icon: Search },
+  { id: "productivity", label: "Productivity", icon: LayoutDashboard },
+  { id: "must_know", label: "Must Know", icon: Newspaper },
+] as const;
+
+const LEDGER_PANE_ITEMS = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "transactions", label: "Transactions" },
+  { id: "budget", label: "Budget" },
+  { id: "investments", label: "Investments" },
+] as const;
+
+const PANE_DETAILS = {
+  overview: {
+    eyebrow: "Workspace",
+    title: "Overview",
+    description: "Shortcuts and daily actions for the current workspace.",
+  },
+  feed: {
+    eyebrow: "Digest",
+    title: "Feed",
+    description: "Category filters live here so the page can stay clean.",
+  },
+  brain: {
+    eyebrow: "Knowledge",
+    title: "Brain",
+    description: "Search, favourites, and spaces stay in one full-height pane.",
+  },
+  ledger: {
+    eyebrow: "Finance",
+    title: "Ledger",
+    description: "Switch ledger sections without crowding the page header.",
+  },
+} as const;
+
+function getRouteModule(pathname: string) {
+  const segment = pathname.split("/")[2] ?? "";
+
+  if (!pathname.startsWith("/workspace")) return "overview";
+  if (!segment) return "overview";
+  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "ai") {
+    return segment;
+  }
+  if (segment === "settings") return "overview";
+  return "brain";
+}
+
+const ModuleRailItem = memo(function ModuleRailItem({
+  mod,
+  isActive,
+  isDocked,
+  onClick,
+  onPrefetch,
+}: {
+  mod: typeof MODULES[number];
+  isActive: boolean;
+  isDocked?: boolean;
+  onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onPrefetch: () => void;
+}) {
+  const Icon = mod.icon;
+
+  return (
+    <div className="group relative flex justify-center">
+      <Link
+        href={mod.href}
+        prefetch
+        aria-label={mod.label}
+        title={mod.label}
+        onClick={onClick}
+        onMouseEnter={onPrefetch}
+        onFocus={onPrefetch}
+        className={cn(
+          "relative flex h-11 w-11 items-center justify-center rounded-2xl border transition-all",
+          isActive
+            ? "border-primary/30 bg-primary/12 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+            : isDocked
+              ? "border-white/12 bg-white/[0.05] text-zinc-100"
+              : "border-transparent text-muted-foreground hover:border-white/10 hover:bg-white/[0.04] hover:text-foreground"
+        )}
+      >
+        <Icon
+          className={cn(
+            "h-[18px] w-[18px]",
+            isActive && "text-primary",
+            !isActive && isDocked && "text-zinc-100"
+          )}
+          strokeWidth={isActive ? 2.4 : 2}
+        />
+        {isActive || isDocked ? (
+          <span
+            className={cn(
+              "absolute right-1 top-1 h-1.5 w-1.5 rounded-full",
+              isActive ? "bg-primary" : "bg-zinc-200"
+            )}
+          />
+        ) : null}
+      </Link>
+
+      <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#181715] px-2 py-1 text-[11px] text-zinc-100 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+        {mod.label}
+      </span>
+    </div>
+  );
+});
+
+function ModuleRail() {
   const router = useRouter();
   const pathname = usePathname();
-  const { setActiveModule } = useAppStore();
-  const workspaceSegment = pathname.split("/")[2] ?? null;
+  const {
+    contextPaneCollapsed,
+    maddyPanelOpen,
+    openMaddyPanel,
+    setActiveModule,
+    setContextPaneCollapsed,
+  } = useAppStore();
 
-  const active = MODULES.find((m) => {
-    if (m.id === "brain") {
-      return (
-        pathname.startsWith("/workspace") &&
-        !["overview", "feed", "ledger", "ai"].includes(workspaceSegment ?? "")
-      );
-    }
-    return workspaceSegment === m.id;
-  })?.id ?? "overview";
+  const active = useMemo(() => getRouteModule(pathname), [pathname]);
+
+  const handleModuleClick = useCallback(
+    (modId: typeof MODULES[number]["id"]) => {
+      if (modId === "ai") {
+        setActiveModule("ai");
+        openMaddyPanel("chat");
+        return;
+      }
+
+      setActiveModule(modId);
+      setContextPaneCollapsed(false);
+    },
+    [openMaddyPanel, setActiveModule, setContextPaneCollapsed]
+  );
+
+  const handlePrefetch = useCallback(
+    (href: string) => {
+      router.prefetch(href);
+    },
+    [router]
+  );
 
   useEffect(() => {
     MODULES.forEach((module) => {
@@ -84,34 +218,70 @@ function ModuleTabs() {
   }, [router]);
 
   return (
-    <nav className="flex flex-col gap-1 px-3 py-3 border-b">
-      {MODULES.map((mod) => {
-        const Icon = mod.icon;
-        const isActive = active === mod.id;
-        return (
+    <div className="flex h-full w-[72px] shrink-0 flex-col border-r border-border/80 bg-sidebar/95">
+      <div className="flex h-16 items-center justify-center border-b border-border/80">
+        <div className="group relative">
           <Link
-            key={mod.id}
-            href={mod.href}
+            href="/workspace/overview"
             prefetch
-            onClick={() => setActiveModule(mod.id)}
-            onMouseEnter={() => router.prefetch(mod.href)}
-            onFocus={() => router.prefetch(mod.href)}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] md:min-h-0",
-              "hover:bg-accent/60",
-              isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
-            )}
+            aria-label="Open workspace overview"
+            title="Open workspace overview"
+            onClick={() => {
+              setActiveModule("overview");
+              setContextPaneCollapsed(false);
+            }}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] transition-all hover:border-white/16 hover:bg-white/[0.05]"
           >
-            <Icon className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} strokeWidth={isActive ? 2.5 : 2} />
-            <span>{mod.label}</span>
+            <AppIcon className="h-6 w-6 rounded-xl" />
           </Link>
-        );
-      })}
-    </nav>
+          <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#181715] px-2 py-1 text-[11px] text-zinc-100 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
+            Workspace overview
+          </span>
+        </div>
+      </div>
+
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+        <div className="space-y-2">
+          {MODULES.map((mod) => (
+            <ModuleRailItem
+              key={mod.id}
+              mod={mod}
+              isActive={active === mod.id}
+              isDocked={mod.id === "ai" && maddyPanelOpen}
+              onClick={(event) => {
+                if (mod.id === "ai") {
+                  event.preventDefault();
+                }
+                handleModuleClick(mod.id);
+              }}
+              onPrefetch={() => handlePrefetch(mod.href)}
+            />
+          ))}
+        </div>
+      </nav>
+
+      <div className="border-t border-border/80 p-3">
+        {contextPaneCollapsed ? (
+          <div className="group relative flex justify-center">
+            <button
+              type="button"
+              aria-label="Open context pane"
+              title="Open context pane"
+              onClick={() => setContextPaneCollapsed(false)}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-muted-foreground transition-all hover:border-white/16 hover:bg-white/[0.05] hover:text-foreground"
+            >
+              <PanelLeft className="h-[18px] w-[18px]" />
+            </button>
+            <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#181715] px-2 py-1 text-[11px] text-zinc-100 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
+              Open pane
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
-// ── KB Section (page tree) ─────────────────────────────────────────────────────
 interface PageItemProps {
   page: any;
   depth?: number;
@@ -121,25 +291,35 @@ interface PageItemProps {
 function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { toggleExpanded, isExpanded } = useAppStore();
+  const { toggleExpanded, isExpanded, setContextPaneCollapsed, setExpanded } = useAppStore();
   const expanded = isExpanded(page._id);
   const [menuOpen, setMenuOpen] = useState(false);
   const pageHref = `/workspace/${page._id}`;
 
   const createPage = useMutation(api.pages.create);
   const archivePage = useMutation(api.pages.archive);
-
   const children = useQuery(api.pages.list, {
     workspaceId,
     parentId: page._id,
   });
 
   const isActive = pathname === pageHref;
-  const hasChildren = children && children.length > 0;
+  const hasChildren = Boolean(children?.length);
   const handlePrefetch = () => router.prefetch(pageHref);
 
-  const handleCreate = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  useEffect(() => {
+    if (isActive) {
+      setExpanded(page._id, true);
+    }
+  }, [isActive, page._id, setExpanded]);
+
+  const handleOpenPage = () => {
+    setContextPaneCollapsed(true);
+    router.push(pageHref);
+  };
+
+  const handleCreate = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     try {
       const newId = await createPage({
         workspaceId,
@@ -147,15 +327,14 @@ function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
         type: "document",
         title: "Untitled",
       });
-      useAppStore.getState().setExpanded(page._id, true);
+      setExpanded(page._id, true);
       router.push(`/workspace/${newId}`);
     } catch {
       toast.error("Failed to create page");
     }
   };
 
-  const handleArchive = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleArchive = async () => {
     try {
       await archivePage({ id: page._id });
       toast.success("Page moved to trash");
@@ -167,104 +346,106 @@ function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
 
   const typeIcon =
     page.type === "database" ? (
-      <Database className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+      <Database className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
     ) : page.type === "dashboard" ? (
-      <LayoutDashboard className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+      <LayoutDashboard className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
     ) : (
-      <FileText className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
     );
 
   return (
     <div>
       <div
         className={cn(
-          "group flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer select-none text-sm",
-          "hover:bg-accent/50 transition-colors",
+          "group flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors",
+          "hover:bg-accent/50",
           isActive && "bg-accent text-accent-foreground"
         )}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
         <button
+          type="button"
           className={cn(
-            "w-4 h-4 flex items-center justify-center rounded shrink-0 min-h-[44px] md:min-h-0",
-            "hover:bg-accent text-muted-foreground transition-colors"
+            "flex h-8 w-4 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent",
+            "min-h-[36px] md:min-h-0"
           )}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleExpanded(page._id);
+          onClick={(event) => {
+            event.stopPropagation();
+            if (hasChildren) toggleExpanded(page._id);
           }}
         >
           {hasChildren ? (
             expanded ? (
-              <ChevronDown className="w-3 h-3" />
+              <ChevronDown className="h-3 w-3" />
             ) : (
-              <ChevronRight className="w-3 h-3" />
+              <ChevronRight className="h-3 w-3" />
             )
           ) : (
-            <span className="w-3 h-3" />
+            <span className="h-3 w-3" />
           )}
         </button>
 
         <Link
           href={pageHref}
           prefetch
-          className="flex min-w-0 flex-1 items-center gap-1"
+          className="flex min-w-0 flex-1 items-center gap-1.5"
+          onClick={() => setContextPaneCollapsed(true)}
           onMouseEnter={handlePrefetch}
           onFocus={handlePrefetch}
         >
-          <span className="text-sm leading-none shrink-0">
-            {page.icon ?? typeIcon}
-          </span>
-
-          <span className="flex-1 truncate text-sm">
-            {page.title || "Untitled"}
-          </span>
+          <span className="shrink-0 text-sm leading-none">{page.icon ?? typeIcon}</span>
+          <span className="flex-1 truncate text-sm">{page.title || "Untitled"}</span>
         </Link>
 
         <div
           className={cn(
             "ml-auto flex items-center gap-0.5 transition-opacity",
             menuOpen
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+              ? "pointer-events-auto opacity-100"
+              : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100"
           )}
         >
           <button
-            className="w-5 h-5 flex items-center justify-center rounded hover:bg-accent"
+            type="button"
+            className="flex h-5 w-5 items-center justify-center rounded hover:bg-accent"
             onClick={handleCreate}
             title="Add sub-page"
           >
-            <Plus className="w-3 h-3 text-muted-foreground" />
+            <Plus className="h-3 w-3 text-muted-foreground" />
           </button>
+
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
               <button
-                className="w-5 h-5 flex items-center justify-center rounded hover:bg-accent"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                type="button"
+                className="flex h-5 w-5 items-center justify-center rounded hover:bg-accent"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
                 }}
               >
-                <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
+                <MoreHorizontal className="h-3 w-3 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="w-48">
-              <DropdownMenuItem onClick={() => router.push(`/workspace/${page._id}`)}>
-                <FileText className="w-4 h-4 mr-2" /> Open page
+              <DropdownMenuItem onClick={handleOpenPage}>
+                <FileText className="mr-2 h-4 w-4" />
+                Open page
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleArchive}
                 className="text-destructive focus:text-destructive"
               >
-                <Archive className="w-4 h-4 mr-2" /> Move to trash
+                <Archive className="mr-2 h-4 w-4" />
+                Move to trash
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {expanded && hasChildren && (
+      {expanded && hasChildren ? (
         <div>
           {children!.map((child: any) => (
             <PageItem
@@ -275,12 +456,11 @@ function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
             />
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
-// ── KB Sidebar Content ────────────────────────────────────────────────────────
 function SpaceBadge({ page, fallbackLabel }: { page?: any; fallbackLabel: string }) {
   if (page?.icon) {
     return (
@@ -306,7 +486,7 @@ interface SpaceSectionProps {
 function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { toggleExpanded, isExpanded, setExpanded } = useAppStore();
+  const { toggleExpanded, isExpanded, setContextPaneCollapsed, setExpanded } = useAppStore();
   const archivePage = useMutation(api.pages.archive);
   const children = useQuery(api.pages.list, {
     workspaceId,
@@ -325,6 +505,11 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
     }
   }, [expandKey, expanded, setExpanded]);
 
+  const handleOpenSpace = () => {
+    setContextPaneCollapsed(true);
+    router.push(spaceHref);
+  };
+
   const handleArchive = async () => {
     try {
       await archivePage({ id: space._id });
@@ -339,6 +524,7 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
     <div className="mb-2 rounded-xl border border-white/6 bg-black/10">
       <div className="flex items-center gap-2 px-2 py-2">
         <button
+          type="button"
           className="flex h-5 w-5 items-center justify-center rounded hover:bg-accent/60"
           onClick={() => toggleExpanded(expandKey)}
           aria-label={expanded ? "Collapse space" : "Expand space"}
@@ -353,8 +539,9 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
         <SpaceBadge page={space} fallbackLabel={space.title || "S"} />
 
         <button
+          type="button"
           className="flex-1 truncate text-left text-sm font-medium text-foreground"
-          onClick={() => router.push(spaceHref)}
+          onClick={handleOpenSpace}
           onMouseEnter={handlePrefetch}
           onFocus={handlePrefetch}
         >
@@ -363,29 +550,35 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex h-7 w-7 items-center justify-center rounded hover:bg-accent/60">
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded hover:bg-accent/60"
+            >
               <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem onClick={() => router.push(`/workspace/${space._id}`)}>
-              <Home className="mr-2 h-4 w-4" /> Open space home
+            <DropdownMenuItem onClick={handleOpenSpace}>
+              <Home className="mr-2 h-4 w-4" />
+              Open space home
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onAddNew(space._id, space.title)}>
-              <Plus className="mr-2 h-4 w-4" /> Add new
+              <Plus className="mr-2 h-4 w-4" />
+              Add new
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleArchive}
               className="text-destructive focus:text-destructive"
             >
-              <Archive className="mr-2 h-4 w-4" /> Move to trash
+              <Archive className="mr-2 h-4 w-4" />
+              Move to trash
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {expanded && (
+      {expanded ? (
         <div className="pb-2">
           <Link
             href={spaceHref}
@@ -394,6 +587,7 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
               "mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent/40",
               isHomeActive && "bg-accent text-accent-foreground"
             )}
+            onClick={() => setContextPaneCollapsed(true)}
             onMouseEnter={handlePrefetch}
             onFocus={handlePrefetch}
           >
@@ -421,6 +615,7 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
           </div>
 
           <button
+            type="button"
             className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
             onClick={() => onAddNew(space._id, space.title)}
           >
@@ -428,7 +623,7 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
             Add new
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -436,7 +631,6 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
 function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const router = useRouter();
   const { setCommandPaletteOpen } = useAppStore();
-  const [maddyOpen, setMaddyOpen] = useState(false);
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState("");
   const [newSpaceLoading, setNewSpaceLoading] = useState(false);
@@ -485,24 +679,19 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 
   return (
     <>
-      <div className="px-2 pt-2 space-y-0.5">
+      <div className="space-y-0.5 px-2 pt-2">
         <NavItem
-          icon={<Search className="w-4 h-4" />}
+          icon={<Search className="h-4 w-4" />}
           label="Search"
           onClick={() => setCommandPaletteOpen(true)}
-          kbd="⌘K"
-        />
-        <NavItem
-          icon={<AppIcon className="w-4 h-4 rounded-md" />}
-          label="Ask Maddy"
-          onClick={() => setMaddyOpen(true)}
+          kbd="Ctrl K"
         />
       </div>
 
-      {favourites && favourites.length > 0 && (
+      {favourites && favourites.length > 0 ? (
         <div className="mt-3">
-          <div className="px-3 py-1 flex items-center gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 px-3 py-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Favourites
             </span>
           </div>
@@ -512,24 +701,26 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
-      <div className="mt-3 flex-1 overflow-y-auto">
-        <div className="px-3 py-1 flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+      <div className="mt-3">
+        <div className="flex items-center justify-between px-3 py-1">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Spaces
           </span>
           <button
-            className="w-5 h-5 flex items-center justify-center rounded hover:bg-accent"
+            type="button"
+            className="flex h-5 w-5 items-center justify-center rounded hover:bg-accent"
             onClick={() => setCreateSpaceOpen(true)}
             title="New space"
           >
-            <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         </div>
+
         <div className="px-1 pb-4">
           {rootPages === undefined || spaceRoots === undefined ? (
-            <div className="px-3 py-2 text-xs text-muted-foreground animate-pulse">Loading...</div>
+            <div className="animate-pulse px-3 py-2 text-xs text-muted-foreground">Loading...</div>
           ) : (
             <>
               <div className="mb-2 rounded-xl border border-white/6 bg-black/10">
@@ -537,6 +728,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
                   <SpaceBadge fallbackLabel="G" />
                   <span className="flex-1 text-sm font-medium text-foreground">General</span>
                 </div>
+
                 <div className="pb-2">
                   <div className="px-1">
                     {generalPages.length === 0 ? (
@@ -551,6 +743,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
                   </div>
 
                   <button
+                    type="button"
                     className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
                     onClick={() => handleOpenCreateItem(null, "General")}
                   >
@@ -643,147 +836,256 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
         parentId={createItemParentId}
         spaceLabel={createItemSpaceLabel}
       />
-      <MaddyPanel open={maddyOpen} onClose={() => setMaddyOpen(false)} />
     </>
   );
 }
 
-// ── Quick Nav helpers for non-KB modules ──────────────────────────────────────
+function ContextPaneFrame({
+  moduleId,
+  children,
+}: {
+  moduleId: keyof typeof PANE_DETAILS;
+  children: ReactNode;
+}) {
+  const { toggleContextPaneCollapsed } = useAppStore();
+  const details = PANE_DETAILS[moduleId];
 
-function ModulePlaceholderNav({ title, description }: { title: string; description: string }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 text-center gap-2">
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      <p className="text-xs text-muted-foreground">{description}</p>
+    <div className="flex h-full flex-col bg-sidebar">
+      <div className="border-b border-border/80 px-3 py-3">
+        <div className="flex items-center gap-2">
+          <UserMenu />
+          <button
+            type="button"
+            aria-label="Hide context pane"
+            title="Hide context pane"
+            onClick={toggleContextPaneCollapsed}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:border-white/16 hover:bg-white/[0.05] hover:text-white"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-3 px-1">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            {details.eyebrow}
+          </div>
+          <div className="mt-1 text-sm font-semibold text-foreground">{details.title}</div>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{details.description}</p>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
     </div>
   );
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
+function OverviewContextPane() {
+  const router = useRouter();
+  const { openMaddyPanel, setCommandPaletteOpen, setActiveModule } = useAppStore();
+
+  const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger") => {
+    setActiveModule(moduleId);
+    router.push(href);
+  };
+
+  return (
+    <div className="space-y-4 px-2 py-3">
+      <div>
+        <div className="px-3 py-1">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Quick Actions
+          </span>
+        </div>
+        <div className="space-y-0.5">
+          <NavItem
+            icon={<Search className="h-4 w-4" />}
+            label="Search"
+            onClick={() => setCommandPaletteOpen(true)}
+            kbd="Ctrl K"
+          />
+          <NavItem
+            icon={<AppIcon className="h-4 w-4 rounded-md" />}
+            label="Ask Maddy"
+            onClick={() => openMaddyPanel("chat")}
+          />
+        </div>
+      </div>
+
+      <div>
+        <div className="px-3 py-1">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Workspace Shortcuts
+          </span>
+        </div>
+        <div className="space-y-0.5">
+          <NavItem
+            icon={<BookOpen className="h-4 w-4" />}
+            label="Open Brain"
+            onClick={() => goTo("/workspace/brain", "brain")}
+          />
+          <NavItem
+            icon={<Newspaper className="h-4 w-4" />}
+            label="Open Feed"
+            onClick={() => goTo("/workspace/feed", "feed")}
+          />
+          <NavItem
+            icon={<Wallet className="h-4 w-4" />}
+            label="Open Ledger"
+            onClick={() => goTo("/workspace/ledger", "ledger")}
+          />
+          <NavItem
+            icon={<Settings className="h-4 w-4" />}
+            label="Settings"
+            onClick={() => router.push("/workspace/settings")}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeedContextPane() {
+  const { feedCategory, setFeedCategory } = useAppStore();
+
+  return (
+    <div className="space-y-4 px-2 py-3">
+      <div className="px-3 py-1">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Channels
+        </span>
+      </div>
+
+      <div className="space-y-0.5">
+        {FEED_PANE_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavItem
+              key={item.label}
+              icon={<Icon className="h-4 w-4" />}
+              label={item.label}
+              active={feedCategory === item.id}
+              onClick={() => setFeedCategory(item.id)}
+            />
+          );
+        })}
+      </div>
+
+      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-xs leading-5 text-muted-foreground">
+        Pick a channel here and the desktop feed updates instantly. Mobile keeps the tab row.
+      </div>
+    </div>
+  );
+}
+
+function LedgerContextPane() {
+  const { ledgerTab, setLedgerTab } = useAppStore();
+
+  return (
+    <div className="space-y-4 px-2 py-3">
+      <div className="px-3 py-1">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Views
+        </span>
+      </div>
+
+      <div className="space-y-0.5">
+        {LEDGER_PANE_ITEMS.map((item) => (
+          <NavItem
+            key={item.id}
+            icon={<Wallet className="h-4 w-4" />}
+            label={item.label}
+            active={ledgerTab === item.id}
+            onClick={() => setLedgerTab(item.id)}
+          />
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-xs leading-5 text-muted-foreground">
+        The ledger section switcher now lives here so the content canvas gets more room.
+      </div>
+    </div>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const {
+    contextPaneCollapsed,
     currentWorkspaceId,
+    setActiveModule,
     setCurrentWorkspaceId,
-    sidebarCollapsed,
-    toggleSidebar,
-    activeModule,
-    setCommandPaletteOpen,
-    setQuickCaptureOpen,
   } = useAppStore();
-  const workspaceSegment = pathname.split("/")[2] ?? null;
+
+  const routeModule = useMemo(() => getRouteModule(pathname), [pathname]);
+  const paneModule: keyof typeof PANE_DETAILS =
+    routeModule === "feed"
+      ? "feed"
+      : routeModule === "brain"
+        ? "brain"
+        : routeModule === "ledger"
+          ? "ledger"
+          : "overview";
 
   const workspaces = useQuery(api.workspaces.listWorkspaces);
   const resolvedWorkspaceId =
-    currentWorkspaceId && workspaces?.some((w: any) => w._id === currentWorkspaceId)
+    currentWorkspaceId && workspaces?.some((workspace: any) => workspace._id === currentWorkspaceId)
       ? currentWorkspaceId
       : workspaces && workspaces.length > 0
         ? workspaces[0]._id
         : null;
+
   useEffect(() => {
     if (!resolvedWorkspaceId || resolvedWorkspaceId === currentWorkspaceId) return;
     setCurrentWorkspaceId(resolvedWorkspaceId);
   }, [resolvedWorkspaceId, currentWorkspaceId, setCurrentWorkspaceId]);
 
+  useEffect(() => {
+    setActiveModule(routeModule);
+  }, [routeModule, setActiveModule]);
+
   if (workspaces !== undefined && workspaces.length === 0) {
     return <WorkspaceSetup />;
   }
 
-  // ── Collapsed sidebar ──────────────────────────────────────────────────────
-  if (sidebarCollapsed) {
-    return (
-      <div className="hidden md:flex w-12 flex-col items-center py-3 gap-3 border-r bg-sidebar shrink-0">
-        <button
-          className="w-8 h-8 flex items-center justify-center rounded hover:bg-accent min-h-[44px]"
-          onClick={toggleSidebar}
-        >
-          <PanelLeft className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <button
-          className="w-8 h-8 flex items-center justify-center rounded hover:bg-accent min-h-[44px]"
-          onClick={() => setCommandPaletteOpen(true)}
-        >
-          <Search className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <button
-          className="w-8 h-8 flex items-center justify-center rounded hover:bg-accent min-h-[44px]"
-          onClick={() => setQuickCaptureOpen(true)}
-        >
-          <Zap className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </div>
-    );
-  }
-
-  // Determine which sidebar content to show based on pathname
-  const isKB =
-    pathname.startsWith("/workspace") &&
-    !["overview", "feed", "ledger", "ai"].includes(workspaceSegment ?? "");
-
   return (
-    <div className="hidden md:flex w-60 shrink-0 flex-col h-full border-r bg-sidebar overflow-hidden">
-      {/* Top: workspace header + collapse */}
-      <div className="flex items-center justify-between px-3 py-2 border-b">
-        <UserMenu />
-        <div className="flex items-center gap-1">
-          <button
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent"
-            onClick={() => setQuickCaptureOpen(true)}
-            title="Quick capture (⌘⇧C)"
-          >
-            <Zap className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
-          <button
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent"
-            onClick={toggleSidebar}
-            title="Collapse sidebar"
-          >
-            <PanelLeftClose className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-      </div>
+    <div className="hidden h-full shrink-0 md:flex">
+      <ModuleRail />
 
-      {/* Module tabs */}
-      <ModuleTabs />
-
-      {/* Module-specific sidebar content */}
-      {isKB && resolvedWorkspaceId ? (
-        <KBSidebarContent workspaceId={resolvedWorkspaceId} />
-      ) : activeModule === "feed" ? (
-        <div className="flex-1 flex flex-col">
-          <ModulePlaceholderNav
-            title="FEED"
-            description="Your personalised AI & productivity news digest"
-          />
+      <aside
+        className={cn(
+          "overflow-hidden border-r border-border/80 bg-sidebar transition-[width,opacity,transform,border-color] duration-300",
+          contextPaneCollapsed
+            ? "pointer-events-none w-0 -translate-x-2 border-transparent opacity-0"
+            : "w-[320px] translate-x-0 opacity-100"
+        )}
+        style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+        aria-hidden={contextPaneCollapsed}
+      >
+        <div className="h-full w-[320px]">
+          <ContextPaneFrame moduleId={paneModule}>
+            {paneModule === "brain" ? (
+              resolvedWorkspaceId ? (
+                <KBSidebarContent workspaceId={resolvedWorkspaceId} />
+              ) : (
+                <div className="px-4 py-6 text-sm text-muted-foreground">
+                  Loading workspace navigation...
+                </div>
+              )
+            ) : paneModule === "feed" ? (
+              <FeedContextPane />
+            ) : paneModule === "ledger" ? (
+              <LedgerContextPane />
+            ) : (
+              <OverviewContextPane />
+            )}
+          </ContextPaneFrame>
         </div>
-      ) : activeModule === "ledger" ? (
-        <div className="flex-1 flex flex-col">
-          <ModulePlaceholderNav
-            title="LEDGER"
-            description="Track income, expenses, budgets & investments"
-          />
-        </div>
-      ) : activeModule === "ai" ? (
-        <div className="flex-1 flex flex-col">
-          <ModulePlaceholderNav
-            title="Maddy AI"
-            description="Multi-model AI assistant — free & paid models"
-          />
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col">
-          <ModulePlaceholderNav
-            title="Overview"
-            description="Your daily command centre"
-          />
-        </div>
-      )}
+      </aside>
     </div>
   );
 }
 
-// ── Nav item helper ───────────────────────────────────────────────────────────
 function NavItem({
   icon,
   label,
@@ -791,7 +1093,7 @@ function NavItem({
   active,
   kbd,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   onClick?: () => void;
   active?: boolean;
@@ -799,8 +1101,9 @@ function NavItem({
 }) {
   return (
     <button
+      type="button"
       className={cn(
-        "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors min-h-[44px] md:min-h-0",
+        "flex min-h-[44px] w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors md:min-h-0",
         "hover:bg-accent/50",
         active && "bg-accent text-accent-foreground"
       )}
@@ -808,11 +1111,11 @@ function NavItem({
     >
       <span className="text-muted-foreground">{icon}</span>
       <span className="flex-1 text-left">{label}</span>
-      {kbd && (
-        <kbd className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
+      {kbd ? (
+        <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
           {kbd}
         </kbd>
-      )}
+      ) : null}
     </button>
   );
 }

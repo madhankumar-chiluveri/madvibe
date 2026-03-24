@@ -28,6 +28,180 @@ type VectorSearchMatch = {
   _id: any;
 };
 
+type ChatHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type OpenAICompatibleResponse = {
+  choices?: Array<{
+    message?: {
+      content?:
+        | string
+        | Array<{
+            type?: string;
+            text?: string;
+          }>;
+    };
+  }>;
+};
+
+type AnthropicResponse = {
+  content?: Array<{
+    type?: string;
+    text?: string;
+  }>;
+};
+
+function readOpenAICompatibleContent(
+  content:
+    | string
+    | Array<{
+        type?: string;
+        text?: string;
+      }>
+    | undefined
+) {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => (part.type === "text" && typeof part.text === "string" ? part.text : ""))
+      .join("\n")
+      .trim();
+  }
+
+  return "";
+}
+
+async function callGeminiChat(args: {
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+  history: ChatHistoryMessage[];
+  prompt: string;
+}) {
+  const normalizedModel = args.model.startsWith("models/")
+    ? args.model.split("/").pop() || "gemini-1.5-flash-latest"
+    : args.model;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${normalizedModel}:generateContent?key=${args.apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: args.systemPrompt }],
+          },
+          ...args.history.map((message) => ({
+            role: message.role === "assistant" ? "model" : "user",
+            parts: [{ text: message.content }],
+          })),
+          {
+            role: "user",
+            parts: [{ text: args.prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.65,
+          maxOutputTokens: 1200,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as GeminiGenerateContentResponse;
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
+async function callOpenAICompatibleChat(args: {
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+  history: ChatHistoryMessage[];
+  prompt: string;
+  baseUrl: string;
+  extraHeaders?: Record<string, string>;
+}) {
+  const response = await fetch(args.baseUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${args.apiKey}`,
+      "Content-Type": "application/json",
+      ...args.extraHeaders,
+    },
+    body: JSON.stringify({
+      model: args.model,
+      messages: [
+        { role: "system", content: args.systemPrompt },
+        ...args.history.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        { role: "user", content: args.prompt },
+      ],
+      temperature: 0.65,
+      max_tokens: 1200,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Chat API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as OpenAICompatibleResponse;
+  return readOpenAICompatibleContent(data.choices?.[0]?.message?.content);
+}
+
+async function callAnthropicChat(args: {
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+  history: ChatHistoryMessage[];
+  prompt: string;
+}) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": args.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: args.model,
+      system: args.systemPrompt,
+      max_tokens: 1200,
+      temperature: 0.65,
+      messages: [
+        ...args.history.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        { role: "user", content: args.prompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Anthropic API error: ${response.status}`);
+  }
+
+  const data = (await response.json()) as AnthropicResponse;
+  return data.content
+    ?.map((part) => (part.type === "text" && typeof part.text === "string" ? part.text : ""))
+    .join("\n")
+    .trim() ?? "";
+}
+
 // ---- Auto-tag page with Maddy ----
 export const tagPage = action({
   args: {
@@ -211,6 +385,123 @@ export const inlineCommand = action({
     if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
     const data = await response.json() as GeminiGenerateContentResponse;
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  },
+});
+
+// ---- Conversational chat with Maddy ----
+export const chatWithMaddy = action({
+  args: {
+    prompt: v.string(),
+    apiKey: v.string(),
+    provider: v.union(
+      v.literal("gemini"),
+      v.literal("openai"),
+      v.literal("anthropic"),
+      v.literal("groq"),
+      v.literal("openrouter")
+    ),
+    model: v.string(),
+    workspaceId: v.optional(v.id("workspaces")),
+    pageId: v.optional(v.id("pages")),
+    history: v.optional(
+      v.array(
+        v.object({
+          role: v.union(v.literal("user"), v.literal("assistant")),
+          content: v.string(),
+        })
+      )
+    ),
+  },
+  handler: async (ctx, args): Promise<string> => {
+    const contextSections: string[] = [];
+
+    if (args.workspaceId) {
+      const workspace = await ctx.runQuery(api.workspaces.getWorkspace, {
+        id: args.workspaceId,
+      });
+      if (workspace?.name) {
+        contextSections.push(`Current workspace: ${workspace.name}`);
+      }
+    }
+
+    if (args.pageId) {
+      const page = (await ctx.runQuery(api.maddy.getPageForMaddy, {
+        pageId: args.pageId,
+      })) as MaddyPagePreview | null;
+
+      if (page) {
+        contextSections.push(
+          `Current page title: ${page.title}`,
+          `Current page preview: ${page.contentPreview || "No page content available."}`
+        );
+      }
+    }
+
+    const systemPrompt = [
+      "You are Maddy, a premium AI workspace assistant inside MadVibe.",
+      "Be clear, concise, practical, and helpful.",
+      "Use the available workspace and page context when it helps, but do not invent facts.",
+      "When the user asks for ideas, structure them cleanly. When they ask for action, be decisive.",
+      contextSections.length > 0 ? contextSections.join("\n") : "No additional workspace context is available.",
+    ].join("\n\n");
+
+    const contents = [
+      ...(args.history ?? []).slice(-8),
+    ];
+
+    if (args.provider === "gemini") {
+      return await callGeminiChat({
+        apiKey: args.apiKey,
+        model: args.model,
+        systemPrompt,
+        history: contents,
+        prompt: args.prompt,
+      });
+    }
+
+    if (args.provider === "anthropic") {
+      return await callAnthropicChat({
+        apiKey: args.apiKey,
+        model: args.model,
+        systemPrompt,
+        history: contents,
+        prompt: args.prompt,
+      });
+    }
+
+    if (args.provider === "groq") {
+      return await callOpenAICompatibleChat({
+        apiKey: args.apiKey,
+        model: args.model,
+        systemPrompt,
+        history: contents,
+        prompt: args.prompt,
+        baseUrl: "https://api.groq.com/openai/v1/chat/completions",
+      });
+    }
+
+    if (args.provider === "openrouter") {
+      return await callOpenAICompatibleChat({
+        apiKey: args.apiKey,
+        model: args.model,
+        systemPrompt,
+        history: contents,
+        prompt: args.prompt,
+        baseUrl: "https://openrouter.ai/api/v1/chat/completions",
+        extraHeaders: {
+          "X-Title": "MadVibe Maddy",
+        },
+      });
+    }
+
+    return await callOpenAICompatibleChat({
+      apiKey: args.apiKey,
+      model: args.model,
+      systemPrompt,
+      history: contents,
+      prompt: args.prompt,
+      baseUrl: "https://api.openai.com/v1/chat/completions",
+    });
   },
 });
 

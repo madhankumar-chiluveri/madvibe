@@ -60,7 +60,7 @@ export function UserMenu() {
           </Avatar>
           <div className="flex-1 min-w-0 text-left">
             <p className="text-sm font-medium truncate leading-none">
-              {workspace?.name ?? "MADVERSE"}
+              {workspace?.name ?? "MadVibe"}
             </p>
           </div>
           <ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />
@@ -84,7 +84,7 @@ export function UserMenu() {
             </Avatar>
             <div className="min-w-0">
               <p className="text-sm font-semibold leading-none truncate">
-                {workspace?.name ?? "MADVERSE"}
+                {workspace?.name ?? "MadVibe"}
               </p>
               <p className="text-xs text-muted-foreground mt-1 truncate">
                 {(user as any)?.email}

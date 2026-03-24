@@ -1,4 +1,4 @@
-const CACHE_NAME = "madverse-v2";
+const CACHE_NAME = "madvibe-v3";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",

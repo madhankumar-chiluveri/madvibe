@@ -57,6 +57,25 @@ export const updateConversationTitle = mutation({
   },
 });
 
+export const updateConversationConfig = mutation({
+  args: {
+    id: v.id("aiConversations"),
+    model: v.string(),
+    provider: v.string(),
+    contextModule: v.optional(v.string()),
+    contextPageId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      model: args.model,
+      provider: args.provider,
+      contextModule: args.contextModule,
+      contextPageId: args.contextPageId,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 export const togglePin = mutation({
   args: { id: v.id("aiConversations") },
   handler: async (ctx, args) => {

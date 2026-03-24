@@ -1,6 +1,38 @@
-import { convexAuthNextjsMiddleware } from "@convex-dev/auth/nextjs/server";
+import {
+  convexAuthNextjsMiddleware,
+  createRouteMatcher,
+  nextjsMiddlewareRedirect,
+} from "@convex-dev/auth/nextjs/server";
+import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
 
-export default convexAuthNextjsMiddleware();
+const isRootRoute = createRouteMatcher("/");
+const isLoginRoute = createRouteMatcher("/login");
+const isWorkspaceRoute = createRouteMatcher("/workspace(.*)");
+
+export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
+  if (!isRootRoute(request) && !isLoginRoute(request) && !isWorkspaceRoute(request)) {
+    return;
+  }
+
+  // Avoid a hard dependency on the backend auth:isAuthenticated export here.
+  // The auth middleware has already refreshed/validated cookies before this runs.
+  const isAuthenticated = Boolean(await convexAuth.getToken());
+
+  if (isRootRoute(request)) {
+    return nextjsMiddlewareRedirect(
+      request,
+      isAuthenticated ? DEFAULT_WORKSPACE_ROUTE : "/login"
+    );
+  }
+
+  if (isLoginRoute(request) && isAuthenticated) {
+    return nextjsMiddlewareRedirect(request, DEFAULT_WORKSPACE_ROUTE);
+  }
+
+  if (isWorkspaceRoute(request) && !isAuthenticated) {
+    return nextjsMiddlewareRedirect(request, "/login");
+  }
+});
 
 export const config = {
   matcher: [

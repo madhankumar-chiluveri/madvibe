@@ -9,13 +9,13 @@ import { InstallPrompt } from "@/components/pwa/install-prompt";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "MADVERSE — AI-Powered BRAIN OS",
+  title: "MadVibe",
   description: "Your AI-powered personal BRAIN OS. Organise everything with Maddy.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MADVERSE",
+    title: "MadVibe",
   },
   icons: {
     icon: "/app-icon.svg",
@@ -51,7 +51,7 @@ export default function RootLayout({
                   if (!isLocalhost) return;
                   if (!('serviceWorker' in navigator)) return;
 
-                  var resetFlag = 'madverse-sw-reset-once';
+                  var resetFlag = 'madvibe-sw-reset-once';
                   if (sessionStorage.getItem(resetFlag)) return;
 
                   navigator.serviceWorker.getRegistrations().then(function (registrations) {
@@ -64,7 +64,7 @@ export default function RootLayout({
                             .then(function (keys) {
                               return Promise.all(
                                 keys
-                                  .filter(function (k) { return k.indexOf('madverse-') === 0; })
+                                  .filter(function (k) { return k.indexOf('madvibe-') === 0; })
                                   .map(function (k) { return caches.delete(k); })
                               );
                             })
@@ -109,7 +109,7 @@ export default function RootLayout({
                       .then(registrations => registrations.forEach(r => r.unregister()))
                       .catch(() => {});
                     caches.keys()
-                      .then(keys => Promise.all(keys.filter(k => k.startsWith('madverse-')).map(k => caches.delete(k))))
+                      .then(keys => Promise.all(keys.filter(k => k.startsWith('madvibe-')).map(k => caches.delete(k))))
                       .catch(() => {});
                   }
                 }

@@ -2,6 +2,8 @@
 // src/api/config/constants.ts
 // ─────────────────────────────────────────────────────────────
 
+import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
+
 export const API_CONFIG = {
   /** Gemini free tier — Flash 2.0 */
   GEMINI_BASE_URL:
@@ -25,7 +27,7 @@ export const API_CONFIG = {
 
 export const ROUTES = {
   LOGIN: "/login",
-  WORKSPACE: "/workspace/brain",
+  WORKSPACE: DEFAULT_WORKSPACE_ROUTE,
   PAGE: (id: string) => `/workspace/${id}`,
   SETTINGS: "/workspace/settings",
   TRASH: "/workspace/trash",

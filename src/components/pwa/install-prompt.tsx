@@ -35,7 +35,7 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card border shadow-lg rounded-xl px-4 py-3 text-sm animate-fade-in">
-      <span>Install MADVERSE for faster access</span>
+      <span>Install MadVibe for faster access</span>
       <Button size="sm" onClick={handleInstall} className="h-7">
         <Download className="w-3.5 h-3.5 mr-1.5" /> Install
       </Button>

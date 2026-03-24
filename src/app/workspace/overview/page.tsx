@@ -1,8 +1,8 @@
 "use client";
 
+import { useState, useEffect, memo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app.store";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 // ── Greeting Widget ───────────────────────────────────────────────────────────
-function GreetingWidget() {
+const GreetingWidget = memo(function GreetingWidget() {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -34,10 +34,10 @@ function GreetingWidget() {
       </div>
     </div>
   );
-}
+});
 
 // ── Quick Capture ─────────────────────────────────────────────────────────────
-function QuickCaptureBar() {
+const QuickCaptureBar = memo(function QuickCaptureBar() {
   const [value, setValue] = useState("");
   const [hint, setHint] = useState("");
 
@@ -76,10 +76,10 @@ function QuickCaptureBar() {
       </div>
     </div>
   );
-}
+});
 
 // ── Pomodoro Timer ────────────────────────────────────────────────────────────
-function PomodoroWidget() {
+const PomodoroWidget = memo(function PomodoroWidget() {
   const { focusActive, focusMinutes, focusStartedAt, startFocus, stopFocus } = useAppStore();
   const [elapsed, setElapsed] = useState(0);
 
@@ -151,10 +151,10 @@ function PomodoroWidget() {
       )}
     </div>
   );
-}
+});
 
 // ── Habit Strip ───────────────────────────────────────────────────────────────
-function HabitStrip() {
+const HabitStrip = memo(function HabitStrip() {
   const today = new Date().toISOString().slice(0, 10);
   const habits = useQuery(api.habits.listHabits);
   const logs = useQuery(api.habits.getTodaysLogs, { date: today });
@@ -201,10 +201,10 @@ function HabitStrip() {
       </div>
     </div>
   );
-}
+});
 
 // ── Ledger Snapshot ───────────────────────────────────────────────────────────
-function LedgerSnapshot() {
+const LedgerSnapshot = memo(function LedgerSnapshot() {
   const router = useRouter();
   const month = new Date().toISOString().slice(0, 7);
   const data = useQuery(api.ledger.getDashboardData, { month });
@@ -250,10 +250,10 @@ function LedgerSnapshot() {
       </div>
     </div>
   );
-}
+});
 
 // ── News Digest ───────────────────────────────────────────────────────────────
-function FeedDigest() {
+const FeedDigest = memo(function FeedDigest() {
   const router = useRouter();
   const articles = useQuery(api.feed.getTopArticles, { limit: 3 });
 
@@ -285,10 +285,10 @@ function FeedDigest() {
       </div>
     </div>
   );
-}
+});
 
 // ── AI Insight ────────────────────────────────────────────────────────────────
-function AIInsightWidget() {
+const AIInsightWidget = memo(function AIInsightWidget() {
   return (
     <div className="bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-pink-500/10 border border-violet-500/20 rounded-2xl p-4">
       <div className="flex items-center gap-2 mb-2">
@@ -300,10 +300,10 @@ function AIInsightWidget() {
       </p>
     </div>
   );
-}
+});
 
-// ── Main Overview Page ────────────────────────────────────────────────────────
-export default function OverviewPage() {
+// ── Main Overview Page ───────────────────────────────────────────────────────
+export default memo(function OverviewPage() {
   return (
     <div className="min-h-full bg-background">
       <div className="max-w-5xl mx-auto px-4 py-6 md:px-6 md:py-8">
@@ -338,4 +338,4 @@ export default function OverviewPage() {
       </div>
     </div>
   );
-}
+});

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Madhan/Desktop/mad-ware/madvibe/src/app -type f -name *.tsx -o -type d)"
+    ]
+  }
+}

@@ -8,7 +8,7 @@ interface AppIconProps {
 
 export function AppIcon({
   className,
-  alt = "MADVERSE",
+  alt = "MadVibe",
   variant = "default",
 }: AppIconProps) {
   return (

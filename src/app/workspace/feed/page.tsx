@@ -1,26 +1,25 @@
 "use client";
 
+import { memo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAppStore } from "@/store/app.store";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/store/app.store";
 import {
-  RefreshCw, BookmarkCheck, Rss, Clock, TrendingUp, Flame,
+  BookmarkCheck, Rss, Clock, TrendingUp, Flame,
 } from "lucide-react";
 
 // ── Category config ─────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { id: null,           label: "For You",      color: "bg-violet-500/20 text-violet-700 dark:text-violet-400" },
-  { id: "ai_ml",        label: "AI & ML",      color: "bg-blue-500/20 text-blue-700 dark:text-blue-400" },
-  { id: "tech_it",      label: "Tech & IT",    color: "bg-cyan-500/20 text-cyan-700 dark:text-cyan-400" },
+  { id: null, label: "For You", color: "bg-violet-500/20 text-violet-700 dark:text-violet-400" },
+  { id: "ai_ml", label: "AI & ML", color: "bg-blue-500/20 text-blue-700 dark:text-blue-400" },
+  { id: "tech_it", label: "Tech & IT", color: "bg-cyan-500/20 text-cyan-700 dark:text-cyan-400" },
   { id: "productivity", label: "Productivity", color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" },
-  { id: "must_know",    label: "Must Know",    color: "bg-orange-500/20 text-orange-700 dark:text-orange-400" },
+  { id: "must_know", label: "Must Know", color: "bg-orange-500/20 text-orange-700 dark:text-orange-400" },
 ] as const;
 
 // ── Article Card ──────────────────────────────────────────────────────────────
-function ArticleCard({ article }: { article: any }) {
+const ArticleCard = memo(function ArticleCard({ article }: { article: any }) {
   const catConfig = CATEGORIES.find((c) => c.id === article.category) ?? CATEGORIES[0];
   const publishedAgo = () => {
     const diff = Date.now() - article.publishedAt;
@@ -36,10 +35,10 @@ function ArticleCard({ article }: { article: any }) {
         "h-28 md:h-36 relative overflow-hidden",
         "bg-gradient-to-br",
         article.category === "ai_ml" ? "from-blue-600/30 via-violet-500/20 to-purple-600/30" :
-        article.category === "tech_it" ? "from-cyan-600/30 via-teal-500/20 to-emerald-600/30" :
-        article.category === "productivity" ? "from-emerald-600/30 via-green-500/20 to-lime-600/30" :
-        article.category === "must_know" ? "from-orange-600/30 via-amber-500/20 to-yellow-600/30" :
-        "from-violet-600/30 via-pink-500/20 to-rose-600/30"
+          article.category === "tech_it" ? "from-cyan-600/30 via-teal-500/20 to-emerald-600/30" :
+            article.category === "productivity" ? "from-emerald-600/30 via-green-500/20 to-lime-600/30" :
+              article.category === "must_know" ? "from-orange-600/30 via-amber-500/20 to-yellow-600/30" :
+                "from-violet-600/30 via-pink-500/20 to-rose-600/30"
       )}>
         {article.isBreaking && (
           <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -79,10 +78,10 @@ function ArticleCard({ article }: { article: any }) {
       </div>
     </div>
   );
-}
+});
 
 // ── Mobile Article Row ────────────────────────────────────────────────────────
-function ArticleRow({ article }: { article: any }) {
+const ArticleRow = memo(function ArticleRow({ article }: { article: any }) {
   const catConfig = CATEGORIES.find((c) => c.id === article.category) ?? CATEGORIES[0];
   return (
     <div className="flex gap-3 p-3 bg-card border rounded-xl hover:border-primary/30 transition-all cursor-pointer">
@@ -90,9 +89,9 @@ function ArticleRow({ article }: { article: any }) {
         "w-16 h-16 rounded-lg shrink-0",
         "bg-gradient-to-br",
         article.category === "ai_ml" ? "from-blue-500/30 to-violet-500/30" :
-        article.category === "tech_it" ? "from-cyan-500/30 to-teal-500/30" :
-        article.category === "productivity" ? "from-emerald-500/30 to-green-500/30" :
-        "from-violet-500/30 to-pink-500/30"
+          article.category === "tech_it" ? "from-cyan-500/30 to-teal-500/30" :
+            article.category === "productivity" ? "from-emerald-500/30 to-green-500/30" :
+              "from-violet-500/30 to-pink-500/30"
       )} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
@@ -108,13 +107,38 @@ function ArticleRow({ article }: { article: any }) {
       </div>
     </div>
   );
-}
+});
 
-// ── Main News Page ────────────────────────────────────────────────────────────
-export default function FeedPage() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+// ── Category Tab Button ────────────────────────────────────────────────────────
+const CategoryTab = memo(function CategoryTab({
+  cat,
+  activeCategory,
+  onClick
+}: {
+  cat: typeof CATEGORIES[number];
+  activeCategory: string | null;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={cn(
+        "shrink-0 text-xs font-medium px-3 py-1.5 rounded-full border transition-all min-h-[36px]",
+        activeCategory === cat.id
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+      )}
+      onClick={onClick}
+    >
+      {cat.label}
+    </button>
+  );
+});
+
+// ── Main News Page ───────────────────────────────────────────────────────────
+export default memo(function FeedPage() {
+  const { feedCategory, setFeedCategory } = useAppStore();
   const articles = useQuery(api.feed.listArticles, {
-    category: activeCategory ? (activeCategory as any) : undefined,
+    category: feedCategory ? (feedCategory as any) : undefined,
     limit: 20,
   });
 
@@ -122,29 +146,20 @@ export default function FeedPage() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <h1 className="text-lg font-bold tracking-tight shrink-0">FEED</h1>
-          <button className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors min-h-[44px] px-2">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
-          </button>
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center">
+          <h1 className="text-lg font-bold tracking-tight">FEED</h1>
         </div>
 
         {/* Category tabs — horizontally scrollable */}
-        <div className="max-w-6xl mx-auto px-4 pb-2">
+        <div className="max-w-6xl mx-auto px-4 pb-2 md:hidden">
           <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
             {CATEGORIES.map((cat) => (
-              <button
+              <CategoryTab
                 key={cat.id ?? "for_you"}
-                className={cn(
-                  "shrink-0 text-xs font-medium px-3 py-1.5 rounded-full border transition-all min-h-[36px]",
-                  activeCategory === cat.id
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
-                )}
-                onClick={() => setActiveCategory(cat.id)}
-              >
-                {cat.label}
-              </button>
+                cat={cat}
+                activeCategory={feedCategory}
+                onClick={() => setFeedCategory(cat.id)}
+              />
             ))}
             <button className={cn(
               "shrink-0 flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border transition-all min-h-[36px]",
@@ -178,7 +193,7 @@ export default function FeedPage() {
             <Rss className="w-12 h-12 text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground">No articles yet</h3>
             <p className="text-sm text-muted-foreground/60 mt-1 max-w-xs">
-              Demo articles will load shortly, or click Refresh to fetch latest content
+              Demo articles will load shortly once your feed is ready.
             </p>
           </div>
         ) : (
@@ -200,4 +215,4 @@ export default function FeedPage() {
       </div>
     </div>
   );
-}
+});
