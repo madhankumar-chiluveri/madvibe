@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../convex/_generated/api";
 import { useAppStore } from "@/store/app.store";
 import { useTheme } from "next-themes";
@@ -26,6 +27,7 @@ import {
   Check,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
@@ -34,6 +36,7 @@ import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 type Section = "appearance" | "maddy" | "keyboard" | "account";
 
 export default function SettingsPage() {
+  const { signOut } = useAuthActions();
   const [section, setSection] = useState<Section>("appearance");
   const {
     theme,
@@ -51,10 +54,16 @@ export default function SettingsPage() {
 
   const updateSettings = useMutation(api.workspaces.updateSettings);
   const user = useQuery(api.workspaces.getCurrentUser);
+  const authStatus = useQuery((api as any).accountConversion.getCurrentAuthStatus);
+  const convertPasswordAccountToGoogle = useAction(
+    (api as any).accountConversion.convertPasswordAccountToGoogle
+  );
 
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [geminiInput, setGeminiInput] = useState(geminiApiKey);
   const [saving, setSaving] = useState(false);
+  const [conversionPassword, setConversionPassword] = useState("");
+  const [authAction, setAuthAction] = useState<"start-google" | "finish-google" | null>(null);
 
   const handleThemeChange = (t: Theme) => {
     setTheme(t);
@@ -69,6 +78,36 @@ export default function SettingsPage() {
       toast.success("API key saved");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleStartGoogleConversion = async () => {
+    if (authAction) return;
+
+    setAuthAction("start-google");
+    try {
+      await signOut();
+    } finally {
+      window.location.assign("/login?provider=google");
+    }
+  };
+
+  const handleConvertPasswordToGoogle = async () => {
+    if (authAction) return;
+    if (!conversionPassword.trim()) {
+      toast.error("Enter your current password to finish the conversion.");
+      return;
+    }
+
+    setAuthAction("finish-google");
+    try {
+      await convertPasswordAccountToGoogle({ password: conversionPassword });
+      toast.success("Your account now uses Google only. Sign in again to open your original data.");
+      await signOut();
+      window.location.assign("/login?provider=google");
+    } catch (error: any) {
+      toast.error(error?.message ?? "This account could not be converted.");
+      setAuthAction(null);
     }
   };
 
@@ -370,6 +409,106 @@ export default function SettingsPage() {
                       {(user as any)?.email ?? "—"}
                     </p>
                   </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Sign-in methods</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <AuthMethodBadge active={Boolean(authStatus?.hasGoogle)}>
+                        Google
+                      </AuthMethodBadge>
+                      <AuthMethodBadge active={Boolean(authStatus?.hasPassword)}>
+                        Password
+                      </AuthMethodBadge>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      A Gmail address still counts as a password account until you
+                      actually sign in with Google OAuth.
+                    </p>
+                  </div>
+
+                  {authStatus === undefined ? (
+                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+                      Checking connected sign-in methods...
+                    </div>
+                  ) : null}
+
+                  {!authStatus?.hasGoogle && authStatus?.hasPassword ? (
+                    <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
+                      <div>
+                        <p className="text-sm font-medium">Convert this account to Google-only</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          To keep the same data, first sign out and continue with
+                          Google using this exact email. After that, MadVibe will
+                          let you finish the conversion and remove password sign-in.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void handleStartGoogleConversion()}
+                        disabled={authAction !== null}
+                        className="w-full sm:w-auto"
+                      >
+                        {authAction === "start-google" ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Continue with Google
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  {authStatus?.hasGoogle &&
+                  (authStatus.hasLegacyPasswordAccount || authStatus.hasPassword) ? (
+                    <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {authStatus.hasLegacyPasswordAccount
+                            ? "Finish moving your old password account to Google"
+                            : "Remove password sign-in"}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {authStatus.hasLegacyPasswordAccount
+                            ? "We found an older password account for this email. Enter that password once and we’ll reattach Google to your original account, keep the existing data there, and disable password login."
+                            : "Google is already connected. Enter your current password once to remove password sign-in and keep Google as the only way in."}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="conversion-password">Current password</Label>
+                        <Input
+                          id="conversion-password"
+                          type="password"
+                          value={conversionPassword}
+                          onChange={(event) => setConversionPassword(event.target.value)}
+                          placeholder="Enter your existing password"
+                          autoComplete="current-password"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => void handleConvertPasswordToGoogle()}
+                        disabled={authAction !== null}
+                        className="w-full sm:w-auto"
+                      >
+                        {authAction === "finish-google" ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        {authStatus.hasLegacyPasswordAccount
+                          ? "Convert to Google-only"
+                          : "Remove password sign-in"}
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  {authStatus?.hasGoogle &&
+                  !authStatus.hasPassword &&
+                  !authStatus.hasLegacyPasswordAccount ? (
+                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                      <p className="text-sm font-medium">This account already uses Google only</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        You can keep signing in with Google and your existing data
+                        will stay on this account.
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               </SettingSection>
             )}
@@ -399,5 +538,26 @@ function SettingSection({
       </div>
       {children}
     </div>
+  );
+}
+
+function AuthMethodBadge({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+        active
+          ? "border-foreground/20 bg-foreground/5 text-foreground"
+          : "border-border bg-background text-muted-foreground"
+      )}
+    >
+      {children}
+    </span>
   );
 }

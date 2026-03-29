@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, ChevronDown, FileText, Link2, Mail, Phone, Sigma } from "lucide-react";
+import { Check, ChevronDown, FileText, Link2, Mail, Phone, Sigma } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -50,23 +50,6 @@ function formatDateValue(rawValue: unknown) {
   }).format(date);
 }
 
-function formatDateTimeValue(rawValue: unknown) {
-  if (rawValue === null || rawValue === undefined || rawValue === "") {
-    return "";
-  }
-
-  const date = new Date(Number(rawValue));
-  if (Number.isNaN(date.getTime())) return "";
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-}
-
 export function PropertyCell({
   property,
   value,
@@ -99,7 +82,6 @@ export function PropertyCell({
     }
   }, [value, editing]);
 
-  const createdTimeValue = useMemo(() => formatDateTimeValue(resolvedValue), [resolvedValue]);
   const formulaTextValue = useMemo(
     () =>
       getPropertyValueAsText(property, value, {
@@ -448,19 +430,15 @@ export function PropertyCell({
 
     case "created_time":
       return (
-        <div
-          className={cn(
-            "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px]",
-            displayWidthClass
-          )}
-        >
-          <CalendarDays className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-          {createdTimeValue ? (
-            <span className="text-zinc-300">{createdTimeValue}</span>
-          ) : (
-            <span className="text-zinc-500">Empty</span>
-          )}
-        </div>
+        <PremiumDateTimePicker
+          value={typeof resolvedValue === "number" ? resolvedValue : null}
+          onChange={(nextValue) => onChange(normalizeValueForProperty(property, nextValue))}
+          mode="datetime"
+          variant="cell"
+          placeholder="Empty"
+          className={cn(displayWidthClass, fullWidth && "w-full")}
+          popoverClassName="w-[320px]"
+        />
       );
 
     case "formula": {

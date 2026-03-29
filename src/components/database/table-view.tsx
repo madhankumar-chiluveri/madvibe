@@ -37,6 +37,7 @@ interface TableViewProps {
   onDeleteRow: (rowId: Id<"rows">) => Promise<void>;
   onBatchDeleteRows: (rowIds: Id<"rows">[]) => Promise<void>;
   onUpdateProperties: (updater: (current: PropertySchema[]) => PropertySchema[]) => Promise<void>;
+  onMoveProperty: (propertyId: string, direction: "left" | "right") => Promise<void>;
 }
 
 export function TableView({
@@ -54,6 +55,7 @@ export function TableView({
   onDeleteRow,
   onBatchDeleteRows,
   onUpdateProperties,
+  onMoveProperty,
 }: TableViewProps) {
   const [newRowLoading, setNewRowLoading] = useState(false);
   const [newPropertyLoading, setNewPropertyLoading] = useState(false);
@@ -290,6 +292,7 @@ export function TableView({
               {properties.map((property) => {
                 const isFrozen = Boolean(property.config?.frozen);
                 const left = frozenState.offsets[property.id];
+                const propertyIndex = properties.findIndex((candidate) => candidate.id === property.id);
 
                 return (
                   <th
@@ -331,6 +334,10 @@ export function TableView({
                       onInsertRight={() =>
                         insertPropertyAt(properties.findIndex((item) => item.id === property.id) + 1)
                       }
+                      onMoveLeft={() => void onMoveProperty(property.id, "left")}
+                      onMoveRight={() => void onMoveProperty(property.id, "right")}
+                      canMoveLeft={propertyIndex > 0}
+                      canMoveRight={propertyIndex < properties.length - 1}
                       onDelete={() =>
                         persistProperties((current) =>
                           current.filter((candidate) => candidate.id !== property.id)

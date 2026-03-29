@@ -34,7 +34,11 @@ Copy `.env.local.example` to `.env.local` and fill in:
 NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
 CONVEX_DEPLOYMENT=your-deployment-name
 CONVEX_SITE_URL=https://your-project.convex.site
+AUTH_GOOGLE_ID=your-google-client-id
+AUTH_GOOGLE_SECRET=your-google-client-secret
 ```
+
+Google OAuth for Convex/Auth.js uses `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` env names.
 
 AI provider API keys (OpenRouter, Anthropic, OpenAI, Google, Groq, Ollama) are stored **per-user** in the `userSettings` Convex table, not as env vars.
 
@@ -112,6 +116,6 @@ BlockNote packages (`@blocknote/core`, `@blocknote/react`, `@blocknote/mantine`)
 
 ---
 
-### { "project": "madvibe", "status": "active", "updatedAt": "2026-03-28" }
-- **Recent Fixes**: Resolved FAB visibility issues on mobile using `createPortal`, unified dashboard color logic, fixed reminder UX, and added a richer BlockNote drag-handle block menu with turn-into, color, duplicate, move, delete, and copy-link actions.
-- **Current Focus**: Enhancing dashboard drilldown logic, polishing editor block actions, and finalizing investment asset tracking.
+### { "project": "madvibe", "status": "active", "updatedAt": "2026-03-29" }
+- **Recent Fixes**: Added Google OAuth support to Convex Auth with `select_account` prompting, corrected Google env docs to `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, added login-page recent account quick picks, persisted signed-in account metadata in local storage, introduced account add/switch/remove controls in the workspace dropdown, added a settings-based password-to-Google conversion flow that verifies the old password, re-links the Google auth account to the original user ID, removes password login, derives saved-account provider metadata from actual auth status, now persist database view state in Convex so saved filters, sorts, board grouping, and table column order survive refreshes while the Tasks Tracker template defaults to `ID`, `Assigned By`, and editable auto-filled `Created`, and moved page/database breadcrumbs into the pinned workspace header while exposing the existing context pane through a mobile drawer so spaces and project navigation are available on phones.
+- **Current Focus**: Finish real Google OAuth credential wiring and end-to-end verification, validate the new password-to-Google conversion flow with a real Google account, sanity-check the persistent database view UX and new mobile workspace navigation with live table/page workflows, then continue dashboard drilldown logic, editor block action polish, and investment asset tracking.

@@ -570,6 +570,7 @@ function createMeetingNotesBlocks() {
 
 function createTasksTrackerProperties() {
   return [
+    createProperty("id", "ID"),
     createProperty("title", "Task"),
     updateProperty(createProperty("select", "Status"), {
       config: {
@@ -591,6 +592,7 @@ function createTasksTrackerProperties() {
       },
     }),
     createProperty("text", "Assignee"),
+    createProperty("text", "Assigned By"),
     createProperty("date", "Due"),
     createProperty("text", "Notes"),
     createProperty("created_time", "Created"),

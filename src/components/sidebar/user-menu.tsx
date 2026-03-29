@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useAppStore } from "@/store/app.store";
@@ -15,6 +15,7 @@ import {
   CreateWorkspaceDialog,
   WorkspaceSwitcherContent,
 } from "@/components/workspace/workspace-switcher";
+import { saveAccount } from "@/lib/account-manager";
 
 export function UserMenu() {
   const { currentWorkspaceId } = useAppStore();
@@ -26,8 +27,19 @@ export function UserMenu() {
     api.workspaces.getWorkspace,
     currentWorkspaceId ? { id: currentWorkspaceId } : "skip"
   );
+  const authStatus = useQuery((api as any).accountConversion.getCurrentAuthStatus);
 
-  const displayName = (user as any)?.name ?? (user as any)?.email ?? "User";
+  const currentUser = user as
+    | {
+        _id: string;
+        name?: string;
+        email?: string;
+        image?: string;
+      }
+    | null
+    | undefined;
+
+  const displayName = currentUser?.name ?? currentUser?.email ?? "User";
   const initials = displayName
     .split(" ")
     .map((n: string) => n[0])
@@ -35,13 +47,35 @@ export function UserMenu() {
     .join("")
     .toUpperCase();
 
+  useEffect(() => {
+    if (!currentUser?._id || !currentUser.email) return;
+
+    saveAccount({
+      userId: String(currentUser._id),
+      email: currentUser.email,
+      name: currentUser.name ?? currentUser.email,
+      image: currentUser.image ?? undefined,
+      provider: authStatus?.preferredProvider === "google"
+        ? "google"
+        : currentUser.image?.includes("googleusercontent.com")
+          ? "google"
+          : "password",
+    });
+  }, [
+    authStatus?.preferredProvider,
+    currentUser?._id,
+    currentUser?.email,
+    currentUser?.image,
+    currentUser?.name,
+  ]);
+
   return (
     <>
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 px-1.5 py-1.5 rounded-md hover:bg-accent/50 data-[state=open]:bg-accent/70 transition-colors flex-1 min-w-0">
           <Avatar className="w-6 h-6 shrink-0">
-            <AvatarImage src={(user as any)?.image} />
+            <AvatarImage src={currentUser?.image} />
             <AvatarFallback className="text-xs bg-foreground text-background">
               {initials}
             </AvatarFallback>

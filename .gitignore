@@ -80,6 +80,7 @@ log/
 .env.development
 .env.test
 .env.production
+client_secret*.json
 
 # Build outputs
 /out

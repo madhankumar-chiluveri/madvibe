@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as accountConversion from "../accountConversion.js";
 import type * as aiChat from "../aiChat.js";
 import type * as auth from "../auth.js";
 import type * as blocks from "../blocks.js";
@@ -34,6 +35,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  accountConversion: typeof accountConversion;
   aiChat: typeof aiChat;
   auth: typeof auth;
   blocks: typeof blocks;

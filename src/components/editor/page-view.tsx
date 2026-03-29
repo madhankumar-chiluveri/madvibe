@@ -75,7 +75,13 @@ export function PageView({ page }: PageViewProps) {
     <div className={cn("min-h-screen pb-32", fontClass)}>
       {/* ── Sticky top bar (WorkspaceTopBar handles workspace breadcrumb + … menu) */}
       <WorkspaceTopBar
-        moduleTitle={page.title || "Untitled"}
+        breadcrumbContent={
+          <PageBreadcrumb
+            pageId={page._id}
+            pageTitle={page.title}
+            pageIcon={page.icon}
+          />
+        }
         rightContent={
           <div className="flex items-center gap-1">
             {saveStatusNode}
@@ -87,13 +93,6 @@ export function PageView({ page }: PageViewProps) {
       {/* ── Page breadcrumb (ancestor trail inside content) */}
       <div className={cn(page.isFullWidth ? "px-4 md:px-10 xl:px-16" : "px-4 md:px-8")}>
         <div className={cn(page.isFullWidth ? "max-w-none" : "max-w-3xl mx-auto")}>
-          <PageBreadcrumb
-            pageId={page._id}
-            pageTitle={page.title}
-            pageIcon={page.icon}
-            className="pt-3"
-          />
-
           <PageHeader
             page={page}
             mobileToolbarOpen={mobileToolbarOpen}

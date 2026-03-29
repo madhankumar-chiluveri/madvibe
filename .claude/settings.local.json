@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "mcp__playwright",
       "Bash(find /c/Users/Madhan/Desktop/mad-ware/madvibe/src/app -type f -name *.tsx -o -type d)",
       "Bash(npx convex:*)",
       "Bash(grep -E \"\\\\.\\(css|tsx\\)$\")",
@@ -30,7 +31,31 @@
       "Bash(node -e \"require\\(''sharp''\\)\")",
       "Bash(python3 -c \"import cairosvg\")",
       "Bash(node -e \"require\\(''canvas''\\)\")",
-      "Bash(node -e \"const sharp = require\\(''sharp''\\); console.log\\(sharp.versions\\);\")"
+      "Bash(node -e \"const sharp = require\\(''sharp''\\); console.log\\(sharp.versions\\);\")",
+      "mcp__stitch__list_projects",
+      "Bash(claude mcp:*)",
+      "Read(//c/Users/madhankumar.ch/.claude/**)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\(''''mcpServers'''',{}\\), indent=2\\)\\)\")",
+      "Bash(ls ~/.claude/*.json)",
+      "Bash(claude --version)",
+      "Bash(grep -r \"Google\\\\|OAuth\\\\|github\\\\|GOOGLE\" /d/Madhan_Projects/madvibe/convex --include=*.ts --include=*.tsx)",
+      "Bash(find /d/Madhan_Projects/madvibe -type f -name *oauth* -o -name *google* -o -name *auth*config*)",
+      "Bash(npx tsc:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\(''''exports'''', {}\\), indent=2\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''version:'''', d.get\\(''''version''''\\)\\); print\\(''''deps:'''', json.dumps\\(d.get\\(''''dependencies'''',{}\\), indent=2\\)\\)\")"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./hooks/read_hook.js"
+          }
+        ]
+      }
     ]
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,11 +13,13 @@ import {
   Plus,
   Settings,
   Sun,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,8 +30,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import {
+  type SavedAccount,
+  getAccounts,
+  removeAccount,
+} from "@/lib/account-manager";
 import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 import { getWorkspaceSwitchTarget } from "@/lib/workspace-routing";
 import { useAppStore } from "@/store/app.store";
 
@@ -49,6 +56,158 @@ function getWorkspaceInitial(name?: string | null) {
   return (name?.trim().slice(0, 1) || "W").toUpperCase();
 }
 
+function getAccountInitials(name?: string | null, email?: string | null) {
+  const value = name?.trim() || email?.trim() || "User";
+  return value
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function AccountsSection({
+  currentUserId,
+  onClose,
+}: {
+  currentUserId: string;
+  onClose?: () => void;
+}) {
+  const { signOut } = useAuthActions();
+  const [accounts, setAccounts] = useState<SavedAccount[]>([]);
+  const [pendingAction, setPendingAction] = useState<string | "add" | null>(null);
+
+  useEffect(() => {
+    setAccounts(getAccounts());
+  }, []);
+
+  const navigateToLogin = (search: string) => {
+    onClose?.();
+    window.location.assign(`/login${search}`);
+  };
+
+  const handleSwitchTo = async (account: SavedAccount) => {
+    if (pendingAction) return;
+
+    if (account.userId === currentUserId) {
+      onClose?.();
+      return;
+    }
+
+    setPendingAction(account.userId);
+    const params = new URLSearchParams({
+      hint: account.email,
+      provider: account.provider,
+    });
+
+    try {
+      await signOut();
+    } finally {
+      navigateToLogin(`?${params.toString()}`);
+    }
+  };
+
+  const handleAddAccount = async () => {
+    if (pendingAction) return;
+
+    setPendingAction("add");
+
+    try {
+      await signOut();
+    } finally {
+      navigateToLogin("?provider=google");
+    }
+  };
+
+  const handleRemoveAccount = (userId: string) => {
+    removeAccount(userId);
+    setAccounts((previous) => previous.filter((account) => account.userId !== userId));
+  };
+
+  if (accounts.length === 0) return null;
+
+  return (
+    <div className="border-b border-border/70 px-2 py-2">
+      <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        Accounts
+      </div>
+
+      <div className="space-y-1">
+        {accounts.map((account) => {
+          const isActive = account.userId === currentUserId;
+          const isPending = pendingAction === account.userId;
+          const initials = getAccountInitials(account.name, account.email);
+
+          return (
+            <div key={account.userId} className="group flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleSwitchTo(account)}
+                disabled={pendingAction !== null}
+                className={cn(
+                  "flex min-h-12 flex-1 items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors touch-manipulation disabled:cursor-not-allowed disabled:opacity-70",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-foreground hover:bg-accent/60"
+                )}
+              >
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={account.image} />
+                  <AvatarFallback className="bg-foreground text-xs text-background">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{account.name}</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {account.email}
+                  </div>
+                </div>
+
+                <div className="shrink-0 text-muted-foreground">
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isActive ? (
+                    <Check className="h-4 w-4 text-foreground" />
+                  ) : null}
+                </div>
+              </button>
+
+              {!isActive ? (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveAccount(account.userId)}
+                  disabled={pendingAction !== null}
+                  className="h-11 w-11 shrink-0 rounded-xl text-muted-foreground transition-colors touch-manipulation hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+                  aria-label={`Remove ${account.email}`}
+                  title="Remove account"
+                >
+                  <X className="mx-auto h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => void handleAddAccount()}
+        disabled={pendingAction !== null}
+        className="mt-2 flex min-h-12 w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-medium text-primary transition-colors touch-manipulation hover:bg-accent/60 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {pendingAction === "add" ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Plus className="h-4 w-4" />
+        )}
+        Add another account
+      </button>
+    </div>
+  );
+}
+
 export function WorkspaceSwitcherContent({
   onClose,
   onRequestCreateWorkspace,
@@ -64,6 +223,16 @@ export function WorkspaceSwitcherContent({
   const user = useQuery(api.workspaces.getCurrentUser);
   const workspaces = useQuery(api.workspaces.listWorkspaces);
 
+  const currentUser = user as
+    | {
+        _id: string;
+        name?: string;
+        email?: string;
+      }
+    | null
+    | undefined;
+
+  const currentUserId = String(currentUser?._id ?? "");
   const workspaceList = workspaces ?? [];
   const resolvedWorkspaceId = currentWorkspaceId ?? workspaceList[0]?._id ?? null;
   const currentWorkspace =
@@ -71,7 +240,7 @@ export function WorkspaceSwitcherContent({
     workspaceList[0] ??
     null;
 
-  const displayName = (user as any)?.name ?? (user as any)?.email ?? "User";
+  const displayName = currentUser?.name ?? currentUser?.email ?? "User";
   const workspaceCount = workspaceList.length;
 
   const handleSelectWorkspace = (workspaceId: Id<"workspaces">) => {
@@ -89,18 +258,23 @@ export function WorkspaceSwitcherContent({
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (isSigningOut) return;
 
     setIsSigningOut(true);
-    const signOutPromise = signOut();
     onClose?.();
-    router.replace("/login");
-    void signOutPromise;
+
+    try {
+      await signOut();
+    } finally {
+      window.location.assign("/login");
+    }
   };
 
   return (
     <div className={cn("flex flex-col", className)}>
+      <AccountsSection currentUserId={currentUserId} onClose={onClose} />
+
       <div className="border-b border-border/70 px-4 py-4">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm font-semibold text-foreground">
@@ -116,7 +290,7 @@ export function WorkspaceSwitcherContent({
           </div>
         </div>
         <p className="mt-3 truncate text-xs text-muted-foreground">
-          {(user as any)?.email ?? displayName}
+          {currentUser?.email ?? displayName}
         </p>
       </div>
 
@@ -154,9 +328,7 @@ export function WorkspaceSwitcherContent({
                     {getWorkspaceInitial(workspace.name)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">
-                      {workspace.name}
-                    </div>
+                    <div className="truncate text-sm font-medium">{workspace.name}</div>
                   </div>
                   <Check
                     className={cn(
@@ -204,7 +376,7 @@ export function WorkspaceSwitcherContent({
         <button
           type="button"
           disabled={isSigningOut}
-          onClick={handleSignOut}
+          onClick={() => void handleSignOut()}
           className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
         >
           {isSigningOut ? (

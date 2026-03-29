@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import {
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Settings2,
   Sigma,
@@ -59,6 +61,10 @@ interface PropertyHeaderMenuProps {
   onTypeChange: (type: PropertyType) => void;
   onInsertLeft: () => void;
   onInsertRight: () => void;
+  onMoveLeft: () => void;
+  onMoveRight: () => void;
+  canMoveLeft: boolean;
+  canMoveRight: boolean;
   onDelete: () => void;
   onToggleWrap: (enabled: boolean) => void;
   onToggleFreeze: (enabled: boolean) => void;
@@ -73,6 +79,10 @@ export function PropertyHeaderMenu({
   onTypeChange,
   onInsertLeft,
   onInsertRight,
+  onMoveLeft,
+  onMoveRight,
+  canMoveLeft,
+  canMoveRight,
   onDelete,
   onToggleWrap,
   onToggleFreeze,
@@ -241,6 +251,24 @@ export function PropertyHeaderMenu({
           <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={onInsertRight}>
             <Plus className="h-4 w-4 text-zinc-400" />
             Insert right
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            disabled={!canMoveLeft}
+            className="focus:bg-white/[0.06] data-[disabled]:opacity-40"
+            onSelect={onMoveLeft}
+          >
+            <ChevronLeft className="h-4 w-4 text-zinc-400" />
+            Move left
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            disabled={!canMoveRight}
+            className="focus:bg-white/[0.06] data-[disabled]:opacity-40"
+            onSelect={onMoveRight}
+          >
+            <ChevronRight className="h-4 w-4 text-zinc-400" />
+            Move right
           </DropdownMenuItem>
 
           <DropdownMenuSeparator className="bg-white/8" />

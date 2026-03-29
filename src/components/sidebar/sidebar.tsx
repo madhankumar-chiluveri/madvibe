@@ -998,9 +998,11 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 function ContextPaneFrame({
   moduleId,
   children,
+  mobile = false,
 }: {
   moduleId: keyof typeof PANE_DETAILS;
   children: ReactNode;
+  mobile?: boolean;
 }) {
   const { toggleContextPaneCollapsed } = useAppStore();
   const details = PANE_DETAILS[moduleId];
@@ -1010,15 +1012,17 @@ function ContextPaneFrame({
       <div className="border-b border-border/80 px-3 py-3">
         <div className="flex items-center gap-2">
           <UserMenu />
-          <button
-            type="button"
-            aria-label="Hide context pane"
-            title="Hide context pane"
-            onClick={toggleContextPaneCollapsed}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:border-white/16 hover:bg-white/[0.05] hover:text-white"
-          >
-            <PanelLeftClose className="h-4 w-4" />
-          </button>
+          {!mobile ? (
+            <button
+              type="button"
+              aria-label="Hide context pane"
+              title="Hide context pane"
+              onClick={toggleContextPaneCollapsed}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:border-white/16 hover:bg-white/[0.05] hover:text-white"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
 
         <div className="mt-3 px-1">
@@ -1233,6 +1237,89 @@ export function Sidebar() {
         </div>
       </aside>
     </div>
+  );
+}
+
+export function MobileWorkspaceContextSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const pathname = usePathname();
+  const {
+    currentWorkspaceId,
+    setActiveModule,
+    setCurrentWorkspaceId,
+  } = useAppStore();
+  const previousPathnameRef = useRef(pathname);
+
+  const routeModule = useMemo(() => getRouteModule(pathname), [pathname]);
+  const paneModule: keyof typeof PANE_DETAILS =
+    routeModule === "feed"
+      ? "feed"
+      : routeModule === "brain"
+        ? "brain"
+        : routeModule === "ledger"
+          ? "ledger"
+          : "overview";
+
+  const workspaces = useQuery(api.workspaces.listWorkspaces);
+  const resolvedWorkspaceId = currentWorkspaceId ?? workspaces?.[0]?._id ?? null;
+
+  useEffect(() => {
+    if (currentWorkspaceId || !workspaces?.length) return;
+    setCurrentWorkspaceId(workspaces[0]._id);
+  }, [workspaces, currentWorkspaceId, setCurrentWorkspaceId]);
+
+  useEffect(() => {
+    setActiveModule(routeModule);
+  }, [routeModule, setActiveModule]);
+
+  useEffect(() => {
+    if (previousPathnameRef.current === pathname) {
+      return;
+    }
+
+    previousPathnameRef.current = pathname;
+
+    if (open) {
+      onOpenChange(false);
+    }
+  }, [onOpenChange, open, pathname]);
+
+  if (workspaces !== undefined && workspaces.length === 0) {
+    return null;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title="Workspace navigation"
+        className="left-0 top-0 h-[100dvh] w-[min(360px,88vw)] max-w-[88vw] translate-x-0 translate-y-0 rounded-none border-r border-white/10 bg-sidebar p-0 text-zinc-100"
+      >
+        <div className="h-full">
+          <ContextPaneFrame moduleId={paneModule} mobile>
+            {paneModule === "brain" ? (
+              resolvedWorkspaceId ? (
+                <KBSidebarContent workspaceId={resolvedWorkspaceId} />
+              ) : (
+                <div className="px-4 py-6 text-sm text-muted-foreground">
+                  Loading workspace navigation...
+                </div>
+              )
+            ) : paneModule === "feed" ? (
+              <FeedContextPane />
+            ) : paneModule === "ledger" ? (
+              <LedgerContextPane />
+            ) : (
+              <OverviewContextPane />
+            )}
+          </ContextPaneFrame>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

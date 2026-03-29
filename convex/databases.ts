@@ -2,6 +2,15 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+const viewTypeValidator = v.union(
+  v.literal("table"),
+  v.literal("board"),
+  v.literal("list"),
+  v.literal("calendar"),
+  v.literal("gallery"),
+  v.literal("timeline")
+);
+
 // ── Database CRUD ────────────────────────────────────────────────────────────
 
 export const create = mutation({
@@ -14,12 +23,29 @@ export const create = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    return await ctx.db.insert("databases", {
+    const databaseId = await ctx.db.insert("databases", {
       pageId: args.pageId,
       name: args.name,
       properties: args.properties,
       defaultViewId: null,
     });
+
+    const viewId = await ctx.db.insert("views", {
+      databaseId,
+      name: "Default view",
+      type: "table",
+      filters: null,
+      sorts: [],
+      groupBy: null,
+      visibleProperties: args.properties
+        .map((property: any) => String(property?.id ?? ""))
+        .filter(Boolean),
+      cardCoverPropertyId: null,
+    });
+
+    await ctx.db.patch(databaseId, { defaultViewId: viewId });
+
+    return databaseId;
   },
 });
 
@@ -167,20 +193,13 @@ export const createView = mutation({
   args: {
     databaseId: v.id("databases"),
     name: v.string(),
-    type: v.union(
-      v.literal("table"),
-      v.literal("board"),
-      v.literal("list"),
-      v.literal("calendar"),
-      v.literal("gallery"),
-      v.literal("timeline")
-    ),
+    type: viewTypeValidator,
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    return await ctx.db.insert("views", {
+    const viewId = await ctx.db.insert("views", {
       databaseId: args.databaseId,
       name: args.name,
       type: args.type,
@@ -190,6 +209,107 @@ export const createView = mutation({
       visibleProperties: undefined,
       cardCoverPropertyId: null,
     });
+
+    const database = await ctx.db.get(args.databaseId);
+    if (database && !database.defaultViewId) {
+      await ctx.db.patch(args.databaseId, { defaultViewId: viewId });
+    }
+
+    return viewId;
+  },
+});
+
+export const ensureDefaultView = mutation({
+  args: {
+    databaseId: v.id("databases"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const database = await ctx.db.get(args.databaseId);
+    if (!database) {
+      throw new Error("Database not found");
+    }
+
+    if (database.defaultViewId) {
+      const defaultView = await ctx.db.get(database.defaultViewId);
+      if (defaultView) {
+        return defaultView._id;
+      }
+    }
+
+    const existingViews = await ctx.db
+      .query("views")
+      .withIndex("by_databaseId", (q) => q.eq("databaseId", args.databaseId))
+      .collect();
+
+    const fallbackView = existingViews[0] ?? null;
+    if (fallbackView) {
+      await ctx.db.patch(args.databaseId, { defaultViewId: fallbackView._id });
+      return fallbackView._id;
+    }
+
+    const viewId = await ctx.db.insert("views", {
+      databaseId: args.databaseId,
+      name: "Default view",
+      type: "table",
+      filters: null,
+      sorts: [],
+      groupBy: null,
+      visibleProperties: (database.properties ?? [])
+        .map((property: any) => String(property?.id ?? ""))
+        .filter(Boolean),
+      cardCoverPropertyId: null,
+    });
+
+    await ctx.db.patch(args.databaseId, { defaultViewId: viewId });
+    return viewId;
+  },
+});
+
+export const updateView = mutation({
+  args: {
+    id: v.id("views"),
+    name: v.optional(v.string()),
+    type: v.optional(viewTypeValidator),
+    filters: v.optional(v.any()),
+    sorts: v.optional(v.array(v.any())),
+    groupBy: v.optional(v.union(v.string(), v.null())),
+    visibleProperties: v.optional(v.array(v.string())),
+    cardCoverPropertyId: v.optional(v.union(v.string(), v.null())),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const updates: Record<string, unknown> = {};
+
+    if (args.name !== undefined) {
+      updates.name = args.name;
+    }
+    if (args.type !== undefined) {
+      updates.type = args.type;
+    }
+    if (args.filters !== undefined) {
+      updates.filters = args.filters;
+    }
+    if (args.sorts !== undefined) {
+      updates.sorts = args.sorts;
+    }
+    if (args.groupBy !== undefined) {
+      updates.groupBy = args.groupBy;
+    }
+    if (args.visibleProperties !== undefined) {
+      updates.visibleProperties = args.visibleProperties;
+    }
+    if (args.cardCoverPropertyId !== undefined) {
+      updates.cardCoverPropertyId = args.cardCoverPropertyId;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(args.id, updates);
+    }
   },
 });
 

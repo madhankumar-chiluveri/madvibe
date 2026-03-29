@@ -1,6 +1,14 @@
 "use client";
 
-import { type ReactNode, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useMutation, useQuery } from "convex/react";
 import {
   ArrowUpDown,
@@ -21,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ReminderTriggerButton } from "@/components/reminders/reminder-trigger-button";
 import { cn } from "@/lib/utils";
+import { PageBreadcrumb } from "@/components/editor/breadcrumb";
+import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 import { BoardView } from "./board-view";
 import { DatabaseQuickFilterBar } from "./database-quick-filter-bar";
 import { DatabaseQuickSortBar } from "./database-quick-sort-bar";
@@ -179,6 +189,48 @@ function getPersistableFilterGroup(group: FilterGroup, properties: PropertySchem
 
 function sanitizeSortRules(rules: SortRule[], properties: PropertySchema[]): SortRule[] {
   return rules.filter((rule) => properties.some((property) => property.id === rule.propertyId));
+}
+
+function areStringArraysEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((value, index) => value === right[index]);
+}
+
+function getOrderedPropertyIds(properties: PropertySchema[], preferredIds: string[] | undefined | null) {
+  const propertyIds = properties.map((property) => property.id);
+  const seen = new Set<string>();
+  const orderedIds: string[] = [];
+
+  for (const propertyId of preferredIds ?? []) {
+    if (!propertyIds.includes(propertyId) || seen.has(propertyId)) {
+      continue;
+    }
+
+    seen.add(propertyId);
+    orderedIds.push(propertyId);
+  }
+
+  for (const propertyId of propertyIds) {
+    if (seen.has(propertyId)) {
+      continue;
+    }
+
+    seen.add(propertyId);
+    orderedIds.push(propertyId);
+  }
+
+  return orderedIds;
+}
+
+function orderProperties(properties: PropertySchema[], orderedIds: string[]) {
+  const propertiesById = new Map(properties.map((property) => [property.id, property]));
+
+  return orderedIds
+    .map((propertyId) => propertiesById.get(propertyId) ?? null)
+    .filter((property): property is PropertySchema => property !== null);
 }
 
 function getNormalizedIdValue(value: unknown) {
@@ -419,10 +471,13 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   const [savedSortRules, setSavedSortRules] = useState<SortRule[]>([]);
   const [sortRules, setSortRules] = useState<SortRule[]>([]);
   const [boardGroupByPropertyId, setBoardGroupByPropertyId] = useState<string | null>(null);
+  const [orderedPropertyIds, setOrderedPropertyIds] = useState<string[]>([]);
   const [undoStack, setUndoStack] = useState<DatabaseHistoryEntry[]>([]);
   const [redoStack, setRedoStack] = useState<DatabaseHistoryEntry[]>([]);
   const [historyBusy, setHistoryBusy] = useState(false);
   const [formulaNow, setFormulaNow] = useState(() => Date.now());
+  const [viewStateHydrated, setViewStateHydrated] = useState(false);
+  const ensuringDefaultViewDatabaseIdRef = useRef<string | null>(null);
 
   const updatePage = useMutation(api.pages.update);
   const addRowMutation = useMutation(api.databases.addRow);
@@ -430,8 +485,14 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   const deleteRowMutation = useMutation(api.databases.deleteRow);
   const updatePropertiesMutation = useMutation(api.databases.updateProperties);
   const replaceRowsMutation = useMutation(api.databases.replaceRows);
+  const ensureDefaultViewMutation = useMutation(api.databases.ensureDefaultView);
+  const updateViewMutation = useMutation(api.databases.updateView);
 
   const database = useQuery(api.databases.getByPage, { pageId: page._id });
+  const views = useQuery(
+    api.databases.listViews,
+    database ? { databaseId: database._id } : "skip"
+  );
   const rows = useQuery(
     api.databases.listRows,
     database ? { databaseId: database._id } : "skip"
@@ -441,7 +502,29 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     () => (database ? normalizeProperties(database.properties ?? []) : []),
     [database]
   );
-  const selectProperties = properties.filter((property) => property.type === "select");
+  const activeView = useMemo(() => {
+    if (!database || views === undefined) {
+      return null;
+    }
+
+    if (views.length === 0) {
+      return null;
+    }
+
+    if (database.defaultViewId) {
+      const defaultView = views.find((view) => view._id === database.defaultViewId);
+      if (defaultView) {
+        return defaultView;
+      }
+    }
+
+    return views[0] ?? null;
+  }, [database, views]);
+  const orderedProperties = useMemo(() => {
+    const nextOrderedIds = getOrderedPropertyIds(properties, orderedPropertyIds);
+    return orderProperties(properties, nextOrderedIds);
+  }, [orderedPropertyIds, properties]);
+  const selectProperties = orderedProperties.filter((property) => property.type === "select");
   const visibleRows = useMemo(() => {
     if (rows === undefined) return undefined;
 
@@ -463,6 +546,38 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   }, [page.title]);
 
   useEffect(() => {
+    if (!database || views === undefined) {
+      return;
+    }
+
+    const shouldEnsureDefaultView =
+      views.length === 0 ||
+      !database.defaultViewId ||
+      !views.some((view) => view._id === database.defaultViewId);
+
+    if (!shouldEnsureDefaultView) {
+      return;
+    }
+
+    const databaseId = String(database._id);
+    if (ensuringDefaultViewDatabaseIdRef.current === databaseId) {
+      return;
+    }
+
+    ensuringDefaultViewDatabaseIdRef.current = databaseId;
+    void ensureDefaultViewMutation({ databaseId: database._id })
+      .catch((error) => {
+        console.error(error);
+        toast.error("Could not prepare the saved database view.");
+      })
+      .finally(() => {
+        if (ensuringDefaultViewDatabaseIdRef.current === databaseId) {
+          ensuringDefaultViewDatabaseIdRef.current = null;
+        }
+      });
+  }, [database, ensureDefaultViewMutation, views]);
+
+  useEffect(() => {
     const emptyFilterGroup: FilterGroup = {
       operator: "and",
       conditions: [],
@@ -477,9 +592,62 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     setFiltersOpen(false);
     setSortsOpen(false);
     setGroupByOpen(false);
+    setBoardGroupByPropertyId(null);
+    setOrderedPropertyIds([]);
     setUndoStack([]);
     setRedoStack([]);
+    setViewStateHydrated(false);
   }, [database?._id]);
+
+  useEffect(() => {
+    if (views === undefined) {
+      return;
+    }
+
+    const emptyFilterGroup: FilterGroup = {
+      operator: "and",
+      conditions: [],
+    };
+
+    if (!activeView) {
+      if (!viewStateHydrated) {
+        const defaultPropertyOrder = getOrderedPropertyIds(properties, properties.map((property) => property.id));
+        setViewType("table");
+        setFilterGroup(emptyFilterGroup);
+        setSavedFilterGroup(emptyFilterGroup);
+        setSortRules([]);
+        setSavedSortRules([]);
+        setBoardGroupByPropertyId(null);
+        setOrderedPropertyIds(defaultPropertyOrder);
+      }
+      return;
+    }
+
+    const nextFilterGroup = sanitizeFilterGroup(
+      (activeView.filters as FilterGroup | null | undefined) ?? emptyFilterGroup,
+      properties
+    );
+    const nextSortRules = sanitizeSortRules(
+      Array.isArray(activeView.sorts) ? (activeView.sorts as SortRule[]) : [],
+      properties
+    );
+    const nextViewType =
+      activeView.type === "board" || activeView.type === "list" ? activeView.type : "table";
+    const nextGroupByPropertyId =
+      activeView.groupBy && properties.some((property) => property.id === activeView.groupBy)
+        ? activeView.groupBy
+        : null;
+    const nextOrderedPropertyIds = getOrderedPropertyIds(properties, activeView.visibleProperties ?? []);
+
+    setViewType(nextViewType);
+    setFilterGroup(cloneFilterGroup(nextFilterGroup));
+    setSavedFilterGroup(cloneFilterGroup(nextFilterGroup));
+    setSortRules(cloneSortRules(nextSortRules));
+    setSavedSortRules(cloneSortRules(nextSortRules));
+    setBoardGroupByPropertyId(nextGroupByPropertyId);
+    setOrderedPropertyIds(nextOrderedPropertyIds);
+    setViewStateHydrated(true);
+  }, [activeView?._id, properties, viewStateHydrated, views]);
 
   useEffect(() => {
     setFilterGroup((current) => {
@@ -506,6 +674,14 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     setSavedSortRules((current) => {
       const next = sanitizeSortRules(current, properties);
       return areSortRulesEqual(current, next) ? current : next;
+    });
+  }, [properties]);
+
+  useEffect(() => {
+    setOrderedPropertyIds((current) => {
+      const preferredIds = current.length > 0 ? current : properties.map((property) => property.id);
+      const next = getOrderedPropertyIds(properties, preferredIds);
+      return areStringArraysEqual(current, next) ? current : next;
     });
   }, [properties]);
 
@@ -859,6 +1035,95 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     ]
   );
 
+  const persistView = useCallback(
+    async (
+      updates: Partial<{
+        type: ViewType;
+        filters: FilterGroup | null;
+        sorts: SortRule[];
+        groupBy: string | null;
+        visibleProperties: string[];
+      }>
+    ) => {
+      if (!activeView) {
+        return;
+      }
+
+      await updateViewMutation({
+        id: activeView._id,
+        ...(updates.type !== undefined ? { type: updates.type } : {}),
+        ...(updates.filters !== undefined ? { filters: updates.filters } : {}),
+        ...(updates.sorts !== undefined ? { sorts: updates.sorts } : {}),
+        ...(updates.groupBy !== undefined ? { groupBy: updates.groupBy } : {}),
+        ...(updates.visibleProperties !== undefined
+          ? { visibleProperties: updates.visibleProperties }
+          : {}),
+      });
+    },
+    [activeView, updateViewMutation]
+  );
+
+  const handleViewTypeChange = useCallback(
+    async (nextViewType: ViewType) => {
+      if (nextViewType === viewType) {
+        return;
+      }
+
+      setViewType(nextViewType);
+
+      try {
+        await persistView({ type: nextViewType });
+      } catch (error) {
+        console.error(error);
+        toast.error("Could not save the selected view.");
+      }
+    },
+    [persistView, viewType]
+  );
+
+  const handleBoardGroupByChange = useCallback(
+    async (propertyId: string | null) => {
+      setBoardGroupByPropertyId(propertyId);
+
+      try {
+        await persistView({ groupBy: propertyId });
+      } catch (error) {
+        console.error(error);
+        toast.error("Could not save the board grouping.");
+      }
+    },
+    [persistView]
+  );
+
+  const handleMoveProperty = useCallback(
+    async (propertyId: string, direction: "left" | "right") => {
+      const sourcePropertyIds = getOrderedPropertyIds(properties, orderedPropertyIds);
+      const sourceIndex = sourcePropertyIds.indexOf(propertyId);
+      if (sourceIndex === -1) {
+        return;
+      }
+
+      const targetIndex = direction === "left" ? sourceIndex - 1 : sourceIndex + 1;
+      if (targetIndex < 0 || targetIndex >= sourcePropertyIds.length) {
+        return;
+      }
+
+      const nextPropertyIds = [...sourcePropertyIds];
+      const [movedPropertyId] = nextPropertyIds.splice(sourceIndex, 1);
+      nextPropertyIds.splice(targetIndex, 0, movedPropertyId);
+
+      setOrderedPropertyIds(nextPropertyIds);
+
+      try {
+        await persistView({ visibleProperties: nextPropertyIds });
+      } catch (error) {
+        console.error(error);
+        toast.error("Could not save the column order.");
+      }
+    },
+    [orderedPropertyIds, persistView, properties]
+  );
+
   const handleQuickAddRow = async () => {
     setQuickAddLoading(true);
     try {
@@ -1000,16 +1265,23 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     );
   };
 
-  const handleSaveFilters = () => {
+  const handleSaveFilters = async () => {
     const nextFilterGroup = getPersistableFilterGroup(filterGroup, properties);
     setFilterGroup(nextFilterGroup);
     setSavedFilterGroup(cloneFilterGroup(nextFilterGroup));
     setFiltersOpen(nextFilterGroup.conditions.length > 0);
-    toast.success(
-      nextFilterGroup.conditions.length > 0
-        ? "Quick filters saved for this view for this session."
-        : "Filter changes saved for this view for this session."
-    );
+
+    try {
+      await persistView({ filters: nextFilterGroup });
+      toast.success(
+        nextFilterGroup.conditions.length > 0
+          ? "Quick filters saved for this view."
+          : "Filter changes saved for this view."
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not save the filters for this view.");
+    }
   };
   const handleResetSorts = () => {
     const nextSortRules = cloneSortRules(savedSortRules);
@@ -1021,16 +1293,23 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         : "Quick sorts cleared."
     );
   };
-  const handleSaveSorts = () => {
+  const handleSaveSorts = async () => {
     const nextSortRules = cloneSortRules(sanitizeSortRules(sortRules, properties));
     setSortRules(nextSortRules);
     setSavedSortRules(cloneSortRules(nextSortRules));
     setSortsOpen(nextSortRules.length > 0);
-    toast.success(
-      nextSortRules.length > 0
-        ? "Quick sorts saved for this view for this session."
-        : "Sort changes saved for this view for this session."
-    );
+
+    try {
+      await persistView({ sorts: nextSortRules });
+      toast.success(
+        nextSortRules.length > 0
+          ? "Quick sorts saved for this view."
+          : "Sort changes saved for this view."
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not save the sorts for this view.");
+    }
   };
 
   const hasActiveControls = Boolean(
@@ -1119,7 +1398,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   <button
                     key={property.id}
                     type="button"
-                    onClick={() => setBoardGroupByPropertyId(property.id)}
+                    onClick={() => {
+                      void handleBoardGroupByChange(property.id);
+                    }}
                     className={cn(
                       "rounded-[18px] border px-4 py-3 text-left transition-colors",
                       isActive
@@ -1146,6 +1427,17 @@ export function DatabaseView({ page }: DatabaseViewProps) {
 
   return (
     <div className="database-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_28%),linear-gradient(180deg,#151412_0%,#0f0e0d_100%)] text-zinc-100">
+      <WorkspaceTopBar
+        className="border-white/8 bg-[#0f0e0d]/80"
+        breadcrumbContent={
+          <PageBreadcrumb
+            pageId={page._id}
+            pageTitle={title}
+            pageIcon={page.icon}
+          />
+        }
+      />
+
       <div className="max-w-full px-6 pb-3 pt-9 md:px-10">
         <div className="mx-auto max-w-[1440px]">
           {editingTitle ? (
@@ -1192,7 +1484,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setViewType(tab.id)}
+                    onClick={() => {
+                      void handleViewTypeChange(tab.id);
+                    }}
                     className={cn(
                       "flex items-center gap-2 rounded-xl px-3.5 py-2 text-[13px] leading-none transition-colors",
                       viewType === tab.id
@@ -1303,7 +1597,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               onOpenChange={setFiltersOpen}
               onChange={updateQuickFilterGroup}
               onReset={handleResetFilters}
-              onSave={handleSaveFilters}
+              onSave={() => {
+                void handleSaveFilters();
+              }}
             />
 
             <DatabaseQuickSortBar
@@ -1315,7 +1611,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               onOpenChange={setSortsOpen}
               onChange={updateQuickSortRules}
               onReset={handleResetSorts}
-              onSave={handleSaveSorts}
+              onSave={() => {
+                void handleSaveSorts();
+              }}
             />
 
             {activeBoardGroupProperty && (
@@ -1364,7 +1662,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   pageId={page._id}
                   databaseId={database._id}
                   databaseName={page.title || database.name}
-                  properties={properties}
+                  properties={orderedProperties}
                   rows={visibleRows}
                   totalRowCount={rows?.length}
                   now={formulaNow}
@@ -1374,6 +1672,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   onDeleteRow={handleDeleteRow}
                   onBatchDeleteRows={handleBatchDeleteRows}
                   onUpdateProperties={handleUpdateProperties}
+                  onMoveProperty={handleMoveProperty}
                 />
               )}
               {viewType === "board" && (
@@ -1382,7 +1681,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   pageId={page._id}
                   databaseId={database._id}
                   databaseName={page.title || database.name}
-                  properties={properties}
+                  properties={orderedProperties}
                   rows={visibleRows}
                   groupByPropertyId={boardGroupByPropertyId}
                   now={formulaNow}
@@ -1396,7 +1695,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   pageId={page._id}
                   databaseId={database._id}
                   databaseName={page.title || database.name}
-                  properties={properties}
+                  properties={orderedProperties}
                   rows={visibleRows}
                   now={formulaNow}
                   onAddRow={() => handleAddRow()}
