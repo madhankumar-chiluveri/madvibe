@@ -35,6 +35,7 @@ import {
   getAccounts,
   removeAccount,
 } from "@/lib/account-manager";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { getWorkspaceSwitchTarget } from "@/lib/workspace-routing";
@@ -217,11 +218,16 @@ export function WorkspaceSwitcherContent({
   const pathname = usePathname();
   const { signOut } = useAuthActions();
   const { theme, setTheme } = useTheme();
-  const { currentWorkspaceId, setCurrentWorkspaceId } = useAppStore();
+  const setCurrentWorkspaceId = useAppStore((state) => state.setCurrentWorkspaceId);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const {
+    currentWorkspace,
+    resolvedWorkspaceId,
+    workspaceList,
+    workspaces,
+  } = useResolvedWorkspace();
 
   const user = useQuery(api.workspaces.getCurrentUser);
-  const workspaces = useQuery(api.workspaces.listWorkspaces);
 
   const currentUser = user as
     | {
@@ -233,13 +239,6 @@ export function WorkspaceSwitcherContent({
     | undefined;
 
   const currentUserId = String(currentUser?._id ?? "");
-  const workspaceList = workspaces ?? [];
-  const resolvedWorkspaceId = currentWorkspaceId ?? workspaceList[0]?._id ?? null;
-  const currentWorkspace =
-    workspaceList.find((workspace: any) => workspace._id === resolvedWorkspaceId) ??
-    workspaceList[0] ??
-    null;
-
   const displayName = currentUser?.name ?? currentUser?.email ?? "User";
   const workspaceCount = workspaceList.length;
 

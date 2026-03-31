@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -17,7 +17,6 @@ import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
 import { CreateSpaceItemModal } from "@/components/modals/create-space-item-modal";
 import { ImportModal } from "@/components/modals/import-modal";
 import {
@@ -35,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app.store";
 import {
@@ -125,7 +125,8 @@ function ActionTile({
 export function WorkspaceActionMenu() {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentWorkspaceId, setReminderCenterOpen } = useAppStore();
+  const setReminderCenterOpen = useAppStore((state) => state.setReminderCenterOpen);
+  const { currentWorkspace, resolvedWorkspaceId } = useResolvedWorkspace();
 
   const [open, setOpen] = useState(false);
   const [createItemOpen, setCreateItemOpen] = useState(false);
@@ -136,23 +137,7 @@ export function WorkspaceActionMenu() {
   const [workspaceSwitcherOpen, setWorkspaceSwitcherOpen] = useState(false);
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
 
-  const workspaces = useQuery(api.workspaces.listWorkspaces) ?? [];
   const createSpace = useMutation(api.pages.createSpace);
-
-  const resolvedWorkspaceId = useMemo<Id<"workspaces"> | null>(() => {
-    if (currentWorkspaceId) {
-      return currentWorkspaceId;
-    }
-
-    return workspaces[0]?._id ?? null;
-  }, [currentWorkspaceId, workspaces]);
-
-  const currentWorkspace = useMemo(
-    () =>
-      workspaces.find((workspace: any) => workspace._id === resolvedWorkspaceId) ??
-      null,
-    [resolvedWorkspaceId, workspaces]
-  );
 
   const reminderSummary = useQuery(
     api.reminders.getSummary,

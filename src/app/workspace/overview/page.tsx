@@ -4,6 +4,7 @@ import { useState, useEffect, memo, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useRouter } from "next/navigation";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { useAppStore } from "@/store/app.store";
 import { cn } from "@/lib/utils";
 import { ReminderOverviewCard } from "@/components/reminders/reminder-overview-card";
@@ -45,7 +46,7 @@ const QuickCaptureBar = memo(function QuickCaptureBar() {
   const [submitting, setSubmitting] = useState(false);
 
   const router = useRouter();
-  const workspaceId = useAppStore((s) => s.currentWorkspaceId);
+  const { resolvedWorkspaceId: workspaceId } = useResolvedWorkspace();
   const createPage = useMutation(api.pages.create);
   const createReminder = useMutation(api.reminders.create);
 

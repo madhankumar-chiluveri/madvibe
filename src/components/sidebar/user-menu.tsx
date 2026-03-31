@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useAppStore } from "@/store/app.store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,17 +15,14 @@ import {
   WorkspaceSwitcherContent,
 } from "@/components/workspace/workspace-switcher";
 import { saveAccount } from "@/lib/account-manager";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 
 export function UserMenu() {
-  const { currentWorkspaceId } = useAppStore();
   const [open, setOpen] = useState(false);
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
+  const { currentWorkspace } = useResolvedWorkspace();
 
   const user = useQuery(api.workspaces.getCurrentUser);
-  const workspace = useQuery(
-    api.workspaces.getWorkspace,
-    currentWorkspaceId ? { id: currentWorkspaceId } : "skip"
-  );
   const authStatus = useQuery((api as any).accountConversion.getCurrentAuthStatus);
 
   const currentUser = user as
@@ -82,7 +78,7 @@ export function UserMenu() {
           </Avatar>
           <div className="flex-1 min-w-0 text-left">
             <p className="text-sm font-medium truncate leading-none">
-              {workspace?.name ?? "MadVibe"}
+              {currentWorkspace?.name ?? "MadVibe"}
             </p>
           </div>
           <ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />

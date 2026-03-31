@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { useAppStore } from "@/store/app.store";
 import { useRouter } from "next/navigation";
 import {
@@ -32,19 +33,19 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { toast } from "sonner";
 
 export function CommandPalette() {
-  const { commandPaletteOpen, setCommandPaletteOpen, currentWorkspaceId } =
-    useAppStore();
+  const { commandPaletteOpen, setCommandPaletteOpen } = useAppStore();
   const setReminderCenterOpen = useAppStore((s) => s.setReminderCenterOpen);
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const { resolvedWorkspaceId } = useResolvedWorkspace();
 
   const createPage = useMutation(api.pages.create);
 
   // Search results
   const searchResults = useQuery(
     api.pages.search,
-    currentWorkspaceId && search.length > 0
-      ? { workspaceId: currentWorkspaceId, query: search }
+    resolvedWorkspaceId && search.length > 0
+      ? { workspaceId: resolvedWorkspaceId, query: search }
       : "skip"
   );
 
@@ -52,7 +53,7 @@ export function CommandPalette() {
   const { recentPageIds } = useAppStore();
   const allPages = useQuery(
     api.pages.listAll,
-    currentWorkspaceId ? { workspaceId: currentWorkspaceId } : "skip"
+    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
   );
 
   const recentPages = useMemo(
@@ -83,10 +84,10 @@ export function CommandPalette() {
   }, [router, close]);
 
   const handleCreatePage = useCallback(async () => {
-    if (!currentWorkspaceId) return;
+    if (!resolvedWorkspaceId) return;
     try {
       const id = await createPage({
-        workspaceId: currentWorkspaceId,
+        workspaceId: resolvedWorkspaceId,
         parentId: null,
         type: "document",
         title: search.trim() || "Untitled",
@@ -95,7 +96,7 @@ export function CommandPalette() {
     } catch {
       toast.error("Failed to create page");
     }
-  }, [currentWorkspaceId, createPage, search, navigate]);
+  }, [createPage, navigate, resolvedWorkspaceId, search]);
 
   const getPageIcon = useCallback((type: string) => {
     if (type === "database") return <Database className="w-4 h-4 mr-2 text-muted-foreground" />;

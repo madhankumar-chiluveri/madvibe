@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { useAppStore } from "@/store/app.store";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatRelativeTime } from "@/lib/utils";
@@ -27,13 +27,13 @@ import {
 } from "@/components/ui/dialog";
 
 export default function TrashPage() {
-  const { currentWorkspaceId } = useAppStore();
+  const { resolvedWorkspaceId } = useResolvedWorkspace();
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const archivedPages = useQuery(
     api.pages.listArchived,
-    currentWorkspaceId ? { workspaceId: currentWorkspaceId } : "skip"
+    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
   );
 
   const restorePage = useMutation(api.pages.restore);

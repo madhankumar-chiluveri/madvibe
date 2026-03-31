@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { useAppStore } from "@/store/app.store";
-import { api } from "../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { ChevronRight, PanelLeft } from "lucide-react";
 import { WorkspaceActionMenu } from "@/components/layout/workspace-action-menu";
 import { MobileWorkspaceContextSheet } from "@/components/sidebar/sidebar";
@@ -22,12 +20,8 @@ export function WorkspaceTopBar({
   rightContent,
   className,
 }: WorkspaceTopBarProps) {
-  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const workspace = useQuery(
-    api.workspaces.getWorkspace,
-    currentWorkspaceId ? { id: currentWorkspaceId } : "skip"
-  );
+  const { currentWorkspace } = useResolvedWorkspace();
 
   return (
     <div
@@ -49,11 +43,11 @@ export function WorkspaceTopBar({
 
         <div className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground select-none">
           <span className="flex items-center gap-1 shrink-0">
-            {workspace?.icon && (
-              <span className="text-sm leading-none">{workspace.icon}</span>
+            {currentWorkspace?.icon && (
+              <span className="text-sm leading-none">{currentWorkspace.icon}</span>
             )}
             <span className="font-medium text-foreground truncate max-w-[120px] md:max-w-[160px]">
-              {workspace?.name ?? "Workspace"}
+              {currentWorkspace?.name ?? "Workspace"}
             </span>
           </span>
 

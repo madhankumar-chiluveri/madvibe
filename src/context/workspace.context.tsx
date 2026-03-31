@@ -6,10 +6,8 @@
 // so any deeply nested component can consume them without
 // prop-drilling.
 // ─────────────────────────────────────────────────────────────
-import React, { createContext, useContext, useEffect } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { useAppStore } from "@/store";
+import React, { createContext, useContext } from "react";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import type { Workspace } from "@/types/page";
 
 interface WorkspaceContextValue {
@@ -29,26 +27,14 @@ export function WorkspaceProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { currentWorkspaceId, setCurrentWorkspaceId } = useAppStore();
-  const workspaces = useQuery(api.workspaces.listWorkspaces, {}) ?? [];
-  const workspace = useQuery(
-    api.workspaces.getWorkspace,
-    currentWorkspaceId ? { id: currentWorkspaceId } : "skip"
-  );
-
-  // Auto-select first workspace on first load
-  useEffect(() => {
-    if (workspaces.length > 0 && !currentWorkspaceId) {
-      setCurrentWorkspaceId(workspaces[0]._id);
-    }
-  }, [workspaces, currentWorkspaceId, setCurrentWorkspaceId]);
+  const { currentWorkspace, workspaceList, workspacesLoading } = useResolvedWorkspace();
 
   return (
     <WorkspaceContext.Provider
       value={{
-        workspace: workspace as Workspace | null | undefined,
-        workspaces: workspaces as Workspace[],
-        isLoading: workspace === undefined,
+        workspace: currentWorkspace as Workspace | null,
+        workspaces: workspaceList as Workspace[],
+        isLoading: workspacesLoading,
       }}
     >
       {children}

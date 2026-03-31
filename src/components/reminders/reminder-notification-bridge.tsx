@@ -5,17 +5,17 @@ import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
-import { useAppStore } from "@/store/app.store";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import type { Reminder } from "@/types/reminder";
 
 export function ReminderNotificationBridge() {
-  const { currentWorkspaceId } = useAppStore();
   const [now, setNow] = useState(() => Date.now());
   const shownIds = useRef<Set<string>>(new Set());
+  const { resolvedWorkspaceId } = useResolvedWorkspace();
   const markNotified = useMutation(api.reminders.markNotified);
   const dueReminders = useQuery(
     api.reminders.listDue,
-    currentWorkspaceId ? { workspaceId: currentWorkspaceId, now } : "skip"
+    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId, now } : "skip"
   ) as Reminder[] | undefined;
 
   useEffect(() => {

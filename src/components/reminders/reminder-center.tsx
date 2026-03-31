@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,21 +37,18 @@ import {
 
 export function ReminderCenter() {
   const router = useRouter();
-  const {
-    currentWorkspaceId,
-    reminderCenterOpen,
-    setReminderCenterOpen,
-  } = useAppStore();
+  const { reminderCenterOpen, setReminderCenterOpen } = useAppStore();
   const [now, setNow] = useState(() => Date.now());
+  const { resolvedWorkspaceId } = useResolvedWorkspace();
   const reminders = useQuery(
     api.reminders.listByWorkspace,
-    currentWorkspaceId
-      ? { workspaceId: currentWorkspaceId, includeCompleted: true, limit: 200 }
+    resolvedWorkspaceId
+      ? { workspaceId: resolvedWorkspaceId, includeCompleted: true, limit: 200 }
       : "skip"
   ) as Reminder[] | undefined;
   const summary = useQuery(
     api.reminders.getSummary,
-    currentWorkspaceId ? { workspaceId: currentWorkspaceId, now } : "skip"
+    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId, now } : "skip"
   );
   const setCompleted = useMutation(api.reminders.setCompleted);
   const snoozeReminder = useMutation(api.reminders.snooze);
@@ -289,7 +287,7 @@ export function ReminderCenter() {
                 type="button"
                 className="rounded-xl bg-white text-black hover:bg-zinc-200"
                 onClick={() => setComposerOpen(true)}
-                disabled={!currentWorkspaceId}
+                disabled={!resolvedWorkspaceId}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 New reminder
@@ -306,21 +304,21 @@ export function ReminderCenter() {
         </DialogContent>
       </Dialog>
 
-      {currentWorkspaceId && (
+      {resolvedWorkspaceId && (
         <ReminderDialog
           open={composerOpen}
           onOpenChange={setComposerOpen}
-          workspaceId={currentWorkspaceId}
+          workspaceId={resolvedWorkspaceId}
         />
       )}
 
-      {currentWorkspaceId && editingReminder && (
+      {resolvedWorkspaceId && editingReminder && (
         <ReminderDialog
           open={Boolean(editingReminder)}
           onOpenChange={(open) => {
             if (!open) setEditingReminder(null);
           }}
-          workspaceId={currentWorkspaceId}
+          workspaceId={resolvedWorkspaceId}
           reminder={editingReminder}
         />
       )}

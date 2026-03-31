@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Archive,
@@ -57,6 +57,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app.store";
 import { UserMenu } from "./user-menu";
@@ -638,29 +639,46 @@ interface SpaceSectionProps {
   space: any;
   workspaceId: Id<"workspaces">;
   onAddNew: (parentId: Id<"pages"> | null, spaceLabel: string) => void;
+  autoExpandToken?: string | null;
 }
 
-function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
+function SpaceSection({
+  space,
+  workspaceId,
+  onAddNew,
+  autoExpandToken = null,
+}: SpaceSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { toggleExpanded, isExpanded, setContextPaneCollapsed, setExpanded } = useAppStore();
   const archivePage = useMutation(api.pages.archive);
-  const children = useQuery(api.pages.list, {
-    workspaceId,
-    parentId: space._id,
-  });
 
   const expandKey = `space:${space._id}`;
   const spaceHref = `/workspace/${space._id}`;
   const expanded = isExpanded(expandKey);
   const isHomeActive = pathname === spaceHref;
+  const children = useQuery(
+    api.pages.list,
+    expanded ? { workspaceId, parentId: space._id } : "skip"
+  );
+  const autoExpandedForRef = useRef<string | null>(null);
   const handlePrefetch = () => router.prefetch(spaceHref);
 
   useEffect(() => {
+    if (!autoExpandToken) {
+      autoExpandedForRef.current = null;
+      return;
+    }
+
+    if (autoExpandedForRef.current === autoExpandToken) {
+      return;
+    }
+
+    autoExpandedForRef.current = autoExpandToken;
     if (!expanded) {
       setExpanded(expandKey, true);
     }
-  }, [expandKey, expanded, setExpanded]);
+  }, [autoExpandToken, expandKey, expanded, setExpanded]);
 
   const handleOpenSpace = () => {
     setContextPaneCollapsed(true);
@@ -791,6 +809,7 @@ function SpaceSection({ space, workspaceId, onAddNew }: SpaceSectionProps) {
 
 function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const router = useRouter();
+  const params = useParams<{ pageId?: string }>();
   const { setCommandPaletteOpen } = useAppStore();
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState("");
@@ -802,12 +821,33 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const rootPages = useQuery(api.pages.list, { workspaceId, parentId: null });
   const spaceRoots = useQuery(api.pages.listSpaceRoots, { workspaceId });
   const favourites = useQuery(api.pages.listFavourites, { workspaceId });
+  const activePageId = params?.pageId as Id<"pages"> | undefined;
+  const activeAncestors =
+    useQuery(api.pages.getAncestors, activePageId ? { id: activePageId } : "skip") ?? [];
   const createSpace = useMutation(api.pages.createSpace);
 
   const generalPages = useMemo(
     () => (rootPages ?? []).filter((page: any) => !page.isSpaceRoot),
     [rootPages]
   );
+  const activeSpaceId = useMemo<Id<"pages"> | null>(() => {
+    if (!activePageId || !spaceRoots?.length) {
+      return null;
+    }
+
+    const spaceIdSet = new Set(spaceRoots.map((space: any) => String(space._id)));
+    if (spaceIdSet.has(String(activePageId))) {
+      return activePageId;
+    }
+
+    for (const ancestor of activeAncestors) {
+      if (spaceIdSet.has(String(ancestor._id))) {
+        return ancestor._id as Id<"pages">;
+      }
+    }
+
+    return null;
+  }, [activeAncestors, activePageId, spaceRoots]);
 
   const handleOpenCreateItem = (parentId: Id<"pages"> | null, spaceLabel: string) => {
     setCreateItemParentId(parentId);
@@ -919,16 +959,21 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
                 </div>
               </div>
 
-              {spaceRoots.length > 0 ? (
-                spaceRoots.map((space: any) => (
-                  <SpaceSection
-                    key={space._id}
-                    space={space}
-                    workspaceId={workspaceId}
-                    onAddNew={handleOpenCreateItem}
-                  />
-                ))
-              ) : (
+                {spaceRoots.length > 0 ? (
+                  spaceRoots.map((space: any) => (
+                    <SpaceSection
+                      key={space._id}
+                      space={space}
+                      workspaceId={workspaceId}
+                      onAddNew={handleOpenCreateItem}
+                      autoExpandToken={
+                        space._id === activeSpaceId
+                          ? String(activePageId ?? space._id)
+                          : null
+                      }
+                    />
+                  ))
+                ) : (
                 <div className="px-3 py-5 text-center">
                   <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-muted/40">
                     <FolderOpen className="h-5 w-5 text-muted-foreground" />
@@ -1180,12 +1225,8 @@ function LedgerContextPane() {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const {
-    contextPaneCollapsed,
-    currentWorkspaceId,
-    setActiveModule,
-    setCurrentWorkspaceId,
-  } = useAppStore();
+  const { contextPaneCollapsed, setActiveModule } = useAppStore();
+  const { resolvedWorkspaceId, workspaceList, workspaces } = useResolvedWorkspace();
 
   const routeModule = useMemo(() => getRouteModule(pathname), [pathname]);
   const paneModule: keyof typeof PANE_DETAILS =
@@ -1197,19 +1238,11 @@ export function Sidebar() {
           ? "ledger"
           : "overview";
 
-  const workspaces = useQuery(api.workspaces.listWorkspaces);
-  const resolvedWorkspaceId = currentWorkspaceId ?? workspaces?.[0]?._id ?? null;
-
-  useEffect(() => {
-    if (currentWorkspaceId || !workspaces?.length) return;
-    setCurrentWorkspaceId(workspaces[0]._id);
-  }, [workspaces, currentWorkspaceId, setCurrentWorkspaceId]);
-
   useEffect(() => {
     setActiveModule(routeModule);
   }, [routeModule, setActiveModule]);
 
-  if (workspaces !== undefined && workspaces.length === 0) {
+  if (workspaces !== undefined && workspaceList.length === 0) {
     return <WorkspaceSetup />;
   }
 
@@ -1259,12 +1292,9 @@ export function MobileWorkspaceContextSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const pathname = usePathname();
-  const {
-    currentWorkspaceId,
-    setActiveModule,
-    setCurrentWorkspaceId,
-  } = useAppStore();
+  const { setActiveModule } = useAppStore();
   const previousPathnameRef = useRef(pathname);
+  const { resolvedWorkspaceId, workspaceList, workspaces } = useResolvedWorkspace();
 
   const routeModule = useMemo(() => getRouteModule(pathname), [pathname]);
   const paneModule: keyof typeof PANE_DETAILS =
@@ -1275,14 +1305,6 @@ export function MobileWorkspaceContextSheet({
         : routeModule === "ledger"
           ? "ledger"
           : "overview";
-
-  const workspaces = useQuery(api.workspaces.listWorkspaces);
-  const resolvedWorkspaceId = currentWorkspaceId ?? workspaces?.[0]?._id ?? null;
-
-  useEffect(() => {
-    if (currentWorkspaceId || !workspaces?.length) return;
-    setCurrentWorkspaceId(workspaces[0]._id);
-  }, [workspaces, currentWorkspaceId, setCurrentWorkspaceId]);
 
   useEffect(() => {
     setActiveModule(routeModule);
@@ -1300,7 +1322,7 @@ export function MobileWorkspaceContextSheet({
     }
   }, [onOpenChange, open, pathname]);
 
-  if (workspaces !== undefined && workspaces.length === 0) {
+  if (workspaces !== undefined && workspaceList.length === 0) {
     return null;
   }
 

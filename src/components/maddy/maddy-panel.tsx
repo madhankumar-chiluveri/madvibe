@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { cn } from "@/lib/utils";
 import { useAppStore, type MaddyProvider } from "@/store/app.store";
 
@@ -210,7 +211,6 @@ function MaddyPanelSurface() {
   const params = useParams();
   const {
     closeMaddyPanel,
-    currentWorkspaceId,
     geminiApiKey,
     openaiApiKey,
     anthropicApiKey,
@@ -226,6 +226,7 @@ function MaddyPanelSurface() {
     setMaddyDefaultModel,
     setMaddyDefaultProvider,
   } = useAppStore();
+  const { currentWorkspace, resolvedWorkspaceId } = useResolvedWorkspace();
 
   const pageId = params?.pageId as Id<"pages"> | undefined;
   const currentModule = formatRouteModule(pathname);
@@ -252,10 +253,6 @@ function MaddyPanelSurface() {
       api.aiChat.getMessages,
       selectedConversationId ? { conversationId: selectedConversationId } : "skip"
     ) ?? [];
-  const currentWorkspace = useQuery(
-    api.workspaces.getWorkspace,
-    currentWorkspaceId ? { id: currentWorkspaceId } : "skip"
-  );
   const currentPage = useQuery(api.pages.get, pageId ? { id: pageId } : "skip");
 
   const createConversation = useMutation(api.aiChat.createConversation);
@@ -417,7 +414,7 @@ function MaddyPanelSurface() {
         apiKey: activeApiKey,
         provider: activeModel.provider,
         model: activeModel.id,
-        workspaceId: currentWorkspaceId ?? undefined,
+        workspaceId: resolvedWorkspaceId ?? undefined,
         pageId,
         history,
       });

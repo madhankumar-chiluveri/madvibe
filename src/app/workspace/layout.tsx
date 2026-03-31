@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { useAppStore } from "@/store/app.store";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 
 // Heavy components loaded after first paint — framer-motion, reminder logic, etc.
 const MaddyPanel = dynamic(
@@ -37,6 +37,7 @@ export default function WorkspaceLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  useResolvedWorkspace();
 
   // Prefetch all primary routes on mount so navigation feels instant
   useEffect(() => {

@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { BellRing, ChevronRight, Plus } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/app.store";
 import type { Reminder } from "@/types/reminder";
@@ -16,10 +17,13 @@ import {
 } from "./reminder-utils";
 
 export function ReminderOverviewCard() {
-  const { currentWorkspaceId, setReminderCenterOpen } = useAppStore();
+  const setReminderCenterOpen = useAppStore((state) => state.setReminderCenterOpen);
+  const { resolvedWorkspaceId } = useResolvedWorkspace();
   const reminders = useQuery(
     api.reminders.listByWorkspace,
-    currentWorkspaceId ? { workspaceId: currentWorkspaceId, includeCompleted: false, limit: 8 } : "skip"
+    resolvedWorkspaceId
+      ? { workspaceId: resolvedWorkspaceId, includeCompleted: false, limit: 8 }
+      : "skip"
   ) as Reminder[] | undefined;
   const [composerOpen, setComposerOpen] = useState(false);
   const now = Date.now();
@@ -84,18 +88,18 @@ export function ReminderOverviewCard() {
           variant="outline"
           className="mt-4 h-9 w-full rounded-xl"
           onClick={() => setComposerOpen(true)}
-          disabled={!currentWorkspaceId}
+          disabled={!resolvedWorkspaceId}
         >
           <Plus className="mr-2 h-4 w-4" />
           New reminder
         </Button>
       </div>
 
-      {currentWorkspaceId && (
+      {resolvedWorkspaceId && (
         <ReminderDialog
           open={composerOpen}
           onOpenChange={setComposerOpen}
-          workspaceId={currentWorkspaceId}
+          workspaceId={resolvedWorkspaceId}
         />
       )}
     </>
