@@ -12,6 +12,7 @@ type AuthRouteContext = {
 };
 
 const PROXIED_AUTH_PREFIXES = new Set(["signin", "callback"]);
+const ALLOWED_GOOGLE_PROMPTS = new Set(["select_account"]);
 
 function getConvexSiteUrl() {
   const convexSiteUrl = process.env.CONVEX_SITE_URL?.trim();
@@ -65,6 +66,34 @@ function getSafeRedirectTarget(request: NextRequest) {
   return redirectTo;
 }
 
+function getSafeGoogleLoginHint(request: NextRequest) {
+  const loginHint = request.nextUrl.searchParams.get("login_hint")?.trim();
+
+  if (!loginHint) {
+    return undefined;
+  }
+
+  if (loginHint.length > 320 || /[\r\n]/.test(loginHint)) {
+    return undefined;
+  }
+
+  return loginHint;
+}
+
+function getSafeGooglePrompt(request: NextRequest) {
+  const prompt = request.nextUrl.searchParams.get("prompt")?.trim();
+
+  if (!prompt) {
+    return undefined;
+  }
+
+  if (!ALLOWED_GOOGLE_PROMPTS.has(prompt)) {
+    return undefined;
+  }
+
+  return prompt;
+}
+
 async function proxyAuthRequest(
   request: NextRequest,
   authSegments: string[]
@@ -79,6 +108,10 @@ async function proxyAuthRequest(
   ) {
     const provider = authSegments[1];
     const redirectTo = getSafeRedirectTarget(request);
+    const loginHint =
+      provider === "google" ? getSafeGoogleLoginHint(request) : undefined;
+    const prompt =
+      provider === "google" ? getSafeGooglePrompt(request) : undefined;
     const token = getAuthTokenFromRequest(request);
 
     try {
@@ -96,7 +129,17 @@ async function proxyAuthRequest(
         throw new Error("OAuth sign-in did not return a redirect and verifier.");
       }
 
-      const redirectResponse = NextResponse.redirect(result.redirect);
+      const providerRedirectUrl = new URL(result.redirect);
+
+      if (loginHint) {
+        providerRedirectUrl.searchParams.set("login_hint", loginHint);
+      }
+
+      if (prompt) {
+        providerRedirectUrl.searchParams.set("prompt", prompt);
+      }
+
+      const redirectResponse = NextResponse.redirect(providerRedirectUrl);
       redirectResponse.cookies.set(
         `${getCookiePrefix(request)}__convexAuthOAuthVerifier`,
         result.verifier,

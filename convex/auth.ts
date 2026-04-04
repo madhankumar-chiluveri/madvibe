@@ -7,12 +7,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password,
     Anonymous,
-    Google({
-      authorization: {
-        params: {
-          prompt: "select_account",
-        },
-      },
-    }),
+    Google({}),
   ],
 });

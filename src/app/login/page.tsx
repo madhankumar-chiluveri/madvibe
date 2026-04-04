@@ -38,6 +38,26 @@ function getSafeRedirectTarget(value: string | null) {
   return value;
 }
 
+function buildGoogleLoginUrl({
+  redirectTo,
+  loginHint,
+  forceAccountSelection,
+}: {
+  redirectTo: string;
+  loginHint?: string;
+  forceAccountSelection?: boolean;
+}) {
+  const params = new URLSearchParams({ redirectTo });
+
+  if (loginHint) {
+    params.set("login_hint", loginHint);
+  } else if (forceAccountSelection) {
+    params.set("prompt", "select_account");
+  }
+
+  return `/api/auth/signin/google?${params.toString()}`;
+}
+
 function GoogleMark() {
   return (
     <svg
@@ -116,27 +136,21 @@ export default function LoginPage() {
     }
 
     autoStartedGoogleRef.current = true;
-    void handleGoogleSignIn();
-  }, [hintProvider]);
+    handleGoogleSignIn({ loginHint: hintEmail || undefined });
+  }, [hintEmail, hintProvider]);
 
-  async function handleGoogleSignIn() {
+  function handleGoogleSignIn(options?: {
+    loginHint?: string;
+    forceAccountSelection?: boolean;
+  }) {
     setGoogleLoading(true);
-
-    try {
-      await signIn("google", { redirectTo });
-    } catch (err: any) {
-      const message = err?.message ?? "";
-
-      if (message.includes("reading 'redirect'")) {
-        toast.error(
-          "Authentication service is not ready. Sync Convex (`npx convex dev --once`) and retry."
-        );
-      } else {
-        toast.error(message || "Google sign-in could not be started.");
-      }
-
-      setGoogleLoading(false);
-    }
+    window.location.assign(
+      buildGoogleLoginUrl({
+        redirectTo,
+        loginHint: options?.loginHint,
+        forceAccountSelection: options?.forceAccountSelection,
+      })
+    );
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -172,7 +186,7 @@ export default function LoginPage() {
     setEmail(account.email);
 
     if (account.provider === "google") {
-      void handleGoogleSignIn();
+      handleGoogleSignIn({ loginHint: account.email });
       return;
     }
 
@@ -241,6 +255,9 @@ export default function LoginPage() {
                 <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   Recent accounts
                 </div>
+                <div className="text-xs leading-5 text-muted-foreground">
+                  Saved Google accounts try the matching account first. The main Google button opens the chooser.
+                </div>
                 <div className="space-y-2">
                   {savedAccounts.map((account) => {
                     const isHinted = hintEmail === account.email;
@@ -265,15 +282,15 @@ export default function LoginPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">
+                          <div className="text-sm font-medium leading-5 break-words">
                             {account.name}
                           </div>
-                          <div className="truncate text-xs text-muted-foreground">
+                          <div className="text-xs leading-4 text-muted-foreground break-all">
                             {account.email}
                           </div>
                         </div>
                         <div className="shrink-0 rounded-full border border-border/70 px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                          {account.provider === "google" ? "Google" : "Password"}
+                          {account.provider === "google" ? "Fast Google" : "Password"}
                         </div>
                       </button>
                     );
@@ -287,7 +304,7 @@ export default function LoginPage() {
               variant="outline"
               size="lg"
               className="mb-4 w-full gap-3 touch-manipulation"
-              onClick={() => void handleGoogleSignIn()}
+              onClick={() => handleGoogleSignIn({ forceAccountSelection: true })}
               disabled={googleLoading || loading}
             >
               {googleLoading ? (
@@ -295,7 +312,7 @@ export default function LoginPage() {
               ) : (
                 <GoogleMark />
               )}
-              Continue with Google
+              Choose Google account
             </Button>
 
             <div className="relative mb-6">

@@ -383,7 +383,7 @@ export function WorkspaceActionMenu() {
         <DialogContent
           title="Workspaces"
           hideTitleVisually={true}
-          className="max-w-[calc(100vw-1rem)] border-white/10 bg-[#161513] p-0 text-zinc-100 sm:max-w-[360px]"
+          className="max-h-[calc(100dvh-1rem)] max-w-[calc(100vw-1rem)] overflow-hidden border-white/10 bg-[#161513] p-0 text-zinc-100 sm:max-w-[360px]"
         >
           <WorkspaceSwitcherContent
             className="rounded-[24px]"

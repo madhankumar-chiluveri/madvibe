@@ -90,7 +90,7 @@ export function UserMenu() {
         side="bottom"
         sideOffset={8}
         collisionPadding={16}
-        className="w-[344px] max-w-[calc(100vw-1.5rem)] rounded-[24px] border-border/70 bg-popover/95 p-0 shadow-2xl backdrop-blur-xl"
+        className="w-[344px] max-w-[calc(100vw-1.5rem)] rounded-[24px] border-border/70 bg-popover/95 p-0 shadow-2xl backdrop-blur-xl max-h-[calc(100dvh-5rem)] overflow-hidden"
       >
         <WorkspaceSwitcherContent
           onClose={() => setOpen(false)}

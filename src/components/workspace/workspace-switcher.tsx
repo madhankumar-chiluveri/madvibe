@@ -53,6 +53,26 @@ type CreateWorkspaceDialogProps = {
   onCreated?: (workspaceId: Id<"workspaces">) => void;
 };
 
+function buildGoogleLoginUrl({
+  redirectTo,
+  loginHint,
+  forceAccountSelection,
+}: {
+  redirectTo: string;
+  loginHint?: string;
+  forceAccountSelection?: boolean;
+}) {
+  const params = new URLSearchParams({ redirectTo });
+
+  if (loginHint) {
+    params.set("login_hint", loginHint);
+  } else if (forceAccountSelection) {
+    params.set("prompt", "select_account");
+  }
+
+  return `/api/auth/signin/google?${params.toString()}`;
+}
+
 function WorkspaceRoleBadge({ role }: { role?: "owner" | "editor" | "viewer" | null }) {
   const normalizedRole = role ?? "owner";
 
@@ -86,9 +106,11 @@ function getAccountInitials(name?: string | null, email?: string | null) {
 
 function AccountsSection({
   currentUserId,
+  userLoaded,
   onClose,
 }: {
   currentUserId: string;
+  userLoaded: boolean;
   onClose?: () => void;
 }) {
   const { signOut } = useAuthActions();
@@ -99,29 +121,42 @@ function AccountsSection({
     setAccounts(getAccounts());
   }, []);
 
-  const navigateToLogin = (search: string) => {
+  const navigateTo = (url: string) => {
     onClose?.();
-    window.location.assign(`/login${search}`);
+    window.location.assign(url);
   };
 
   const handleSwitchTo = async (account: SavedAccount) => {
     if (pendingAction) return;
+    // Wait for user data to load before allowing account switch
+    if (!userLoaded) return;
 
     if (account.userId === currentUserId) {
+      // Already on this account — just close the panel
       onClose?.();
       return;
     }
 
     setPendingAction(account.userId);
-    const params = new URLSearchParams({
-      hint: account.email,
-      provider: account.provider,
-    });
 
     try {
       await signOut();
     } finally {
-      navigateToLogin(`?${params.toString()}`);
+      if (account.provider === "google") {
+        navigateTo(
+          buildGoogleLoginUrl({
+            redirectTo: DEFAULT_WORKSPACE_ROUTE,
+            loginHint: account.email,
+          })
+        );
+        return;
+      }
+
+      const params = new URLSearchParams({
+        hint: account.email,
+        provider: account.provider,
+      });
+      navigateTo(`/login?${params.toString()}`);
     }
   };
 
@@ -133,7 +168,12 @@ function AccountsSection({
     try {
       await signOut();
     } finally {
-      navigateToLogin("?provider=google");
+      navigateTo(
+        buildGoogleLoginUrl({
+          redirectTo: DEFAULT_WORKSPACE_ROUTE,
+          forceAccountSelection: true,
+        })
+      );
     }
   };
 
@@ -149,11 +189,17 @@ function AccountsSection({
       <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
         Accounts
       </div>
+      <div className="px-2 pb-2 text-[11px] leading-5 text-muted-foreground">
+        Saved Google accounts try a direct switch first. Add another account opens Google's chooser.
+      </div>
 
       <div className="space-y-1">
         {accounts.map((account) => {
-          const isActive = account.userId === currentUserId;
+          // Only treat as active once user data has loaded — avoids false
+          // "not active" while currentUserId is still the empty string.
+          const isActive = userLoaded && account.userId === currentUserId;
           const isPending = pendingAction === account.userId;
+          const isLoading = !userLoaded;
           const initials = getAccountInitials(account.name, account.email);
 
           return (
@@ -161,7 +207,7 @@ function AccountsSection({
               <button
                 type="button"
                 onClick={() => void handleSwitchTo(account)}
-                disabled={pendingAction !== null}
+                disabled={pendingAction !== null || isLoading}
                 className={cn(
                   "flex min-h-12 flex-1 items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors touch-manipulation disabled:cursor-not-allowed disabled:opacity-70",
                   isActive
@@ -177,14 +223,23 @@ function AccountsSection({
                 </Avatar>
 
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{account.name}</div>
-                  <div className="truncate text-xs text-muted-foreground">
+                  <div className="text-sm font-medium leading-5 break-words">{account.name}</div>
+                  <div className="text-xs leading-4 text-muted-foreground break-all">
                     {account.email}
+                    {isLoading
+                      ? " · Loading…"
+                      : account.provider === "google"
+                        ? isActive
+                          ? " · Current Google account"
+                          : " · Switch via Google"
+                        : isActive
+                          ? " · Current account"
+                          : " · Password sign-in"}
                   </div>
                 </div>
 
                 <div className="shrink-0 text-muted-foreground">
-                  {isPending ? (
+                  {isPending || (isLoading && accounts.length === 1) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : isActive ? (
                     <Check className="h-4 w-4 text-foreground" />
@@ -196,7 +251,7 @@ function AccountsSection({
                 <button
                   type="button"
                   onClick={() => handleRemoveAccount(account.userId)}
-                  disabled={pendingAction !== null}
+                  disabled={pendingAction !== null || isLoading}
                   className="h-11 w-11 shrink-0 rounded-xl text-muted-foreground transition-colors touch-manipulation hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
                   aria-label={`Remove ${account.email}`}
                   title="Remove account"
@@ -220,7 +275,7 @@ function AccountsSection({
         ) : (
           <Plus className="h-4 w-4" />
         )}
-        Add another account
+        Choose another Google account
       </button>
     </div>
   );
@@ -260,6 +315,8 @@ export function WorkspaceSwitcherContent({
     | undefined;
 
   const currentUserId = String(currentUser?._id ?? "");
+  // user === undefined means still loading; null means loaded but not signed in
+  const userLoaded = currentUser !== undefined;
   const displayName = currentUser?.name ?? currentUser?.email ?? "User";
   const workspaceCount = workspaceList.length;
 
@@ -322,8 +379,13 @@ export function WorkspaceSwitcherContent({
   };
 
   return (
-    <div className={cn("flex flex-col", className)}>
-      <AccountsSection currentUserId={currentUserId} onClose={onClose} />
+    <div
+      className={cn(
+        "flex max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-y-auto overscroll-contain",
+        className
+      )}
+    >
+      <AccountsSection currentUserId={currentUserId} userLoaded={userLoaded} onClose={onClose} />
 
       <div className="border-b border-border/70 px-4 py-4">
         <div className="flex items-start gap-3">
@@ -331,7 +393,7 @@ export function WorkspaceSwitcherContent({
             {getWorkspaceInitial(currentWorkspace?.name)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
+            <p className="text-sm font-semibold leading-5 text-foreground break-words">
               {currentWorkspace?.name ?? "Workspace"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -340,7 +402,7 @@ export function WorkspaceSwitcherContent({
           </div>
           <WorkspaceRoleBadge role={(currentWorkspace as any)?.role ?? "owner"} />
         </div>
-        <p className="mt-3 truncate text-xs text-muted-foreground">
+        <p className="mt-3 text-xs leading-5 text-muted-foreground break-all">
           {currentUser?.email ?? displayName}
         </p>
       </div>
@@ -362,7 +424,7 @@ export function WorkspaceSwitcherContent({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-foreground">
+                      <div className="text-sm font-medium leading-5 text-foreground break-words">
                         {invite.workspaceName}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
@@ -435,8 +497,8 @@ export function WorkspaceSwitcherContent({
                     {getWorkspaceInitial(workspace.name)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{workspace.name}</div>
-                    <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                    <div className="text-sm font-medium leading-5 break-words">{workspace.name}</div>
+                    <div className="mt-0.5 text-[11px] leading-4 text-muted-foreground break-words">
                       {(workspace as any).role === "owner"
                         ? `${(workspace as any).memberCount ?? 1} member${(workspace as any).memberCount === 1 ? "" : "s"}`
                         : `Shared by ${(workspace as any).ownerName ?? "workspace owner"}`}
