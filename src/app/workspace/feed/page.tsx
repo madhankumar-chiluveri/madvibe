@@ -1,11 +1,11 @@
 "use client";
 
-import { memo } from "react";
-import { useQuery } from "convex/react";
+import { memo, useEffect, useState } from "react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/app.store";
-import { Rss, Clock, TrendingUp, Flame } from "lucide-react";
+import { Rss, Clock, TrendingUp, Flame, RefreshCw } from "lucide-react";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 
 // ── Category config ─────────────────────────────────────────────────────────
@@ -40,6 +40,20 @@ function getCategoryGradientSmall(category: string | null) {
 
 function openArticle(url?: string) {
   if (url) window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function formatSyncAge(timestamp?: number | null) {
+  if (!timestamp) return "Waiting for the first live sync.";
+
+  const diff = Date.now() - timestamp;
+  const minutes = Math.max(1, Math.floor(diff / 60_000));
+  if (minutes < 60) return `Updated ${minutes}m ago.`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Updated ${hours}h ago.`;
+
+  const days = Math.floor(hours / 24);
+  return `Updated ${days}d ago.`;
 }
 
 // ── Article Card (desktop) ────────────────────────────────────────────────────
@@ -172,10 +186,60 @@ const CategoryTab = memo(function CategoryTab({
 // ── Main Feed Page ───────────────────────────────────────────────────────────
 export default memo(function FeedPage() {
   const { feedCategory, setFeedCategory } = useAppStore();
+  const syncFeed = useAction(api.feedSync.fetchAndProcessFeed);
   const articles = useQuery(api.feed.listArticles, {
     category: feedCategory ? (feedCategory as any) : undefined,
     limit: 20,
   });
+  const [syncState, setSyncState] = useState<"idle" | "syncing" | "fresh" | "error">("idle");
+  const [syncMessage, setSyncMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    setSyncState("syncing");
+    setSyncMessage("Refreshing the latest stories in the background...");
+
+    void syncFeed({})
+      .then((result: any) => {
+        if (!active) return;
+
+        if (result?.success) {
+          setSyncState("fresh");
+          if (result.skipped) {
+            setSyncMessage("Feed is already fresh.");
+            return;
+          }
+
+          const providerLabel =
+            result.provider === "the_news_api"
+              ? "The News API"
+              : result.provider === "gnews"
+                ? "GNews"
+                : "your news source";
+          setSyncMessage(`Pulled fresh stories from ${providerLabel}.`);
+          return;
+        }
+
+        setSyncState("error");
+        setSyncMessage("Add THE_NEWS_API_TOKEN or GNEWS_API_KEY to enable live refresh.");
+      })
+      .catch(() => {
+        if (!active) return;
+        setSyncState("error");
+        setSyncMessage("Live refresh failed, showing the latest cached stories instead.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [syncFeed]);
+
+  const latestFetchedAt =
+    articles?.reduce(
+      (latest: number, article: any) => Math.max(latest, article.fetchedAt ?? 0),
+      0
+    ) ?? 0;
 
   return (
     <div className="min-h-full bg-background">
@@ -199,6 +263,25 @@ export default memo(function FeedPage() {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-4 md:py-6">
+        <div className="mb-4 rounded-2xl border bg-card/80 px-4 py-3">
+          <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <RefreshCw
+                className={cn("h-4 w-4", syncState === "syncing" && "animate-spin")}
+              />
+              {syncState === "syncing"
+                ? "Refreshing live feed"
+                : syncState === "error"
+                  ? "Live sync unavailable"
+                  : "Live feed ready"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {syncState === "error" ? syncMessage : formatSyncAge(latestFetchedAt)}
+            </p>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground/80">{syncMessage}</p>
+        </div>
+
         {articles === undefined ? (
           <>
             <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -217,7 +300,8 @@ export default memo(function FeedPage() {
             <Rss className="w-12 h-12 text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground">No articles yet</h3>
             <p className="text-sm text-muted-foreground/60 mt-1 max-w-xs">
-              Articles load automatically every 3 hours once API keys are configured.
+              Open the feed after adding THE_NEWS_API_TOKEN or GNEWS_API_KEY and it will refresh
+              the latest stories automatically.
             </p>
           </div>
         ) : (

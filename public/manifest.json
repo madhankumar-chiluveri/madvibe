@@ -4,6 +4,15 @@
   "description": "AI-Powered Personal Knowledge OS",
   "start_url": "/",
   "display": "standalone",
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait-primary",

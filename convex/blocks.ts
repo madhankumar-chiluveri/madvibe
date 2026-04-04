@@ -5,6 +5,66 @@ import {
   requirePageAccess,
 } from "./workspaceAccess";
 
+function normalizeSharedUrl(rawUrl?: string) {
+  if (!rawUrl) return "";
+  return rawUrl.trim();
+}
+
+function normalizeSharedText(rawText?: string) {
+  if (!rawText) return "";
+  return rawText.replace(/\s+/g, " ").trim();
+}
+
+function truncateSharedText(text: string, maxLength: number) {
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
+}
+
+function buildSharedChecklistText(
+  sharedTitle?: string,
+  sharedText?: string,
+  sharedUrl?: string
+) {
+  const normalizedTitle = normalizeSharedText(sharedTitle);
+  const normalizedText = normalizeSharedText(sharedText);
+  const normalizedUrl = normalizeSharedUrl(sharedUrl);
+  const textWithoutUrl =
+    normalizedUrl && normalizedText
+      ? normalizeSharedText(normalizedText.replace(normalizedUrl, ""))
+      : normalizedText;
+
+  const lead =
+    normalizedTitle ||
+    textWithoutUrl ||
+    (normalizedUrl ? "Review shared link" : "Review shared note");
+
+  return truncateSharedText(
+    normalizedUrl ? `${lead} - ${normalizedUrl}` : lead,
+    420
+  );
+}
+
+function buildSharedChecklistItem(
+  sharedTitle?: string,
+  sharedText?: string,
+  sharedUrl?: string
+) {
+  return {
+    type: "checkListItem",
+    props: {
+      checked: false,
+    },
+    content: [
+      {
+        type: "text",
+        text: buildSharedChecklistText(sharedTitle, sharedText, sharedUrl),
+        styles: {},
+      },
+    ],
+    children: [],
+  };
+}
+
 export const upsert = mutation({
   args: {
     id: v.optional(v.id("blocks")),
@@ -189,5 +249,68 @@ export const replaceAll = mutation({
 
     await ctx.db.patch(args.pageId, { updatedAt: now });
     return true;
+  },
+});
+
+export const appendSharedLinkTodo = mutation({
+  args: {
+    pageId: v.id("pages"),
+    sharedTitle: v.optional(v.string()),
+    sharedText: v.optional(v.string()),
+    sharedUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requirePageAccess(ctx, args.pageId, "editor");
+
+    const now = Date.now();
+    const blocks = await ctx.db
+      .query("blocks")
+      .withIndex("by_pageId", (q) => q.eq("pageId", args.pageId))
+      .collect();
+
+    const primaryBlock = [...blocks]
+      .sort((left, right) => left.sortOrder - right.sortOrder)
+      .find((block) => block.parentBlockId === null);
+
+    const checklistItem = buildSharedChecklistItem(
+      args.sharedTitle,
+      args.sharedText,
+      args.sharedUrl
+    );
+
+    if (!primaryBlock) {
+      await ctx.db.insert("blocks", {
+        pageId: args.pageId,
+        type: "document",
+        content: [checklistItem],
+        parentBlockId: null,
+        sortOrder: 1000,
+        properties: {},
+        updatedAt: now,
+      });
+    } else {
+      let currentContent = Array.isArray(primaryBlock.content)
+        ? primaryBlock.content
+        : [];
+
+      if (!Array.isArray(primaryBlock.content) && typeof primaryBlock.content === "string") {
+        try {
+          const parsedContent = JSON.parse(primaryBlock.content);
+          if (Array.isArray(parsedContent)) {
+            currentContent = parsedContent;
+          }
+        } catch {
+          currentContent = [];
+        }
+      }
+
+      await ctx.db.patch(primaryBlock._id, {
+        content: [...currentContent, checklistItem],
+        updatedAt: now,
+      });
+    }
+
+    await ctx.db.patch(args.pageId, { updatedAt: now });
+    return { pageId: args.pageId, appendedAt: now };
   },
 });

@@ -2,39 +2,81 @@ import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+const newsCategoryValidator = v.union(
+  v.literal("for_you"),
+  v.literal("ai_ml"),
+  v.literal("tech_it"),
+  v.literal("productivity"),
+  v.literal("must_know"),
+  v.literal("general")
+);
+
+const newsSentimentValidator = v.union(
+  v.literal("positive"),
+  v.literal("neutral"),
+  v.literal("negative"),
+  v.literal("mixed")
+);
+
+const newsArticleFields = {
+  title: v.string(),
+  source: v.string(),
+  url: v.string(),
+  summary: v.optional(v.string()),
+  category: newsCategoryValidator,
+  tags: v.optional(v.array(v.string())),
+  relevanceScore: v.optional(v.number()),
+  sentiment: v.optional(newsSentimentValidator),
+  readingTimeMinutes: v.optional(v.number()),
+  isBreaking: v.optional(v.boolean()),
+  publishedAt: v.number(),
+  fetchedAt: v.number(),
+  sourceUrl: v.optional(v.string()),
+  thumbnailUrl: v.optional(v.string()),
+  author: v.optional(v.string()),
+  content: v.optional(v.string()),
+};
+
+function normalizeArticleUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    parsed.searchParams.delete("utm_source");
+    parsed.searchParams.delete("utm_medium");
+    parsed.searchParams.delete("utm_campaign");
+    parsed.searchParams.delete("utm_term");
+    parsed.searchParams.delete("utm_content");
+    parsed.searchParams.delete("fbclid");
+    parsed.searchParams.delete("gclid");
+    parsed.searchParams.delete("ref");
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return url.trim();
+  }
+}
+
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 export const listArticles = query({
   args: {
-    category: v.optional(
-      v.union(
-        v.literal("for_you"),
-        v.literal("ai_ml"),
-        v.literal("tech_it"),
-        v.literal("productivity"),
-        v.literal("must_know"),
-        v.literal("general")
-      )
-    ),
+    category: v.optional(newsCategoryValidator),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 30;
-    let articles;
     if (args.category) {
-      articles = await ctx.db
-        .query("newsArticles")
-        .withIndex("by_category", (q) => q.eq("category", args.category!))
-        .order("desc")
-        .take(limit);
-    } else {
-      articles = await ctx.db
+      return await ctx.db
         .query("newsArticles")
         .withIndex("by_publishedAt")
         .order("desc")
+        .filter((q) => q.eq(q.field("category"), args.category))
         .take(limit);
     }
-    return articles;
+    return await ctx.db
+      .query("newsArticles")
+      .withIndex("by_publishedAt")
+      .order("desc")
+      .take(limit);
   },
 });
 
@@ -295,30 +337,101 @@ export const seedDemoArticles = action({
 });
 
 export const insertArticle = mutation({
-  args: {
-    title: v.string(),
-    source: v.string(),
-    url: v.string(),
-    summary: v.optional(v.string()),
-    category: v.union(
-      v.literal("for_you"), v.literal("ai_ml"), v.literal("tech_it"),
-      v.literal("productivity"), v.literal("must_know"), v.literal("general")
-    ),
-    tags: v.optional(v.array(v.string())),
-    relevanceScore: v.optional(v.number()),
-    sentiment: v.optional(v.union(
-      v.literal("positive"), v.literal("neutral"), v.literal("negative"), v.literal("mixed")
-    )),
-    readingTimeMinutes: v.optional(v.number()),
-    isBreaking: v.optional(v.boolean()),
-    publishedAt: v.number(),
-    fetchedAt: v.number(),
-    sourceUrl: v.optional(v.string()),
-    thumbnailUrl: v.optional(v.string()),
-    author: v.optional(v.string()),
-    content: v.optional(v.string()),
-  },
+  args: newsArticleFields,
   handler: async (ctx, args) => {
     return await ctx.db.insert("newsArticles", args);
+  },
+});
+
+export const bulkUpsertArticles = mutation({
+  args: {
+    articles: v.array(v.object(newsArticleFields)),
+  },
+  handler: async (ctx, args) => {
+    const recentArticles = await ctx.db
+      .query("newsArticles")
+      .withIndex("by_publishedAt")
+      .order("desc")
+      .take(400);
+
+    const existingByUrl = new Map<
+      string,
+      {
+        _id: (typeof recentArticles)[number]["_id"];
+        source: string;
+        title: string;
+        url: string;
+        publishedAt: number;
+        fetchedAt: number;
+      }
+    >(
+      recentArticles.map((article) => [normalizeArticleUrl(article.url), article] as const)
+    );
+    const existingByTitle = new Map<
+      string,
+      {
+        _id: (typeof recentArticles)[number]["_id"];
+        source: string;
+        title: string;
+        url: string;
+        publishedAt: number;
+        fetchedAt: number;
+      }
+    >(
+      recentArticles.map((article) => [
+        `${article.source.toLowerCase()}::${article.title.trim().toLowerCase()}`,
+        article,
+      ] as const)
+    );
+
+    let inserted = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const article of args.articles) {
+      const normalizedUrl = normalizeArticleUrl(article.url);
+      const titleKey = `${article.source.toLowerCase()}::${article.title.trim().toLowerCase()}`;
+      const existing = existingByUrl.get(normalizedUrl) ?? existingByTitle.get(titleKey);
+
+      if (!existing) {
+        const insertedId = await ctx.db.insert("newsArticles", article);
+        const storedArticle = {
+          _id: insertedId,
+          source: article.source,
+          title: article.title,
+          url: article.url,
+          publishedAt: article.publishedAt,
+          fetchedAt: article.fetchedAt,
+        };
+        existingByUrl.set(normalizedUrl, storedArticle);
+        existingByTitle.set(titleKey, storedArticle);
+        inserted++;
+        continue;
+      }
+
+      const incomingIsNewer =
+        article.publishedAt > existing.publishedAt || article.fetchedAt > existing.fetchedAt;
+
+      if (!incomingIsNewer) {
+        skipped++;
+        continue;
+      }
+
+      await ctx.db.patch(existing._id, article);
+
+      const patchedArticle = {
+        _id: existing._id,
+        source: article.source,
+        title: article.title,
+        url: article.url,
+        publishedAt: article.publishedAt,
+        fetchedAt: article.fetchedAt,
+      };
+      existingByUrl.set(normalizedUrl, patchedArticle);
+      existingByTitle.set(titleKey, patchedArticle);
+      updated++;
+    }
+
+    return { inserted, updated, skipped };
   },
 });

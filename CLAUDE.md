@@ -37,6 +37,8 @@ CONVEX_DEPLOYMENT=your-deployment-name
 CONVEX_SITE_URL=https://your-project.convex.site
 AUTH_GOOGLE_ID=your-google-client-id
 AUTH_GOOGLE_SECRET=your-google-client-secret
+THE_NEWS_API_TOKEN=your-the-news-api-token
+GNEWS_API_KEY=your-gnews-api-key
 ```
 
 Google OAuth for Convex/Auth.js uses `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`.
@@ -46,6 +48,7 @@ If Convex is configured with `CUSTOM_AUTH_SITE_URL=https://your-app.vercel.app`,
 The service worker is intentionally limited to same-origin static app assets (`/manifest.json`, `/app-icon.svg`, and `/icons/*`) and should not cache document routes, auth routes, or `_next` assets. Global Google fonts use `display: "swap"` with `preload: false` to avoid noisy unused-preload warnings on auth-first loads.
 
 AI provider API keys (OpenRouter, Anthropic, OpenAI, Google, Groq, Ollama) are stored per-user in the `userSettings` Convex table, not as env vars.
+The FEED module is different: live news ingestion runs on the server via Convex actions and reads `THE_NEWS_API_TOKEN` (preferred) or `GNEWS_API_KEY` from environment variables. Feed sync no longer depends on a Gemini env key.
 
 ---
 
@@ -78,6 +81,7 @@ AI provider API keys (OpenRouter, Anthropic, OpenAI, Google, Groq, Ollama) are s
   feed/                -> AI-categorized news
   ledger/              -> finance tracker
   settings/            -> user settings
+  /share               -> Android PWA share-target capture flow for saving shared links into pages
   trash/               -> deleted items
 ```
 
@@ -89,7 +93,8 @@ Key modules and responsibilities:
 - `maddy.ts` - AI semantic search, embeddings, auto-tagging
 - `aiChat.ts` - chat conversation management
 - `ledger.ts` - finance accounts, transactions, budgets, investments
-- `feed.ts`, `feedSync.ts` - news articles with AI categorization
+- `feed.ts`, `feedSync.ts` - news articles, deduped sync, provider normalization, and live refresh on feed open
+- `blocks.ts` - BlockNote persistence plus shared-link checklist insertion for the PWA share target
 - `reminders.ts`, `habits.ts` - productivity modules
 - `auth.ts`, `auth.config.ts` - Convex Auth integration
 - `crons.ts` - scheduled background jobs
@@ -101,6 +106,8 @@ Finance: `financeAccounts`, `financeCategories`, `financeTransactions`, `finance
 AI: `aiConversations`, `aiMessages`
 Productivity: `habits`, `habitLogs`, `focusSessions`, `reminders`
 News: `newsArticles`, `userNewsInteractions`, `userNewsPreferences`
+Feed sync behavior: `/workspace/feed` triggers a freshness-aware background sync, while `convex/crons.ts` keeps the cache warm every 2 hours. The current provider preference is The News API because it offers real-time top stories, category/source filters, and lower production pricing than NewsAPI; GNews remains a fallback if that token is not configured.
+Share target behavior: the manifest now registers `/share` as an Android Web Share Target entry point. When the installed PWA receives a shared link, the `/share` screen preserves the payload through login, lets the user pick an editable workspace/page, and appends one unchecked checklist item into the selected page via `blocks.appendSharedLinkTodo`. iOS-style global share-sheet support still requires a native Share Extension and is not part of the web app.
 Settings: `userSettings`
 
 ### Path Alias
