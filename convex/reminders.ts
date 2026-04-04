@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireWorkspaceAccess } from "./workspaceAccess";
 
 async function requireUserId(ctx: any) {
   const userId = await getAuthUserId(ctx);
@@ -16,6 +17,7 @@ export const listByWorkspace = query({
   },
   handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
     const reminders = await ctx.db
       .query("reminders")
@@ -40,6 +42,7 @@ export const getSummary = query({
   },
   handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
     const now = args.now ?? Date.now();
 
     const scheduled = await ctx.db
@@ -67,6 +70,7 @@ export const listDue = query({
   },
   handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
     const now = args.now ?? Date.now();
 
     const reminders = await ctx.db
@@ -96,6 +100,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await requireUserId(ctx);
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
     const now = Date.now();
 
     return await ctx.db.insert("reminders", {

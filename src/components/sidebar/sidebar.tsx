@@ -82,8 +82,14 @@ const FEED_PANE_ITEMS = [
 const LEDGER_PANE_ITEMS = [
   { id: "dashboard", label: "Dashboard" },
   { id: "transactions", label: "Transactions" },
-  { id: "budget", label: "Budget" },
+  { id: "credit_cards", label: "Credit Cards" },
+  { id: "loans", label: "Loans & Lending" },
   { id: "investments", label: "Investments" },
+  { id: "budget", label: "Budget" },
+  { id: "goals", label: "Goals" },
+  { id: "recurring", label: "Recurring" },
+  { id: "reports", label: "Reports" },
+  { id: "market", label: "Market" },
 ] as const;
 
 const PANE_DETAILS = {
@@ -1064,7 +1070,7 @@ function ContextPaneFrame({
   const details = PANE_DETAILS[moduleId];
 
   return (
-    <div className="flex h-full flex-col bg-sidebar">
+    <div className="flex h-full min-h-0 flex-col bg-sidebar">
       <div className="border-b border-border/80 px-3 py-3">
         <div className="flex items-center gap-2">
           <UserMenu />
@@ -1090,7 +1096,14 @@ function ContextPaneFrame({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]",
+          mobile && "pb-[calc(5rem+env(safe-area-inset-bottom))]"
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -1330,9 +1343,10 @@ export function MobileWorkspaceContextSheet({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Workspace navigation"
-        className="left-0 top-0 h-[100dvh] w-[min(360px,88vw)] max-w-[88vw] translate-x-0 translate-y-0 rounded-none border-r border-white/10 bg-sidebar p-0 text-zinc-100"
+        hideTitleVisually
+        className="left-0 top-0 h-[100dvh] w-[min(360px,88vw)] max-w-[88vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-r border-white/10 bg-sidebar p-0 text-zinc-100"
       >
-        <div className="h-full">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
           <ContextPaneFrame moduleId={paneModule} mobile>
             {paneModule === "brain" ? (
               resolvedWorkspaceId ? (

@@ -31,6 +31,7 @@ interface TableViewProps {
   rows: any[] | undefined;
   totalRowCount?: number;
   now?: number;
+  editable?: boolean;
   onAddRow: () => Promise<void>;
   onUpdateRow: (rowId: Id<"rows">, data: Record<string, unknown>) => Promise<void>;
   onBatchUpdateRows: (updates: Array<{ rowId: Id<"rows">; data: Record<string, unknown> }>) => Promise<void>;
@@ -49,6 +50,7 @@ export function TableView({
   rows,
   totalRowCount,
   now,
+  editable = true,
   onAddRow,
   onUpdateRow,
   onBatchUpdateRows,
@@ -109,6 +111,7 @@ export function TableView({
   const persistProperties = async (
     updater: (current: PropertySchema[]) => PropertySchema[]
   ) => {
+    if (!editable) return;
     await onUpdateProperties(updater);
   };
 
@@ -131,6 +134,7 @@ export function TableView({
   };
 
   const insertPropertyAt = async (index: number) => {
+    if (!editable) return;
     setNewPropertyLoading(true);
     try {
       await persistProperties((current) => {
@@ -143,6 +147,7 @@ export function TableView({
   };
 
   const handleAddRow = async () => {
+    if (!editable) return;
     setNewRowLoading(true);
     try {
       await onAddRow();
@@ -152,6 +157,7 @@ export function TableView({
   };
 
   const handleCellChange = async (rowId: Id<"rows">, property: PropertySchema, value: unknown) => {
+    if (!editable) return;
     const row = rows?.find((item: any) => item._id === rowId);
     if (!row) return;
 
@@ -177,6 +183,7 @@ export function TableView({
   }, [allRowsSelected, selectedCount]);
 
   const toggleRowSelection = (rowId: Id<"rows">, checked: boolean) => {
+    if (!editable) return;
     setSelectedRowIds((current) => {
       const next = new Set(current);
       if (checked) {
@@ -189,6 +196,7 @@ export function TableView({
   };
 
   const toggleAllVisibleRows = (checked: boolean) => {
+    if (!editable) return;
     setSelectedRowIds(() => {
       if (!checked || !rows) {
         return new Set();
@@ -199,6 +207,7 @@ export function TableView({
   };
 
   const handleApplyPropertyToSelectedRows = async (property: PropertySchema, value: unknown) => {
+    if (!editable) return;
     if (selectedRows.length === 0) {
       return;
     }
@@ -215,6 +224,7 @@ export function TableView({
   };
 
   const handleDeleteSelectedRows = async () => {
+    if (!editable) return;
     if (selectedRows.length === 0) {
       return;
     }
@@ -232,7 +242,7 @@ export function TableView({
   return (
     <div className="database-shell overflow-hidden rounded-[24px] border border-white/8 bg-[#12110f] shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
       <div className="border-b border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-4 py-3">
-        {selectedCount > 0 ? (
+        {editable && selectedCount > 0 ? (
           <DatabaseRowSelectionBar
             properties={properties}
             selectedCount={selectedCount}
@@ -247,17 +257,23 @@ export function TableView({
               <span>{rowCountLabel}</span>
             </div>
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={newPropertyLoading}
-              className="rounded-xl border border-white/8 bg-white/[0.03] text-zinc-100 hover:bg-white/[0.08] hover:text-white"
-              onClick={() => insertPropertyAt(properties.length)}
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              {newPropertyLoading ? "Adding..." : "New property"}
-            </Button>
+            {editable ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={newPropertyLoading}
+                className="rounded-xl border border-white/8 bg-white/[0.03] text-zinc-100 hover:bg-white/[0.08] hover:text-white"
+                onClick={() => void insertPropertyAt(properties.length)}
+              >
+                <Plus className="mr-1.5 h-4 w-4" />
+                {newPropertyLoading ? "Adding..." : "New property"}
+              </Button>
+            ) : (
+              <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+                View only
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -278,16 +294,20 @@ export function TableView({
           <thead className="sticky top-0 z-30 bg-[#12110f]/95 backdrop-blur-md">
             <tr className="h-11 border-b border-white/8">
               <th className="sticky left-0 z-50 border-r border-white/6 bg-[#171614] px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]">
-                <label className="flex h-11 items-center justify-center">
-                  <input
-                    ref={selectAllRef}
-                    type="checkbox"
-                    checked={allRowsSelected}
-                    onChange={(event) => toggleAllVisibleRows(event.target.checked)}
-                    className="h-4 w-4 rounded border-white/15 bg-white/[0.04] accent-white"
-                    aria-label="Select all rows"
-                  />
-                </label>
+                {editable ? (
+                  <label className="flex h-11 items-center justify-center">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={allRowsSelected}
+                      onChange={(event) => toggleAllVisibleRows(event.target.checked)}
+                      className="h-4 w-4 rounded border-white/15 bg-white/[0.04] accent-white"
+                      aria-label="Select all rows"
+                    />
+                  </label>
+                ) : (
+                  <div className="h-11" />
+                )}
               </th>
               {properties.map((property) => {
                 const isFrozen = Boolean(property.config?.frozen);
@@ -306,89 +326,95 @@ export function TableView({
                         "shadow-[1px_0_0_0_rgba(255,255,255,0.06),14px_0_28px_rgba(0,0,0,0.18)]"
                     )}
                   >
-                    <PropertyHeaderMenu
-                      property={property}
-                      onRename={(name) =>
-                        persistProperties((current) =>
-                          current.map((candidate) =>
-                            candidate.id === property.id ? updateProperty(candidate, { name }) : candidate
+                    {editable ? (
+                      <PropertyHeaderMenu
+                        property={property}
+                        onRename={(name) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id ? updateProperty(candidate, { name }) : candidate
+                            )
                           )
-                        )
-                      }
-                      onTypeChange={(type) =>
-                        persistProperties((current) =>
-                          current.map((candidate) =>
-                            candidate.id === property.id
-                              ? updateProperty(candidate, {
-                                  type,
-                                  config:
-                                    type === "title"
-                                      ? { frozen: true, showPageIcon: true }
-                                      : undefined,
-                                })
-                              : candidate
+                        }
+                        onTypeChange={(type) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id
+                                ? updateProperty(candidate, {
+                                    type,
+                                    config:
+                                      type === "title"
+                                        ? { frozen: true, showPageIcon: true }
+                                        : undefined,
+                                  })
+                                : candidate
+                            )
                           )
-                        )
-                      }
-                      onInsertLeft={() => insertPropertyAt(properties.findIndex((item) => item.id === property.id))}
-                      onInsertRight={() =>
-                        insertPropertyAt(properties.findIndex((item) => item.id === property.id) + 1)
-                      }
-                      onMoveLeft={() => void onMoveProperty(property.id, "left")}
-                      onMoveRight={() => void onMoveProperty(property.id, "right")}
-                      canMoveLeft={propertyIndex > 0}
-                      canMoveRight={propertyIndex < properties.length - 1}
-                      onDelete={() =>
-                        persistProperties((current) =>
-                          current.filter((candidate) => candidate.id !== property.id)
-                        )
-                      }
-                      onToggleWrap={(enabled) =>
-                        persistProperties((current) =>
-                          current.map((candidate) =>
-                            candidate.id === property.id
-                              ? updateProperty(candidate, { config: { wrap: enabled } })
-                              : candidate
+                        }
+                        onInsertLeft={() => void insertPropertyAt(properties.findIndex((item) => item.id === property.id))}
+                        onInsertRight={() =>
+                          void insertPropertyAt(properties.findIndex((item) => item.id === property.id) + 1)
+                        }
+                        onMoveLeft={() => void onMoveProperty(property.id, "left")}
+                        onMoveRight={() => void onMoveProperty(property.id, "right")}
+                        canMoveLeft={propertyIndex > 0}
+                        canMoveRight={propertyIndex < properties.length - 1}
+                        onDelete={() =>
+                          persistProperties((current) =>
+                            current.filter((candidate) => candidate.id !== property.id)
                           )
-                        )
-                      }
-                      onToggleFreeze={(enabled) =>
-                        persistProperties((current) =>
-                          current.map((candidate) =>
-                            candidate.id === property.id
-                              ? updateProperty(candidate, { config: { frozen: enabled } })
-                              : candidate
+                        }
+                        onToggleWrap={(enabled) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id
+                                ? updateProperty(candidate, { config: { wrap: enabled } })
+                                : candidate
+                            )
                           )
-                        )
-                      }
-                      onToggleShowPageIcon={(enabled) =>
-                        persistProperties((current) =>
-                          current.map((candidate) =>
-                            candidate.id === property.id
-                              ? updateProperty(candidate, { config: { showPageIcon: enabled } })
-                              : candidate
+                        }
+                        onToggleFreeze={(enabled) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id
+                                ? updateProperty(candidate, { config: { frozen: enabled } })
+                                : candidate
+                            )
                           )
-                        )
-                      }
-                      onSaveOptions={(options: SelectOption[]) =>
-                        persistProperties((current) =>
-                          current.map((candidate) =>
-                            candidate.id === property.id
-                              ? updateProperty(candidate, { config: { options } })
-                              : candidate
+                        }
+                        onToggleShowPageIcon={(enabled) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id
+                                ? updateProperty(candidate, { config: { showPageIcon: enabled } })
+                                : candidate
+                            )
                           )
-                        )
-                      }
-                      onSaveFormula={(formula: FormulaConfig) =>
-                        persistProperties((current) =>
-                          current.map((candidate) =>
-                            candidate.id === property.id
-                              ? updateProperty(candidate, { config: { formula } })
-                              : candidate
+                        }
+                        onSaveOptions={(options: SelectOption[]) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id
+                                ? updateProperty(candidate, { config: { options } })
+                                : candidate
+                            )
                           )
-                        )
-                      }
-                    />
+                        }
+                        onSaveFormula={(formula: FormulaConfig) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id
+                                ? updateProperty(candidate, { config: { formula } })
+                                : candidate
+                            )
+                          )
+                        }
+                      />
+                    ) : (
+                      <div className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left">
+                        <span className="truncate">{property.name || "Untitled"}</span>
+                      </div>
+                    )}
                   </th>
                 );
               })}
@@ -433,15 +459,19 @@ export function TableView({
                       isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-[#12110f] group-hover:bg-[#1a1916]"
                     )}
                   >
-                    <label className="flex min-h-[38px] items-center justify-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(event) => toggleRowSelection(row._id, event.target.checked)}
-                        className="h-4 w-4 rounded border-white/15 bg-white/[0.04] accent-white"
-                        aria-label={`Select row ${titleProperty ? String(row.data?.[titleProperty.id] ?? "Untitled row") : String(row._id)}`}
-                      />
-                    </label>
+                    {editable ? (
+                      <label className="flex min-h-[38px] items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(event) => toggleRowSelection(row._id, event.target.checked)}
+                          className="h-4 w-4 rounded border-white/15 bg-white/[0.04] accent-white"
+                          aria-label={`Select row ${titleProperty ? String(row.data?.[titleProperty.id] ?? "Untitled row") : String(row._id)}`}
+                        />
+                      </label>
+                    ) : (
+                      <div className="min-h-[38px]" />
+                    )}
                   </td>
                   {properties.map((property) => {
                     const isFrozen = Boolean(property.config?.frozen);
@@ -472,7 +502,11 @@ export function TableView({
                           allProperties={properties}
                           now={now}
                           fullWidth
-                          onChange={(nextValue) => handleCellChange(row._id, property, nextValue)}
+                          onChange={
+                            editable
+                              ? (nextValue) => handleCellChange(row._id, property, nextValue)
+                              : undefined
+                          }
                         />
                       </td>
                     );
@@ -501,15 +535,17 @@ export function TableView({
                           sourceUrl: `/workspace/${pageId}`,
                         }}
                       />
-                      <button
-                        type="button"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 opacity-0 transition-all hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
-                        onClick={() => onDeleteRow(row._id)}
-                        title="Delete row"
-                        aria-label="Delete row"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {editable ? (
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 opacity-0 transition-all hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
+                          onClick={() => onDeleteRow(row._id)}
+                          title="Delete row"
+                          aria-label="Delete row"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -520,15 +556,21 @@ export function TableView({
           <tfoot>
             <tr className="h-11 border-t border-white/8 bg-[#151412]">
               <td colSpan={properties.length + 2} className="px-2 py-0">
-                <button
-                  type="button"
-                  className="flex h-9 w-full items-center gap-2 rounded-xl px-3 text-left text-[13px] text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
-                  onClick={handleAddRow}
-                  disabled={newRowLoading}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {newRowLoading ? "Adding row..." : "New row"}
-                </button>
+                {editable ? (
+                  <button
+                    type="button"
+                    className="flex h-9 w-full items-center gap-2 rounded-xl px-3 text-left text-[13px] text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
+                    onClick={() => void handleAddRow()}
+                    disabled={newRowLoading}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {newRowLoading ? "Adding row..." : "New row"}
+                  </button>
+                ) : (
+                  <div className="flex h-9 items-center px-3 text-[13px] text-zinc-500">
+                    View-only access. Editors can add rows and update properties.
+                  </div>
+                )}
               </td>
             </tr>
           </tfoot>

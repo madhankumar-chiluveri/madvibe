@@ -24,6 +24,7 @@ interface BoardViewProps {
   rows: any[] | undefined;
   groupByPropertyId?: string | null;
   now?: number;
+  editable?: boolean;
   onAddRow: (initialData?: Record<string, unknown>) => Promise<void>;
   onUpdateRow: (rowId: Id<"rows">, data: Record<string, unknown>) => Promise<void>;
 }
@@ -37,6 +38,7 @@ export function BoardView({
   rows,
   groupByPropertyId,
   now,
+  editable = true,
   onAddRow,
   onUpdateRow,
 }: BoardViewProps) {
@@ -59,6 +61,7 @@ export function BoardView({
   const noGroupRows = rows?.filter((row: any) => !matchesAnyColumn(row.data?.[groupProperty.id]));
 
   const handleAddCard = async (columnId: string) => {
+    if (!editable) return;
     const initialData = buildInitialRowData(properties);
     initialData[groupProperty.id] = columnId;
     await onAddRow(initialData);
@@ -105,11 +108,14 @@ export function BoardView({
                 rowData={row.data}
                 allProperties={properties}
                 now={now}
-                onChange={(nextValue) =>
-                  onUpdateRow(row._id, {
-                    ...row.data,
-                    [property.id]: normalizeValueForProperty(property, nextValue),
-                  })
+                onChange={
+                  editable
+                    ? (nextValue) =>
+                        onUpdateRow(row._id, {
+                          ...row.data,
+                          [property.id]: normalizeValueForProperty(property, nextValue),
+                        })
+                    : undefined
                 }
               />
             </div>
@@ -162,15 +168,17 @@ export function BoardView({
                     <span className="text-xs text-zinc-500">{columnRows.length}</span>
                   </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/[0.06] hover:text-white"
-                    onClick={() => handleAddCard(column.id)}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
+                  {editable ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                      onClick={() => void handleAddCard(column.id)}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  ) : null}
                 </div>
 
                 <div className="space-y-3 rounded-[18px] bg-[#11100f] p-2">

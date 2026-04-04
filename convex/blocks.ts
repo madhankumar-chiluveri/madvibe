@@ -1,6 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import {
+  requireBlockAccess,
+  requirePageAccess,
+} from "./workspaceAccess";
 
 export const upsert = mutation({
   args: {
@@ -13,10 +16,10 @@ export const upsert = mutation({
     properties: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.pageId, "editor");
 
     if (args.id) {
+      await requireBlockAccess(ctx, args.id, "editor");
       await ctx.db.patch(args.id, {
         type: args.type,
         content: args.content,
@@ -60,13 +63,13 @@ export const bulkUpsert = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.pageId, "editor");
 
     const now = Date.now();
 
     for (const block of args.blocks) {
       if (block.id) {
+        await requireBlockAccess(ctx, block.id, "editor");
         const existing = await ctx.db.get(block.id);
         if (existing) {
           await ctx.db.patch(block.id, {
@@ -99,8 +102,7 @@ export const bulkUpsert = mutation({
 export const remove = mutation({
   args: { id: v.id("blocks") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireBlockAccess(ctx, args.id, "editor");
 
     // Recursively delete children
     const children = await ctx.db
@@ -122,8 +124,7 @@ export const reorder = mutation({
     orderedIds: v.array(v.id("blocks")),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.pageId, "editor");
 
     for (let i = 0; i < args.orderedIds.length; i++) {
       await ctx.db.patch(args.orderedIds[i], {
@@ -137,6 +138,8 @@ export const reorder = mutation({
 export const listByPage = query({
   args: { pageId: v.id("pages") },
   handler: async (ctx, args) => {
+    await requirePageAccess(ctx, args.pageId, "viewer");
+
     return await ctx.db
       .query("blocks")
       .withIndex("by_pageId", (q) => q.eq("pageId", args.pageId))
@@ -158,8 +161,7 @@ export const replaceAll = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.pageId, "editor");
 
     // Delete existing blocks
     const existing = await ctx.db

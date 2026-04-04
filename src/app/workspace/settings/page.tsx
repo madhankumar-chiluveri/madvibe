@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { useAppStore } from "@/store/app.store";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { AppIcon } from "@/components/ui/app-icon";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn, ACCENT_COLORS } from "@/lib/utils";
 import {
   Palette,
@@ -28,12 +37,15 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Trash2,
+  UserPlus,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 
-type Section = "appearance" | "maddy" | "keyboard" | "account";
+type Section = "appearance" | "workspace" | "maddy" | "keyboard" | "account";
 
 export default function SettingsPage() {
   const { signOut } = useAuthActions();
@@ -51,9 +63,28 @@ export default function SettingsPage() {
     setGeminiApiKey,
   } = useAppStore();
   const { setTheme: setNextTheme } = useTheme();
+  const { currentWorkspace, resolvedWorkspaceId } = useResolvedWorkspace();
 
   const updateSettings = useMutation(api.workspaces.updateSettings);
   const user = useQuery(api.workspaces.getCurrentUser);
+  const workspaceAccess = useQuery(
+    api.workspaces.getWorkspaceAccess,
+    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
+  );
+  const workspaceMembers = useQuery(
+    api.workspaces.listWorkspaceMembers,
+    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
+  );
+  const workspaceInvites = useQuery(
+    api.workspaces.listWorkspaceInvites,
+    resolvedWorkspaceId && workspaceAccess?.canManageMembers
+      ? { workspaceId: resolvedWorkspaceId }
+      : "skip"
+  );
+  const inviteToWorkspace = useMutation(api.workspaces.inviteToWorkspace);
+  const updateWorkspaceMemberRole = useMutation(api.workspaces.updateWorkspaceMemberRole);
+  const removeWorkspaceMember = useMutation(api.workspaces.removeWorkspaceMember);
+  const cancelWorkspaceInvite = useMutation(api.workspaces.cancelWorkspaceInvite);
   const authStatus = useQuery((api as any).accountConversion.getCurrentAuthStatus);
   const convertPasswordAccountToGoogle = useAction(
     (api as any).accountConversion.convertPasswordAccountToGoogle
@@ -64,6 +95,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [conversionPassword, setConversionPassword] = useState("");
   const [authAction, setAuthAction] = useState<"start-google" | "finish-google" | null>(null);
+  const [shareEmail, setShareEmail] = useState("");
+  const [shareRole, setShareRole] = useState<"editor" | "viewer">("editor");
+  const [workspaceAction, setWorkspaceAction] = useState<string | null>(null);
 
   const handleThemeChange = (t: Theme) => {
     setTheme(t);
@@ -111,8 +145,95 @@ export default function SettingsPage() {
     }
   };
 
-  const navItems: { id: Section; label: string; icon: React.ReactNode }[] = [
+  const handleInviteMember = async () => {
+    if (!resolvedWorkspaceId || !workspaceAccess?.canManageMembers || workspaceAction) return;
+
+    const email = shareEmail.trim();
+    if (!email) {
+      toast.error("Enter an email address");
+      return;
+    }
+
+    setWorkspaceAction("invite");
+    try {
+      const result = await inviteToWorkspace({
+        workspaceId: resolvedWorkspaceId,
+        email,
+        role: shareRole,
+      });
+      setShareEmail("");
+      toast.success(
+        result.status === "created_invite"
+          ? "Invite created"
+          : result.status === "updated_member"
+            ? "Member access updated"
+            : "Member added"
+      );
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not share this workspace");
+    } finally {
+      setWorkspaceAction(null);
+    }
+  };
+
+  const handleUpdateMemberRole = async (
+    memberUserId: string,
+    role: "editor" | "viewer"
+  ) => {
+    if (!resolvedWorkspaceId || workspaceAction) return;
+
+    setWorkspaceAction(`member:${memberUserId}`);
+    try {
+      await updateWorkspaceMemberRole({
+        workspaceId: resolvedWorkspaceId,
+        memberUserId,
+        role,
+      });
+      toast.success("Member role updated");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not update member role");
+    } finally {
+      setWorkspaceAction(null);
+    }
+  };
+
+  const handleRemoveMember = async (memberUserId: string) => {
+    if (!resolvedWorkspaceId || workspaceAction) return;
+
+    setWorkspaceAction(`remove:${memberUserId}`);
+    try {
+      await removeWorkspaceMember({
+        workspaceId: resolvedWorkspaceId,
+        memberUserId,
+      });
+      toast.success("Member removed");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not remove member");
+    } finally {
+      setWorkspaceAction(null);
+    }
+  };
+
+  const handleCancelInvite = async (inviteId: Id<"workspaceInvites">) => {
+    if (!resolvedWorkspaceId || workspaceAction) return;
+
+    setWorkspaceAction(`invite:${inviteId}`);
+    try {
+      await cancelWorkspaceInvite({
+        workspaceId: resolvedWorkspaceId,
+        inviteId,
+      });
+      toast.success("Invite cancelled");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not cancel invite");
+    } finally {
+      setWorkspaceAction(null);
+    }
+  };
+
+  const navItems: { id: Section; label: string; icon: ReactNode }[] = [
     { id: "appearance", label: "Appearance", icon: <Palette className="w-4 h-4" /> },
+    { id: "workspace", label: "Workspace", icon: <Users className="w-4 h-4" /> },
     { id: "maddy", label: "Maddy AI", icon: <AppIcon className="w-4 h-4 rounded-md" /> },
     { id: "keyboard", label: "Shortcuts", icon: <Keyboard className="w-4 h-4" /> },
     { id: "account", label: "Account", icon: <Shield className="w-4 h-4" /> },
@@ -177,7 +298,7 @@ export default function SettingsPage() {
                         { value: "light", icon: <Sun className="w-4 h-4" />, label: "Light" },
                         { value: "dark", icon: <Moon className="w-4 h-4" />, label: "Dark" },
                         { value: "system", icon: <Monitor className="w-4 h-4" />, label: "System" },
-                      ] as { value: Theme; icon: React.ReactNode; label: string }[]
+                      ] as { value: Theme; icon: ReactNode; label: string }[]
                     ).map((t) => (
                       <button
                         key={t.value}
@@ -264,6 +385,211 @@ export default function SettingsPage() {
             )}
 
             {/* ── Maddy AI ── */}
+            {section === "workspace" && (
+              <SettingSection
+                title="Workspace collaboration"
+                description="Share the current workspace so other accounts can open the same spaces, pages, comments, and databases with real-time sync."
+              >
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {currentWorkspace?.name ?? "Workspace"}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {workspaceAccess?.role === "owner"
+                            ? `You own this workspace${workspaceAccess.workspace.memberCount ? ` · ${workspaceAccess.workspace.memberCount} members` : ""}`
+                            : `You have ${workspaceAccess?.role ?? "viewer"} access to this shared workspace`}
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em]",
+                          workspaceAccess?.role === "owner" && "border-emerald-500/20 bg-emerald-500/6 text-emerald-600",
+                          workspaceAccess?.role === "editor" && "border-sky-500/20 bg-sky-500/6 text-sky-600",
+                          workspaceAccess?.role === "viewer" && "border-border bg-background text-muted-foreground"
+                        )}
+                      >
+                        {workspaceAccess?.role ?? "owner"}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                      Collaboration currently applies to shared workspace content. Personal modules like Ledger, habits, feed preferences, and account settings still stay private for each signed-in user.
+                    </p>
+                  </div>
+
+                  {workspaceAccess?.canManageMembers ? (
+                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                      <div className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-sm font-medium">Invite someone</p>
+                      </div>
+                      <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px_auto]">
+                        <Input
+                          value={shareEmail}
+                          onChange={(event) => setShareEmail(event.target.value)}
+                          placeholder="name@example.com"
+                          type="email"
+                        />
+                        <Select
+                          value={shareRole}
+                          onValueChange={(value: "editor" | "viewer") => setShareRole(value)}
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="editor">Editor</SelectItem>
+                            <SelectItem value="viewer">Viewer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          onClick={() => void handleInviteMember()}
+                          disabled={workspaceAction !== null}
+                          className="h-10"
+                        >
+                          {workspaceAction === "invite" ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : null}
+                          Share
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+                      Only the workspace owner can invite people or change roles. Your current access is {workspaceAccess?.role ?? "viewer"}.
+                    </div>
+                  )}
+
+                  <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                    <p className="text-sm font-medium">Members</p>
+                    <div className="mt-3 space-y-3">
+                      {workspaceMembers === undefined ? (
+                        <div className="text-sm text-muted-foreground">Loading members...</div>
+                      ) : workspaceMembers.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">No members yet.</div>
+                      ) : (
+                        workspaceMembers.map((member: any) => {
+                          const isRoleUpdating = workspaceAction === `member:${member.userId}`;
+                          const isRemoving = workspaceAction === `remove:${member.userId}`;
+
+                          return (
+                            <div
+                              key={`${member.userId}:${member.role}`}
+                              className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 sm:flex-row sm:items-center"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="truncate text-sm font-medium">
+                                    {member.name}
+                                  </p>
+                                  {member.isCurrentUser ? (
+                                    <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                                      You
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {member.email ?? "No email"}
+                                </p>
+                              </div>
+
+                              {member.role === "owner" ? (
+                                <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/6 px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-emerald-600">
+                                  Owner
+                                </span>
+                              ) : workspaceAccess?.canManageMembers ? (
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                  <Select
+                                    value={member.role}
+                                    onValueChange={(value: "editor" | "viewer") =>
+                                      void handleUpdateMemberRole(member.userId, value)
+                                    }
+                                    disabled={workspaceAction !== null}
+                                  >
+                                    <SelectTrigger className="h-9 w-[130px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="editor">Editor</SelectItem>
+                                      <SelectItem value="viewer">Viewer</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    disabled={workspaceAction !== null}
+                                    onClick={() => void handleRemoveMember(member.userId)}
+                                  >
+                                    {isRoleUpdating || isRemoving ? (
+                                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="mr-1.5 h-4 w-4" />
+                                    )}
+                                    Remove
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full border border-border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                                  {member.role}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {workspaceAccess?.canManageMembers ? (
+                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                      <p className="text-sm font-medium">Pending invites</p>
+                      <div className="mt-3 space-y-3">
+                        {workspaceInvites === undefined ? (
+                          <div className="text-sm text-muted-foreground">Loading invites...</div>
+                        ) : workspaceInvites.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">No pending invites.</div>
+                        ) : (
+                          workspaceInvites.map((invite: any) => (
+                            <div
+                              key={invite._id}
+                              className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 sm:flex-row sm:items-center"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{invite.email}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Pending {invite.role} invite
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                disabled={workspaceAction !== null}
+                                onClick={() => void handleCancelInvite(invite._id)}
+                              >
+                                {workspaceAction === `invite:${invite._id}` ? (
+                                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="mr-1.5 h-4 w-4" />
+                                )}
+                                Cancel invite
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </SettingSection>
+            )}
+
             {section === "maddy" && (
               <>
                 <SettingSection title="Enable Maddy AI">
@@ -526,7 +852,7 @@ function SettingSection({
 }: {
   title: string;
   description?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="space-y-3">
@@ -546,7 +872,7 @@ function AuthMethodBadge({
   children,
 }: {
   active: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <span

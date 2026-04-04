@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action, internalMutation, query } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requirePageAccess, requireWorkspaceAccess } from "./workspaceAccess";
 
 type MaddyPagePreview = {
   title: string;
@@ -688,8 +689,7 @@ export const getRelatedPages = action({
 export const getPageForMaddy = query({
   args: { pageId: v.id("pages") },
   handler: async (ctx, args): Promise<MaddyPagePreview | null> => {
-    const page = await ctx.db.get(args.pageId);
-    if (!page) return null;
+    const { page } = await requirePageAccess(ctx, args.pageId, "viewer");
 
     const blocks = await ctx.db
       .query("blocks")
@@ -770,6 +770,7 @@ export const upsertEmbedding = internalMutation({
 export const getEmbedding = query({
   args: { pageId: v.id("pages") },
   handler: async (ctx, args): Promise<any | null> => {
+    await requirePageAccess(ctx, args.pageId, "viewer");
     return await ctx.db
       .query("maddyEmbeddings")
       .withIndex("by_pageId", (q) => q.eq("pageId", args.pageId))
@@ -783,6 +784,7 @@ export const getPagesByEmbeddingIds = query({
     workspaceId: v.id("workspaces"),
   },
   handler: async (ctx, args): Promise<any[]> => {
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
     const results: any[] = [];
     for (const embId of args.embeddingIds) {
       const emb = await ctx.db.get(embId);

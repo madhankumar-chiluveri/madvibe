@@ -52,6 +52,7 @@ export function BlockNoteEditor({
   const blockId = useRef<Id<"blocks"> | null>(null);
   const hasPendingSave = useRef(false);
   const mountedPageId = useRef<string>(pageId);
+  const lastRemoteSnapshot = useRef<string | null>(null);
 
   // true = show shimmer, false = show editor
   const [isLoadingContent, setIsLoadingContent] = useState(true);
@@ -74,6 +75,7 @@ export function BlockNoteEditor({
     isInitialized.current = false;
     blockId.current = null;
     hasPendingSave.current = false;
+    lastRemoteSnapshot.current = null;
     setSaveStatus("idle");
     setDirty(false);
     // Show shimmer while new page's blocks load
@@ -82,28 +84,51 @@ export function BlockNoteEditor({
 
   // ── Load content once blocks arrive ──────────────────────────────────────
   useEffect(() => {
-    if (!blocks || isInitialized.current) return;
-    isInitialized.current = true;
+    if (!blocks) return;
 
-    if (blocks.length > 0) {
-      blockId.current = blocks[0]._id;
-      try {
-        let blockContent = blocks[0]?.content;
-        if (typeof blockContent === "string") {
-          blockContent = JSON.parse(blockContent);
-        }
-        if (blockContent && Array.isArray(blockContent)) {
-          editor.replaceBlocks(editor.document, blockContent as any);
-        }
-      } catch (e) {
-        // Silently fall back to empty editor
+    const primaryBlock = blocks[0] ?? null;
+    blockId.current = primaryBlock?._id ?? null;
+
+    let nextRemoteContent: unknown[] = [];
+    try {
+      let blockContent = primaryBlock?.content;
+      if (typeof blockContent === "string") {
+        blockContent = JSON.parse(blockContent);
       }
+      if (Array.isArray(blockContent)) {
+        nextRemoteContent = blockContent;
+      }
+    } catch {
+      nextRemoteContent = [];
     }
 
-    // Brief delay lets BlockNote finish rendering before we reveal it
-    const t = setTimeout(() => setIsLoadingContent(false), 60);
-    return () => clearTimeout(t);
-  }, [blocks, editor]);
+    const remoteSnapshot = JSON.stringify(sanitizeForConvex(nextRemoteContent));
+    const previousRemoteSnapshot = lastRemoteSnapshot.current;
+    lastRemoteSnapshot.current = remoteSnapshot;
+
+    if (!isInitialized.current) {
+      isInitialized.current = true;
+      if (nextRemoteContent.length > 0) {
+        editor.replaceBlocks(editor.document, nextRemoteContent as any);
+      }
+
+      const t = setTimeout(() => setIsLoadingContent(false), 60);
+      return () => clearTimeout(t);
+    }
+
+    if (remoteSnapshot === previousRemoteSnapshot || hasPendingSave.current) {
+      return;
+    }
+
+    const editorSnapshot = JSON.stringify(sanitizeForConvex(editor.document));
+    if (editorSnapshot === remoteSnapshot) {
+      return;
+    }
+
+    editor.replaceBlocks(editor.document, nextRemoteContent as any);
+    setDirty(false);
+    setSaveStatus("idle");
+  }, [blocks, editor, setDirty, setSaveStatus]);
 
   // ── beforeunload guard ────────────────────────────────────────────────────
   useEffect(() => {

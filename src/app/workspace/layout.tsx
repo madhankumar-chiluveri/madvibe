@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
+import { cn } from "@/lib/utils";
 
 // Heavy components loaded after first paint — framer-motion, reminder logic, etc.
 const MaddyPanel = dynamic(
@@ -37,7 +38,9 @@ export default function WorkspaceLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   useResolvedWorkspace();
+  const showMobileNav = pathname !== "/workspace/ai";
 
   // Prefetch all primary routes on mount so navigation feels instant
   useEffect(() => {
@@ -50,7 +53,12 @@ export default function WorkspaceLayout({
       <Sidebar />
 
       {/* Main content - add bottom padding on mobile for nav bar */}
-      <main className="relative flex-1 overflow-y-auto min-w-0 pb-16 md:pb-0">
+      <main
+        className={cn(
+          "relative min-w-0 flex-1 overflow-y-auto md:pb-0",
+          showMobileNav ? "pb-16" : "pb-0"
+        )}
+      >
         {children}
       </main>
 
@@ -62,7 +70,7 @@ export default function WorkspaceLayout({
       <ReminderNotificationBridge />
 
       {/* Mobile bottom nav - hidden on desktop */}
-      <MobileNav />
+      {showMobileNav ? <MobileNav /> : null}
     </div>
   );
 }

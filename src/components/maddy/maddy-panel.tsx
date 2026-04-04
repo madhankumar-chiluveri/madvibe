@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   Check,
   CircleAlert,
   Clock3,
@@ -40,6 +41,7 @@ import { useAppStore, type MaddyProvider } from "@/store/app.store";
 
 const PANEL_EASE = [0.22, 1, 0.36, 1] as const;
 const MAX_HISTORY_ITEMS = 14;
+type MaddySurfaceMode = "overlay" | "page";
 
 type ModelOption = {
   id: string;
@@ -205,12 +207,17 @@ function EmptyState({
   );
 }
 
-function MaddyPanelSurface() {
+function MaddyPanelSurface({
+  mode = "overlay",
+  onDismiss,
+}: {
+  mode?: MaddySurfaceMode;
+  onDismiss: () => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
   const {
-    closeMaddyPanel,
     geminiApiKey,
     openaiApiKey,
     anthropicApiKey,
@@ -230,6 +237,7 @@ function MaddyPanelSurface() {
 
   const pageId = params?.pageId as Id<"pages"> | undefined;
   const currentModule = formatRouteModule(pathname);
+  const isPageMode = mode === "page";
 
   const [selectedConversationId, setSelectedConversationId] =
     useState<Id<"aiConversations"> | null>(null);
@@ -301,11 +309,11 @@ function MaddyPanelSurface() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeMaddyPanel();
+      if (event.key === "Escape") onDismiss();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeMaddyPanel]);
+  }, [onDismiss]);
 
   useEffect(() => {
     if (selectedConversationId) {
@@ -435,11 +443,32 @@ function MaddyPanelSurface() {
     }
   };
 
+  const handleOpenSettings = () => {
+    setSettingsOpen(false);
+    if (!isPageMode) {
+      onDismiss();
+    }
+    router.push("/workspace/settings");
+  };
+
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),rgba(255,255,255,0.015)_36%),linear-gradient(180deg,#131211_0%,#0f0e0d_100%)] text-zinc-100">
+    <div
+      className="flex h-full flex-col overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.07),rgba(255,255,255,0.015)_36%),linear-gradient(180deg,#131211_0%,#0f0e0d_100%)] text-zinc-100"
+      style={isPageMode ? { paddingTop: "env(safe-area-inset-top)" } : undefined}
+    >
       <div className="border-b border-white/8 px-3.5 pb-3 pt-3.5 shadow-[inset_0_-1px_0_rgba(255,255,255,0.03)]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex items-center gap-2.5">
+            {isPageMode ? (
+              <button
+                type="button"
+                aria-label="Back"
+                onClick={onDismiss}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-300 transition-all hover:border-white/16 hover:bg-white/[0.06] hover:text-white"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.13),rgba(255,255,255,0.03)_62%)] shadow-[0_14px_28px_rgba(0,0,0,0.22)]">
               <AppIcon className="h-5 w-5 rounded-xl" />
             </div>
@@ -459,7 +488,10 @@ function MaddyPanelSurface() {
                   <History className="h-3.5 w-3.5" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-[320px] border-white/10 bg-[#181715] p-2.5">
+              <PopoverContent
+                align="end"
+                className="w-80 max-w-[calc(100vw-1rem)] border-white/10 bg-[#181715] p-2.5"
+              >
                 <div className="mb-2 px-1">
                   <div className="text-sm font-semibold text-white">History</div>
                   <div className="text-[11px] text-zinc-500">Recent chats across your workspace</div>
@@ -536,7 +568,10 @@ function MaddyPanelSurface() {
                   <Settings2 className="h-3.5 w-3.5" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-[360px] border-white/10 bg-[#181715] p-3">
+              <PopoverContent
+                align="end"
+                className="w-[22.5rem] max-w-[calc(100vw-1rem)] border-white/10 bg-[#181715] p-3"
+              >
                 <div className="mb-3">
                   <div className="text-sm font-semibold text-white">Model access</div>
                   <div className="mt-1 text-[11px] leading-5 text-zinc-500">
@@ -576,11 +611,7 @@ function MaddyPanelSurface() {
                   <button
                     type="button"
                     className="text-zinc-300 transition-colors hover:text-white"
-                    onClick={() => {
-                      setSettingsOpen(false);
-                      closeMaddyPanel();
-                      router.push("/workspace/settings");
-                    }}
+                    onClick={handleOpenSettings}
                   >
                     Open settings
                   </button>
@@ -619,14 +650,16 @@ function MaddyPanelSurface() {
               <Plus className="h-3.5 w-3.5" />
             </button>
 
-            <button
-              type="button"
-              aria-label="Close Maddy AI"
-              onClick={closeMaddyPanel}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-300 transition-all hover:border-white/16 hover:bg-white/[0.06] hover:text-white"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            {!isPageMode ? (
+              <button
+                type="button"
+                aria-label="Close Maddy AI"
+                onClick={onDismiss}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-300 transition-all hover:border-white/16 hover:bg-white/[0.06] hover:text-white"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -667,7 +700,14 @@ function MaddyPanelSurface() {
         )}
       </div>
 
-      <div className="border-t border-white/8 px-3.5 py-3.5">
+      <div
+        className="border-t border-white/8 px-3.5 py-3.5"
+        style={
+          isPageMode
+            ? { paddingBottom: "calc(env(safe-area-inset-bottom) + 0.875rem)" }
+            : undefined
+        }
+      >
         <div className="rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <textarea
             value={input}
@@ -683,10 +723,10 @@ function MaddyPanelSurface() {
             className="min-h-[62px] w-full resize-none bg-transparent text-sm leading-6 text-white outline-none placeholder:text-zinc-500"
           />
 
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
               <Select value={selectedModelId} onValueChange={handleModelChange}>
-                <SelectTrigger className="h-8 w-[188px] rounded-full border-white/10 bg-white/[0.04] px-3 text-xs text-zinc-200 shadow-none focus:ring-0">
+                <SelectTrigger className="h-8 w-full rounded-full border-white/10 bg-white/[0.04] px-3 text-xs text-zinc-200 shadow-none focus:ring-0 sm:w-[188px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-white/10 bg-[#1a1917] text-zinc-100">
@@ -701,7 +741,7 @@ function MaddyPanelSurface() {
                         <div className="flex flex-col">
                           <span>{option.label}</span>
                           <span className="text-[11px] text-zinc-500">
-                            {providerLabel(option.provider)} · {hasKey ? option.helper : "Add key in settings"}
+                            {providerLabel(option.provider)} - {hasKey ? option.helper : "Add key in settings"}
                           </span>
                         </div>
                       </SelectItem>
@@ -710,7 +750,7 @@ function MaddyPanelSurface() {
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+              <div className="hidden items-center gap-1.5 text-[11px] text-zinc-500 sm:flex">
                 <Clock3 className="h-3.5 w-3.5" />
                 Enter to send
               </div>
@@ -721,7 +761,7 @@ function MaddyPanelSurface() {
               onClick={() => void handleSend()}
               disabled={loading || !input.trim() || !activeApiKey}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full transition-all",
+                "flex h-10 w-10 self-end items-center justify-center rounded-full transition-all sm:h-9 sm:w-9 sm:self-auto",
                 loading || !input.trim() || !activeApiKey
                   ? "cursor-not-allowed bg-white/[0.05] text-zinc-600"
                   : "bg-white text-black shadow-[0_16px_34px_rgba(255,255,255,0.12)] hover:scale-[1.02]"
@@ -732,6 +772,14 @@ function MaddyPanelSurface() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function MaddyScreen({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="h-full min-h-full overflow-hidden bg-[#12110f]">
+      <MaddyPanelSurface mode="page" onDismiss={onDismiss} />
     </div>
   );
 }
@@ -768,7 +816,7 @@ export function MaddyPanel() {
               exit={{ x: "110%", opacity: 0.92 }}
               transition={{ duration: 0.34, ease: PANEL_EASE }}
             >
-              <MaddyPanelSurface />
+              <MaddyPanelSurface mode="overlay" onDismiss={closeMaddyPanel} />
             </motion.aside>
           </motion.div>
         </>

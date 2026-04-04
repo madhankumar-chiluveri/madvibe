@@ -53,6 +53,23 @@ type CreateWorkspaceDialogProps = {
   onCreated?: (workspaceId: Id<"workspaces">) => void;
 };
 
+function WorkspaceRoleBadge({ role }: { role?: "owner" | "editor" | "viewer" | null }) {
+  const normalizedRole = role ?? "owner";
+
+  return (
+    <span
+      className={cn(
+        "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+        normalizedRole === "owner" && "border-emerald-400/16 bg-emerald-400/[0.08] text-emerald-200",
+        normalizedRole === "editor" && "border-sky-400/16 bg-sky-400/[0.08] text-sky-200",
+        normalizedRole === "viewer" && "border-white/10 bg-white/[0.04] text-zinc-400"
+      )}
+    >
+      {normalizedRole}
+    </span>
+  );
+}
+
 function getWorkspaceInitial(name?: string | null) {
   return (name?.trim().slice(0, 1) || "W").toUpperCase();
 }
@@ -220,6 +237,7 @@ export function WorkspaceSwitcherContent({
   const { theme, setTheme } = useTheme();
   const setCurrentWorkspaceId = useAppStore((state) => state.setCurrentWorkspaceId);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [inviteActionId, setInviteActionId] = useState<string | null>(null);
   const {
     currentWorkspace,
     resolvedWorkspaceId,
@@ -228,6 +246,9 @@ export function WorkspaceSwitcherContent({
   } = useResolvedWorkspace();
 
   const user = useQuery(api.workspaces.getCurrentUser);
+  const pendingInvites = useQuery(api.workspaces.listMyWorkspaceInvites) ?? [];
+  const acceptWorkspaceInvite = useMutation(api.workspaces.acceptWorkspaceInvite);
+  const declineWorkspaceInvite = useMutation(api.workspaces.declineWorkspaceInvite);
 
   const currentUser = user as
     | {
@@ -251,6 +272,36 @@ export function WorkspaceSwitcherContent({
   const handleOpenSettings = () => {
     onClose?.();
     router.push("/workspace/settings");
+  };
+
+  const handleAcceptInvite = async (inviteId: Id<"workspaceInvites">) => {
+    if (inviteActionId) return;
+
+    setInviteActionId(String(inviteId));
+    try {
+      const workspaceId = await acceptWorkspaceInvite({ inviteId });
+      setCurrentWorkspaceId(workspaceId);
+      toast.success("Workspace added");
+      onClose?.();
+      router.push(getWorkspaceSwitchTarget(pathname));
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not accept the invite");
+      setInviteActionId(null);
+    }
+  };
+
+  const handleDeclineInvite = async (inviteId: Id<"workspaceInvites">) => {
+    if (inviteActionId) return;
+
+    setInviteActionId(String(inviteId));
+    try {
+      await declineWorkspaceInvite({ inviteId });
+      toast.success("Invite declined");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not decline the invite");
+    } finally {
+      setInviteActionId(null);
+    }
   };
 
   const handleToggleTheme = () => {
@@ -287,11 +338,68 @@ export function WorkspaceSwitcherContent({
               {workspaceCount === 1 ? "1 workspace" : `${workspaceCount} workspaces`}
             </p>
           </div>
+          <WorkspaceRoleBadge role={(currentWorkspace as any)?.role ?? "owner"} />
         </div>
         <p className="mt-3 truncate text-xs text-muted-foreground">
           {currentUser?.email ?? displayName}
         </p>
       </div>
+
+      {pendingInvites.length > 0 ? (
+        <div className="border-b border-border/70 px-2 py-2">
+          <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Invites
+          </div>
+
+          <div className="space-y-2 px-2 pb-1">
+            {pendingInvites.map((invite: any) => {
+              const isPending = inviteActionId === String(invite._id);
+
+              return (
+                <div
+                  key={invite._id}
+                  className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-foreground">
+                        {invite.workspaceName}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Invited by {invite.ownerName}
+                      </div>
+                    </div>
+                    <WorkspaceRoleBadge role={invite.role} />
+                  </div>
+
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 flex-1 rounded-xl"
+                      disabled={inviteActionId !== null}
+                      onClick={() => void handleAcceptInvite(invite._id)}
+                    >
+                      {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                      Join
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 flex-1 rounded-xl"
+                      disabled={inviteActionId !== null}
+                      onClick={() => void handleDeclineInvite(invite._id)}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div className="px-2 py-2">
         <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -328,7 +436,13 @@ export function WorkspaceSwitcherContent({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{workspace.name}</div>
+                    <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                      {(workspace as any).role === "owner"
+                        ? `${(workspace as any).memberCount ?? 1} member${(workspace as any).memberCount === 1 ? "" : "s"}`
+                        : `Shared by ${(workspace as any).ownerName ?? "workspace owner"}`}
+                    </div>
                   </div>
+                  <WorkspaceRoleBadge role={(workspace as any).role ?? "owner"} />
                   <Check
                     className={cn(
                       "h-4 w-4 shrink-0 transition-opacity",

@@ -1,6 +1,12 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import {
+  requireDatabaseAccess,
+  requirePageAccess,
+  requireRowAccess,
+  requireViewAccess,
+  requireWorkspaceAccess,
+} from "./workspaceAccess";
 
 const viewTypeValidator = v.union(
   v.literal("table"),
@@ -20,8 +26,7 @@ export const create = mutation({
     properties: v.array(v.any()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.pageId, "editor");
 
     const databaseId = await ctx.db.insert("databases", {
       pageId: args.pageId,
@@ -52,6 +57,8 @@ export const create = mutation({
 export const getByPage = query({
   args: { pageId: v.id("pages") },
   handler: async (ctx, args) => {
+    await requirePageAccess(ctx, args.pageId, "viewer");
+
     return await ctx.db
       .query("databases")
       .withIndex("by_pageId", (q) => q.eq("pageId", args.pageId))
@@ -62,6 +69,7 @@ export const getByPage = query({
 export const get = query({
   args: { id: v.id("databases") },
   handler: async (ctx, args) => {
+    await requireDatabaseAccess(ctx, args.id, "viewer");
     return await ctx.db.get(args.id);
   },
 });
@@ -72,8 +80,7 @@ export const updateProperties = mutation({
     properties: v.array(v.any()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireDatabaseAccess(ctx, args.id, "editor");
     await ctx.db.patch(args.id, { properties: args.properties });
   },
 });
@@ -83,6 +90,8 @@ export const updateProperties = mutation({
 export const listRows = query({
   args: { databaseId: v.id("databases") },
   handler: async (ctx, args) => {
+    await requireDatabaseAccess(ctx, args.databaseId, "viewer");
+
     return await ctx.db
       .query("rows")
       .withIndex("by_databaseId", (q) => q.eq("databaseId", args.databaseId))
@@ -99,8 +108,7 @@ export const addRow = mutation({
     pageId: v.optional(v.union(v.id("pages"), v.null())),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireDatabaseAccess(ctx, args.databaseId, "editor");
 
     const siblings = await ctx.db
       .query("rows")
@@ -125,8 +133,7 @@ export const updateRow = mutation({
     data: v.any(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireRowAccess(ctx, args.id, "editor");
     await ctx.db.patch(args.id, { data: args.data });
   },
 });
@@ -134,8 +141,7 @@ export const updateRow = mutation({
 export const deleteRow = mutation({
   args: { id: v.id("rows") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireRowAccess(ctx, args.id, "editor");
     await ctx.db.delete(args.id);
   },
 });
@@ -155,8 +161,7 @@ export const replaceRows = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireDatabaseAccess(ctx, args.databaseId, "editor");
 
     const existingRows = await ctx.db
       .query("rows")
@@ -182,6 +187,8 @@ export const replaceRows = mutation({
 export const listViews = query({
   args: { databaseId: v.id("databases") },
   handler: async (ctx, args) => {
+    await requireDatabaseAccess(ctx, args.databaseId, "viewer");
+
     return await ctx.db
       .query("views")
       .withIndex("by_databaseId", (q) => q.eq("databaseId", args.databaseId))
@@ -196,8 +203,7 @@ export const createView = mutation({
     type: viewTypeValidator,
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireDatabaseAccess(ctx, args.databaseId, "editor");
 
     const viewId = await ctx.db.insert("views", {
       databaseId: args.databaseId,
@@ -224,8 +230,7 @@ export const ensureDefaultView = mutation({
     databaseId: v.id("databases"),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireDatabaseAccess(ctx, args.databaseId, "editor");
 
     const database = await ctx.db.get(args.databaseId);
     if (!database) {
@@ -280,8 +285,7 @@ export const updateView = mutation({
     cardCoverPropertyId: v.optional(v.union(v.string(), v.null())),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requireViewAccess(ctx, args.id, "editor");
 
     const updates: Record<string, unknown> = {};
 
@@ -321,8 +325,7 @@ export const importCsv = mutation({
     rows: v.array(v.any()),       // array of objects mapping prop IDs to values
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const { userId } = await requireWorkspaceAccess(ctx, args.workspaceId, "editor");
 
     // 1. Create a Database Page natively
     const pageId = await ctx.db.insert("pages", {

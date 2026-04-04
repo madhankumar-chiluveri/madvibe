@@ -1,25 +1,23 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
 import {
-  MessageSquare,
+  Check,
   ChevronDown,
   ChevronUp,
-  Check,
-  Trash2,
-  Pencil,
   CornerDownRight,
-  X,
+  MessageSquare,
+  Pencil,
+  Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-// ── Types ─────────────────────────────────────────────────────
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Comment = {
   _id: Id<"comments">;
@@ -39,41 +37,35 @@ type Comment = {
 
 type Filter = "open" | "resolved" | "all";
 
-// ── Avatar helper ─────────────────────────────────────────────
-
 function Avatar({ name }: { name?: string }) {
   const initials = (name ?? "?")
     .split(" ")
-    .map((w) => w[0])
+    .map((word) => word[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 
   return (
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center flex-shrink-0 text-xs font-semibold text-white select-none">
+    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-xs font-semibold text-white select-none">
       {initials}
     </div>
   );
 }
 
-// ── Single comment ─────────────────────────────────────────────
-
 interface CommentItemProps {
   comment: Comment;
   currentUserId: string | null;
+  editable?: boolean;
   isReply?: boolean;
   onReply: (id: Id<"comments">, authorName?: string) => void;
-  pageId: Id<"pages">;
-  workspaceId: Id<"workspaces">;
 }
 
 function CommentItem({
   comment,
   currentUserId,
+  editable = true,
   isReply = false,
   onReply,
-  pageId,
-  workspaceId,
 }: CommentItemProps) {
   const removeComment = useMutation(api.comments.remove);
   const editComment = useMutation(api.comments.edit);
@@ -84,6 +76,10 @@ function CommentItem({
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const isOwn = currentUserId === comment.authorId;
+  const canReply = editable && !isReply;
+  const canResolve = editable && !isReply;
+  const canEditComment = editable && isOwn;
+  const canDeleteComment = editable && isOwn;
 
   const handleDelete = useCallback(async () => {
     try {
@@ -96,6 +92,7 @@ function CommentItem({
   const handleEditSave = useCallback(async () => {
     const trimmed = editValue.trim();
     if (!trimmed) return;
+
     try {
       await editComment({ id: comment._id, content: trimmed });
       setEditing(false);
@@ -116,51 +113,52 @@ function CommentItem({
     <div
       className={cn(
         "group relative flex gap-3",
-        isReply && "ml-6 md:ml-10 mt-2",
+        isReply && "mt-2 ml-6 md:ml-10",
         comment.isResolved && "opacity-60"
       )}
     >
       <Avatar name={comment.authorName} />
 
-      <div className="flex-1 min-w-0">
-        {/* Header row */}
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium text-foreground">
             {comment.authorName ?? "Unknown"}
           </span>
           <span className="text-xs text-muted-foreground">
             {formatDistanceToNow(comment.createdAt, { addSuffix: true })}
           </span>
-          {comment.editedAt && (
-            <span className="text-xs text-muted-foreground italic">(edited)</span>
-          )}
-          {comment.isResolved && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-medium">
+          {comment.editedAt ? (
+            <span className="text-xs italic text-muted-foreground">(edited)</span>
+          ) : null}
+          {comment.isResolved ? (
+            <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-xs font-medium text-emerald-500">
               Resolved
             </span>
-          )}
+          ) : null}
         </div>
 
-        {/* Content / edit form */}
         {editing ? (
           <div className="mt-1.5">
             <textarea
               ref={editRef}
               value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleEditSave();
-                if (e.key === "Escape") {
+              onChange={(event) => setEditValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                  void handleEditSave();
+                }
+
+                if (event.key === "Escape") {
                   setEditing(false);
                   setEditValue(comment.content);
                 }
               }}
               rows={3}
               autoFocus
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
-            <div className="flex items-center gap-2 mt-1.5">
-              <Button size="sm" className="h-8 text-xs" onClick={handleEditSave}>
+            <div className="mt-1.5 flex items-center gap-2">
+              <Button size="sm" className="h-8 text-xs" onClick={() => void handleEditSave()}>
                 Save
               </Button>
               <Button
@@ -177,63 +175,63 @@ function CommentItem({
             </div>
           </div>
         ) : (
-          <p className="mt-1 text-sm text-foreground/90 whitespace-pre-wrap break-words">
+          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground/90">
             {comment.content}
           </p>
         )}
 
-        {/* Action row — always visible on mobile, hover-reveal on desktop */}
-        {!editing && (
-          <div className="flex items-center flex-wrap gap-1 mt-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-            {!isReply && (
+        {!editing ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+            {canReply ? (
               <button
                 onClick={() => onReply(comment._id, comment.authorName)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-accent/50 transition-colors min-h-[32px]"
+                className="flex min-h-[32px] items-center gap-1 rounded px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
               >
-                <CornerDownRight className="w-3 h-3" /> Reply
+                <CornerDownRight className="h-3 w-3" />
+                Reply
               </button>
-            )}
-            {!isReply && (
+            ) : null}
+            {canResolve ? (
               <button
-                onClick={handleResolve}
+                onClick={() => void handleResolve()}
                 className={cn(
-                  "flex items-center gap-1 text-xs px-2 py-1.5 rounded transition-colors min-h-[32px]",
+                  "flex min-h-[32px] items-center gap-1 rounded px-2 py-1.5 text-xs transition-colors",
                   comment.isResolved
-                    ? "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                    : "text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                    ? "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
                 )}
               >
-                <Check className="w-3 h-3" />
+                <Check className="h-3 w-3" />
                 {comment.isResolved ? "Unresolve" : "Resolve"}
               </button>
-            )}
-            {isOwn && (
+            ) : null}
+            {canEditComment ? (
               <button
                 onClick={() => {
                   setEditing(true);
                   setEditValue(comment.content);
                 }}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-accent/50 transition-colors min-h-[32px]"
+                className="flex min-h-[32px] items-center gap-1 rounded px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
               >
-                <Pencil className="w-3 h-3" /> Edit
+                <Pencil className="h-3 w-3" />
+                Edit
               </button>
-            )}
-            {isOwn && (
+            ) : null}
+            {canDeleteComment ? (
               <button
-                onClick={handleDelete}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 px-2 py-1.5 rounded hover:bg-red-500/10 transition-colors min-h-[32px]"
+                onClick={() => void handleDelete()}
+                className="flex min-h-[32px] items-center gap-1 rounded px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-400"
               >
-                <Trash2 className="w-3 h-3" /> Delete
+                <Trash2 className="h-3 w-3" />
+                Delete
               </button>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
 }
-
-// ── Reply composer ─────────────────────────────────────────────
 
 interface ReplyComposerProps {
   pageId: Id<"pages">;
@@ -257,6 +255,7 @@ function ReplyComposer({
   const handleSubmit = useCallback(async () => {
     const trimmed = value.trim();
     if (!trimmed) return;
+
     setSubmitting(true);
     try {
       await addComment({
@@ -275,28 +274,29 @@ function ReplyComposer({
   }, [addComment, onDone, pageId, parentId, value, workspaceId]);
 
   return (
-    <div className="ml-6 md:ml-10 mt-2">
+    <div className="mt-2 ml-6 md:ml-10">
       <textarea
         autoFocus
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
-          if (e.key === "Escape") onDone();
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+            void handleSubmit();
+          }
+
+          if (event.key === "Escape") {
+            onDone();
+          }
         }}
-        placeholder={
-          parentAuthorName
-            ? `Reply to ${parentAuthorName}…`
-            : "Write a reply…"
-        }
+        placeholder={parentAuthorName ? `Reply to ${parentAuthorName}...` : "Write a reply..."}
         rows={2}
-        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+        className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
       />
-      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
         <Button
           size="sm"
           className="h-9 text-xs"
-          onClick={handleSubmit}
+          onClick={() => void handleSubmit()}
           disabled={!value.trim() || submitting}
         >
           Reply
@@ -304,23 +304,31 @@ function ReplyComposer({
         <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={onDone}>
           Cancel
         </Button>
-        <span className="text-xs text-muted-foreground ml-auto hidden sm:block">⌘↵ to send</span>
+        <span className="ml-auto hidden text-xs text-muted-foreground sm:block">
+          Ctrl/Cmd+Enter to send
+        </span>
       </div>
     </div>
   );
 }
 
-// ── Thread (one root comment + its replies) ───────────────────
-
 interface ThreadProps {
   root: Comment;
   replies: Comment[];
   currentUserId: string | null;
+  editable?: boolean;
   pageId: Id<"pages">;
   workspaceId: Id<"workspaces">;
 }
 
-function Thread({ root, replies, currentUserId, pageId, workspaceId }: ThreadProps) {
+function Thread({
+  root,
+  replies,
+  currentUserId,
+  editable = true,
+  pageId,
+  workspaceId,
+}: ThreadProps) {
   const [replyingTo, setReplyingTo] = useState<{
     id: Id<"comments">;
     name?: string;
@@ -328,43 +336,41 @@ function Thread({ root, replies, currentUserId, pageId, workspaceId }: ThreadPro
   const [showReplies, setShowReplies] = useState(true);
 
   return (
-    <div className="py-3 border-b border-border/60 last:border-0">
+    <div className="border-b border-border/60 py-3 last:border-0">
       <CommentItem
         comment={root}
         currentUserId={currentUserId}
-        onReply={(id, name) => setReplyingTo({ id, name })}
-        pageId={pageId}
-        workspaceId={workspaceId}
+        editable={editable}
+        onReply={(id, name) => {
+          if (!editable) return;
+          setReplyingTo({ id, name });
+        }}
       />
 
-      {replies.length > 0 && (
+      {replies.length > 0 ? (
         <button
-          onClick={() => setShowReplies((v) => !v)}
-          className="ml-6 md:ml-10 mt-1.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors min-h-[32px] px-1"
+          onClick={() => setShowReplies((current) => !current)}
+          className="mt-1.5 ml-6 flex min-h-[32px] items-center gap-1 px-1 text-xs text-muted-foreground transition-colors hover:text-foreground md:ml-10"
         >
-          {showReplies ? (
-            <ChevronUp className="w-3 h-3" />
-          ) : (
-            <ChevronDown className="w-3 h-3" />
-          )}
+          {showReplies ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           {replies.length} {replies.length === 1 ? "reply" : "replies"}
         </button>
-      )}
+      ) : null}
 
-      {showReplies &&
-        replies.map((reply) => (
-          <CommentItem
-            key={reply._id}
-            comment={reply}
-            currentUserId={currentUserId}
-            isReply
-            onReply={() => {}}
-            pageId={pageId}
-            workspaceId={workspaceId}
-          />
-        ))}
+      {showReplies
+        ? replies.map((reply) => (
+            <CommentItem
+              key={reply._id}
+              comment={reply}
+              currentUserId={currentUserId}
+              editable={editable}
+              isReply
+              onReply={() => {}}
+            />
+          ))
+        : null}
 
-      {replyingTo && (
+      {editable && replyingTo ? (
         <ReplyComposer
           pageId={pageId}
           workspaceId={workspaceId}
@@ -372,19 +378,22 @@ function Thread({ root, replies, currentUserId, pageId, workspaceId }: ThreadPro
           parentAuthorName={replyingTo.name}
           onDone={() => setReplyingTo(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 }
 
-// ── Main PageComments component ───────────────────────────────
-
 interface PageCommentsProps {
   pageId: Id<"pages">;
   workspaceId: Id<"workspaces">;
+  editable?: boolean;
 }
 
-export function PageComments({ pageId, workspaceId }: PageCommentsProps) {
+export function PageComments({
+  pageId,
+  workspaceId,
+  editable = true,
+}: PageCommentsProps) {
   const addComment = useMutation(api.comments.add);
   const result = useQuery(api.comments.listByPage, { pageId });
 
@@ -397,24 +406,23 @@ export function PageComments({ pageId, workspaceId }: PageCommentsProps) {
   const comments: Comment[] = result?.comments ?? [];
   const currentUserId = result?.currentUserId ?? null;
 
-  // Split roots vs replies
-  const roots = comments.filter((c) => !c.parentCommentId);
+  const roots = comments.filter((comment) => !comment.parentCommentId);
   const getReplies = (id: Id<"comments">) =>
-    comments.filter((c) => c.parentCommentId === id);
+    comments.filter((comment) => comment.parentCommentId === id);
 
-  // Apply filter
-  const filteredRoots = roots.filter((c) => {
-    if (filter === "open") return !c.isResolved;
-    if (filter === "resolved") return c.isResolved;
+  const filteredRoots = roots.filter((comment) => {
+    if (filter === "open") return !comment.isResolved;
+    if (filter === "resolved") return comment.isResolved;
     return true;
   });
 
-  const openCount = roots.filter((c) => !c.isResolved).length;
+  const openCount = roots.filter((comment) => !comment.isResolved).length;
   const totalCount = roots.length;
 
   const handleSubmit = useCallback(async () => {
     const trimmed = newComment.trim();
     if (!trimmed) return;
+
     setSubmitting(true);
     try {
       await addComment({ pageId, workspaceId, content: trimmed });
@@ -431,104 +439,103 @@ export function PageComments({ pageId, workspaceId }: PageCommentsProps) {
 
   return (
     <div className="mt-16 border-t border-border/60 pt-6">
-      {/* Section header */}
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4 w-full text-left min-h-[40px]"
+        onClick={() => setOpen((current) => !current)}
+        className="mb-4 flex min-h-[40px] w-full items-center gap-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
-        <MessageSquare className="w-4 h-4" />
+        <MessageSquare className="h-4 w-4" />
         <span>
           {totalCount === 0
             ? "Comments"
             : `${openCount > 0 ? `${openCount} open` : ""}${
                 openCount > 0 && totalCount - openCount > 0 ? " · " : ""
               }${
-                totalCount - openCount > 0
-                  ? `${totalCount - openCount} resolved`
-                  : ""
+                totalCount - openCount > 0 ? `${totalCount - openCount} resolved` : ""
               }`}
         </span>
-        {open ? (
-          <ChevronUp className="w-3.5 h-3.5 ml-auto" />
-        ) : (
-          <ChevronDown className="w-3.5 h-3.5 ml-auto" />
-        )}
+        {open ? <ChevronUp className="ml-auto h-3.5 w-3.5" /> : <ChevronDown className="ml-auto h-3.5 w-3.5" />}
       </button>
 
-      {/* New comment composer */}
-      <div className="flex gap-3 mb-4">
-        <Avatar name="You" />
-        <div className="flex-1 min-w-0">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onFocus={() => setComposerFocused(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
-              if (e.key === "Escape") {
-                setComposerFocused(false);
-                setNewComment("");
-              }
-            }}
-            placeholder="Add a comment…"
-            rows={composerFocused ? 3 : 1}
-            className={cn(
-              "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground transition-all duration-150"
-            )}
-          />
-          {composerFocused && (
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <Button
-                size="sm"
-                className="h-9 text-xs"
-                onClick={handleSubmit}
-                disabled={!newComment.trim() || submitting}
-              >
-                Comment
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-9 text-xs"
-                onClick={() => {
+      {editable ? (
+        <div className="mb-4 flex gap-3">
+          <Avatar name="You" />
+          <div className="min-w-0 flex-1">
+            <textarea
+              value={newComment}
+              onChange={(event) => setNewComment(event.target.value)}
+              onFocus={() => setComposerFocused(true)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                  void handleSubmit();
+                }
+
+                if (event.key === "Escape") {
                   setComposerFocused(false);
                   setNewComment("");
-                }}
-              >
-                Cancel
-              </Button>
-              <span className="text-xs text-muted-foreground ml-auto hidden sm:block">⌘↵ to send</span>
-            </div>
-          )}
+                }
+              }}
+              placeholder="Add a comment..."
+              rows={composerFocused ? 3 : 1}
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            {composerFocused ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  className="h-9 text-xs"
+                  onClick={() => void handleSubmit()}
+                  disabled={!newComment.trim() || submitting}
+                >
+                  Comment
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 text-xs"
+                  onClick={() => {
+                    setComposerFocused(false);
+                    setNewComment("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <span className="ml-auto hidden text-xs text-muted-foreground sm:block">
+                  Ctrl/Cmd+Enter to send
+                </span>
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mb-4 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+          You can read comment threads in this shared page, but only editors can add, reply, or resolve comments.
+        </div>
+      )}
 
-      {/* Comment list */}
-      {open && totalCount > 0 && (
+      {open && totalCount > 0 ? (
         <div>
-          {/* Filter tabs */}
-          <div className="flex items-center gap-1 mb-4 border-b border-border/60 pb-2">
-            {(["open", "resolved", "all"] as Filter[]).map((f) => (
+          <div className="mb-4 flex items-center gap-1 border-b border-border/60 pb-2">
+            {(["open", "resolved", "all"] as Filter[]).map((value) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
+                key={value}
+                onClick={() => setFilter(value)}
                 className={cn(
-                  "px-3 py-1.5 text-xs rounded-md transition-colors capitalize min-h-[32px]",
-                  filter === f
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  "min-h-[32px] rounded-md px-3 py-1.5 text-xs capitalize transition-colors",
+                  filter === value
+                    ? "bg-accent font-medium text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                 )}
               >
-                {f}
-                {f === "open" && openCount > 0 && (
+                {value}
+                {value === "open" && openCount > 0 ? (
                   <span className="ml-1 text-xs opacity-60">{openCount}</span>
-                )}
+                ) : null}
               </button>
             ))}
           </div>
 
           {filteredRoots.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               No {filter !== "all" ? filter : ""} comments
             </p>
           ) : (
@@ -539,6 +546,7 @@ export function PageComments({ pageId, workspaceId }: PageCommentsProps) {
                   root={root}
                   replies={getReplies(root._id)}
                   currentUserId={currentUserId}
+                  editable={editable}
                   pageId={pageId}
                   workspaceId={workspaceId}
                 />
@@ -546,7 +554,7 @@ export function PageComments({ pageId, workspaceId }: PageCommentsProps) {
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

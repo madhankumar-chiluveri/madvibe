@@ -1,6 +1,27 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
+import {
+  financeAccountTypeValidator,
+  financeAssetTypeValidator,
+  financeBudgetPeriodValidator,
+  financeCreditCardNetworkValidator,
+  financeDividendTypeValidator,
+  financeGoalPriorityValidator,
+  financeIpoStatusValidator,
+  financeLoanDirectionValidator,
+  financeLoanStatusValidator,
+  financeMarketAssetTypeValidator,
+  financeMarketHistoryPointValidator,
+  financeMarketStatusValidator,
+  financeRecurringFrequencyValidator,
+  financeTransactionTypeValidator,
+  financeTransferDirectionValidator,
+} from "./financeShared";
+import {
+  workspaceInviteStatusValidator,
+  workspaceRoleValidator,
+} from "./workspaceShared";
 
 export default defineSchema({
   ...authTables,
@@ -12,6 +33,33 @@ export default defineSchema({
     icon: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
+
+  workspaceMembers: defineTable({
+    workspaceId: v.id("workspaces"),
+    userId: v.string(),
+    role: workspaceRoleValidator,
+    invitedByUserId: v.string(),
+    joinedAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_workspaceId", ["workspaceId"])
+    .index("by_userId", ["userId"])
+    .index("by_workspaceId_userId", ["workspaceId", "userId"]),
+
+  workspaceInvites: defineTable({
+    workspaceId: v.id("workspaces"),
+    email: v.string(),
+    invitedUserId: v.optional(v.string()),
+    role: workspaceRoleValidator,
+    status: workspaceInviteStatusValidator,
+    invitedByUserId: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+  })
+    .index("by_workspaceId", ["workspaceId"])
+    .index("by_workspaceId_email", ["workspaceId", "email"])
+    .index("by_email_status", ["email", "status"]),
 
   // ── KB Pages ───────────────────────────────────────
   pages: defineTable({
@@ -184,16 +232,50 @@ export default defineSchema({
   financeAccounts: defineTable({
     userId: v.string(),
     name: v.string(),
-    type: v.union(
-      v.literal("savings"), v.literal("checking"), v.literal("credit_card"),
-      v.literal("cash"), v.literal("investment"), v.literal("loan"), v.literal("wallet")
-    ),
+    type: financeAccountTypeValidator,
     currency: v.string(),
     balance: v.number(),
     institution: v.optional(v.string()),
+    accountNumberLast4: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    color: v.optional(v.string()),
+    creditLimit: v.optional(v.number()),
+    statementBalance: v.optional(v.number()),
+    availableCredit: v.optional(v.number()),
+    rewardPoints: v.optional(v.number()),
+    billingDay: v.optional(v.number()),
+    dueDay: v.optional(v.number()),
     isActive: v.boolean(),
     createdAt: v.number(),
-  }).index("by_userId", ["userId"]),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_type", ["userId", "type"]),
+
+  financeCreditCards: defineTable({
+    userId: v.string(),
+    accountId: v.id("financeAccounts"),
+    issuer: v.string(),
+    network: v.optional(financeCreditCardNetworkValidator),
+    cardName: v.optional(v.string()),
+    lastFour: v.optional(v.string()),
+    creditLimit: v.number(),
+    statementBalance: v.number(),
+    currentBalance: v.number(),
+    availableCredit: v.number(),
+    billingDay: v.number(),
+    dueDay: v.number(),
+    minimumDue: v.optional(v.number()),
+    dueDate: v.optional(v.string()),
+    lastStatementDate: v.optional(v.string()),
+    rewardPoints: v.optional(v.number()),
+    rewardProgram: v.optional(v.string()),
+    autoPayAccountId: v.optional(v.id("financeAccounts")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_accountId", ["accountId"]),
 
   financeCategories: defineTable({
     userId: v.optional(v.string()), // null = system default
@@ -211,30 +293,55 @@ export default defineSchema({
   financeTransactions: defineTable({
     userId: v.string(),
     accountId: v.id("financeAccounts"),
-    type: v.union(v.literal("income"), v.literal("expense"), v.literal("transfer"), v.literal("investment")),
+    type: financeTransactionTypeValidator,
     amount: v.number(),
     currency: v.string(),
     categoryId: v.optional(v.id("financeCategories")),
+    sourceAccountId: v.optional(v.id("financeAccounts")),
+    destinationAccountId: v.optional(v.id("financeAccounts")),
+    transferDirection: v.optional(financeTransferDirectionValidator),
+    transferGroupId: v.optional(v.string()),
+    linkedCreditCardId: v.optional(v.id("financeCreditCards")),
+    loanId: v.optional(v.id("financeLoans")),
+    splitFromTransactionId: v.optional(v.id("financeTransactions")),
     merchant: v.optional(v.string()),
+    location: v.optional(v.string()),
     description: v.string(),
     notes: v.optional(v.string()),
+    receiptUrl: v.optional(v.string()),
     date: v.string(), // "YYYY-MM-DD"
+    status: v.optional(
+      v.union(
+        v.literal("posted"),
+        v.literal("pending"),
+        v.literal("cleared"),
+        v.literal("void"),
+      ),
+    ),
     isRecurring: v.boolean(),
-    recurringId: v.optional(v.string()),
+    recurringId: v.optional(v.id("financeRecurring")),
     tags: v.optional(v.array(v.string())),
     aiCategorized: v.optional(v.boolean()),
+    originalAmount: v.optional(v.number()),
+    originalCurrency: v.optional(v.string()),
+    exchangeRate: v.optional(v.number()),
+    affectsBalance: v.optional(v.boolean()),
+    isSplitParent: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_date", ["userId", "date"])
-    .index("by_accountId", ["accountId"]),
+    .index("by_accountId", ["accountId"])
+    .index("by_loanId", ["loanId"])
+    .index("by_recurringId", ["recurringId"])
+    .index("by_transferGroupId", ["transferGroupId"]),
 
   financeBudgets: defineTable({
     userId: v.string(),
     categoryId: v.id("financeCategories"),
     amount: v.number(),
-    period: v.union(v.literal("monthly"), v.literal("quarterly"), v.literal("yearly")),
+    period: financeBudgetPeriodValidator,
     startDate: v.string(),
     rollover: v.boolean(),
     alertThresholds: v.array(v.number()),
@@ -244,24 +351,152 @@ export default defineSchema({
 
   financeInvestments: defineTable({
     userId: v.string(),
-    assetType: v.union(
-      v.literal("stock"), v.literal("mutual_fund"), v.literal("etf"),
-      v.literal("fd"), v.literal("ppf"), v.literal("gold"),
-      v.literal("crypto"), v.literal("real_estate"), v.literal("bond"), v.literal("other")
-    ),
+    assetType: financeAssetTypeValidator,
     symbol: v.optional(v.string()),
+    exchange: v.optional(v.string()),
     name: v.string(),
     quantity: v.number(),
     buyPrice: v.number(),
     buyDate: v.string(),
     currentPrice: v.optional(v.number()),
+    currency: v.optional(v.string()),
     platform: v.optional(v.string()),
+    accountId: v.optional(v.id("financeAccounts")),
     isSip: v.optional(v.boolean()),
     sipAmount: v.optional(v.number()),
+    sipDay: v.optional(v.number()),
+    lastSyncedAt: v.optional(v.number()),
+    dividendYield: v.optional(v.number()),
+    taxType: v.optional(v.string()),
     notes: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_userId", ["userId"]),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_symbol", ["userId", "symbol"]),
+
+  financeInvestmentLots: defineTable({
+    userId: v.string(),
+    investmentId: v.id("financeInvestments"),
+    accountId: v.optional(v.id("financeAccounts")),
+    quantity: v.number(),
+    remainingQuantity: v.number(),
+    buyPrice: v.number(),
+    investedAmount: v.number(),
+    buyDate: v.string(),
+    fees: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_investmentId", ["investmentId"]),
+
+  financeMarketData: defineTable({
+    symbol: v.string(),
+    assetType: financeMarketAssetTypeValidator,
+    displayName: v.optional(v.string()),
+    exchange: v.optional(v.string()),
+    currency: v.string(),
+    price: v.number(),
+    previousClose: v.optional(v.number()),
+    change: v.optional(v.number()),
+    changePercent: v.optional(v.number()),
+    marketState: v.optional(financeMarketStatusValidator),
+    source: v.string(),
+    fetchedAt: v.number(),
+    expiresAt: v.number(),
+    history: v.optional(v.array(financeMarketHistoryPointValidator)),
+  })
+    .index("by_symbol", ["symbol"])
+    .index("by_symbol_assetType", ["symbol", "assetType"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  financeLoans: defineTable({
+    userId: v.string(),
+    direction: financeLoanDirectionValidator,
+    counterpartyName: v.string(),
+    principalAmount: v.number(),
+    currentBalance: v.number(),
+    currency: v.string(),
+    issuedDate: v.string(),
+    dueDate: v.optional(v.string()),
+    status: financeLoanStatusValidator,
+    linkedAccountId: v.optional(v.id("financeAccounts")),
+    interestRate: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_status", ["userId", "status"])
+    .index("by_linkedAccountId", ["linkedAccountId"]),
+
+  financeRecurring: defineTable({
+    userId: v.string(),
+    title: v.string(),
+    type: financeTransactionTypeValidator,
+    amount: v.number(),
+    currency: v.string(),
+    accountId: v.id("financeAccounts"),
+    destinationAccountId: v.optional(v.id("financeAccounts")),
+    categoryId: v.optional(v.id("financeCategories")),
+    loanId: v.optional(v.id("financeLoans")),
+    linkedCreditCardId: v.optional(v.id("financeCreditCards")),
+    description: v.string(),
+    notes: v.optional(v.string()),
+    merchant: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    frequency: financeRecurringFrequencyValidator,
+    interval: v.number(),
+    startDate: v.string(),
+    endDate: v.optional(v.string()),
+    nextDueDate: v.string(),
+    lastProcessedAt: v.optional(v.number()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_dueDate", ["userId", "nextDueDate"])
+    .index("by_accountId", ["accountId"]),
+
+  financeDividends: defineTable({
+    userId: v.string(),
+    investmentId: v.id("financeInvestments"),
+    amount: v.number(),
+    currency: v.string(),
+    type: financeDividendTypeValidator,
+    recordDate: v.string(),
+    payoutDate: v.optional(v.string()),
+    taxWithheld: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_investmentId", ["investmentId"]),
+
+  financeIPOs: defineTable({
+    userId: v.optional(v.string()),
+    companyName: v.string(),
+    symbol: v.optional(v.string()),
+    exchange: v.optional(v.string()),
+    status: financeIpoStatusValidator,
+    openDate: v.optional(v.string()),
+    closeDate: v.optional(v.string()),
+    lotSize: v.optional(v.number()),
+    priceBandMin: v.optional(v.number()),
+    priceBandMax: v.optional(v.number()),
+    gmp: v.optional(v.number()),
+    expectedListingDate: v.optional(v.string()),
+    subscriptionStatus: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_userId", ["userId"]),
 
   financeGoals: defineTable({
     userId: v.string(),
@@ -269,9 +504,14 @@ export default defineSchema({
     targetAmount: v.number(),
     currentAmount: v.number(),
     targetDate: v.string(),
-    priority: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+    priority: financeGoalPriorityValidator,
     strategy: v.optional(v.string()),
+    linkedAccountId: v.optional(v.id("financeAccounts")),
+    autoContribute: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    category: v.optional(v.string()),
     createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
   }).index("by_userId", ["userId"]),
 
   // ── AI Conversations ───────────────────────────────

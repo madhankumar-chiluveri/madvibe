@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { financeAccountTypeValidator } from "./financeShared";
 
 // ── Accounts ──────────────────────────────────────────────────────────────────
 
@@ -19,17 +20,18 @@ export const listAccounts = query({
 export const createAccount = mutation({
   args: {
     name: v.string(),
-    type: v.union(
-      v.literal("savings"), v.literal("checking"), v.literal("credit_card"),
-      v.literal("cash"), v.literal("investment"), v.literal("loan"), v.literal("wallet")
-    ),
+    type: financeAccountTypeValidator,
     currency: v.optional(v.string()),
     balance: v.number(),
     institution: v.optional(v.string()),
+    accountNumberLast4: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    color: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    const now = Date.now();
     return await ctx.db.insert("financeAccounts", {
       userId,
       name: args.name,
@@ -37,8 +39,12 @@ export const createAccount = mutation({
       currency: args.currency ?? "INR",
       balance: args.balance,
       institution: args.institution,
+      accountNumberLast4: args.accountNumberLast4,
+      notes: args.notes,
+      color: args.color,
       isActive: true,
-      createdAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
     });
   },
 });
@@ -47,6 +53,8 @@ export const updateAccount = mutation({
   args: {
     id: v.id("financeAccounts"),
     name: v.optional(v.string()),
+    type: v.optional(financeAccountTypeValidator),
+    currency: v.optional(v.string()),
     balance: v.optional(v.number()),
     institution: v.optional(v.string()),
     isActive: v.optional(v.boolean()),
@@ -55,7 +63,9 @@ export const updateAccount = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
     const { id, ...updates } = args;
-    await ctx.db.patch(id, updates);
+    const account = await ctx.db.get(id);
+    if (!account || account.userId !== userId) throw new Error("Account not found");
+    await ctx.db.patch(id, { ...updates, updatedAt: Date.now() });
   },
 });
 
@@ -388,5 +398,301 @@ export const updateGoalProgress = mutation({
   args: { id: v.id("financeGoals"), currentAmount: v.number() },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, { currentAmount: args.currentAmount });
+  },
+});
+
+export const updateGoal = mutation({
+  args: {
+    id: v.id("financeGoals"),
+    name: v.optional(v.string()),
+    targetAmount: v.optional(v.number()),
+    targetDate: v.optional(v.string()),
+    priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
+    strategy: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    linkedAccountId: v.optional(v.id("financeAccounts")),
+    autoContribute: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, { ...updates, updatedAt: Date.now() });
+  },
+});
+
+export const deleteGoal = mutation({
+  args: { id: v.id("financeGoals") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    await ctx.db.delete(args.id);
+  },
+});
+
+// ── Account Extended ──────────────────────────────────────────────────────────
+
+export const deleteAccount = mutation({
+  args: { id: v.id("financeAccounts") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const account = await ctx.db.get(args.id);
+    if (!account || account.userId !== userId) throw new Error("Account not found");
+    await ctx.db.patch(args.id, { isActive: false, updatedAt: Date.now() });
+  },
+});
+
+export const updateAccountFull = mutation({
+  args: {
+    id: v.id("financeAccounts"),
+    name: v.optional(v.string()),
+    type: v.optional(financeAccountTypeValidator),
+    currency: v.optional(v.string()),
+    balance: v.optional(v.number()),
+    institution: v.optional(v.string()),
+    isActive: v.optional(v.boolean()),
+    creditLimit: v.optional(v.number()),
+    billingDay: v.optional(v.number()),
+    dueDay: v.optional(v.number()),
+    color: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    accountNumberLast4: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const { id, ...updates } = args;
+    const account = await ctx.db.get(id);
+    if (!account || account.userId !== userId) throw new Error("Account not found");
+    await ctx.db.patch(id, { ...updates, updatedAt: Date.now() });
+  },
+});
+
+// ── Transfer Between Accounts ─────────────────────────────────────────────────
+
+export const transferBetweenAccounts = mutation({
+  args: {
+    fromAccountId: v.id("financeAccounts"),
+    toAccountId: v.id("financeAccounts"),
+    amount: v.number(),
+    description: v.string(),
+    date: v.string(),
+    notes: v.optional(v.string()),
+    linkedCreditCardId: v.optional(v.id("financeCreditCards")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const now = Date.now();
+    const groupId = `transfer-${now}-${Math.random().toString(36).slice(2)}`;
+
+    const fromAccount = await ctx.db.get(args.fromAccountId);
+    const toAccount = await ctx.db.get(args.toAccountId);
+    if (!fromAccount || !toAccount) throw new Error("Account not found");
+
+    // Outgoing leg
+    await ctx.db.insert("financeTransactions", {
+      userId,
+      accountId: args.fromAccountId,
+      type: "transfer",
+      amount: args.amount,
+      currency: fromAccount.currency ?? "INR",
+      description: args.description,
+      notes: args.notes,
+      date: args.date,
+      isRecurring: false,
+      transferDirection: "out",
+      transferGroupId: groupId,
+      sourceAccountId: args.fromAccountId,
+      destinationAccountId: args.toAccountId,
+      linkedCreditCardId: args.linkedCreditCardId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await ctx.db.patch(args.fromAccountId, { balance: fromAccount.balance - args.amount, updatedAt: now });
+
+    // Incoming leg
+    await ctx.db.insert("financeTransactions", {
+      userId,
+      accountId: args.toAccountId,
+      type: "transfer",
+      amount: args.amount,
+      currency: toAccount.currency ?? "INR",
+      description: args.description,
+      notes: args.notes,
+      date: args.date,
+      isRecurring: false,
+      transferDirection: "in",
+      transferGroupId: groupId,
+      sourceAccountId: args.fromAccountId,
+      destinationAccountId: args.toAccountId,
+      linkedCreditCardId: args.linkedCreditCardId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await ctx.db.patch(args.toAccountId, { balance: toAccount.balance + args.amount, updatedAt: now });
+
+    // If paying a credit card, update its current balance
+    if (args.linkedCreditCardId) {
+      const card = await ctx.db.get(args.linkedCreditCardId);
+      if (card) {
+        const newBalance = Math.max(0, card.currentBalance - args.amount);
+        const newAvailable = card.creditLimit - newBalance;
+        await ctx.db.patch(args.linkedCreditCardId, {
+          currentBalance: newBalance,
+          availableCredit: newAvailable,
+          updatedAt: now,
+        });
+      }
+    }
+
+    return groupId;
+  },
+});
+
+// ── Budget Extended ───────────────────────────────────────────────────────────
+
+export const deleteBudget = mutation({
+  args: { id: v.id("financeBudgets") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    await ctx.db.delete(args.id);
+  },
+});
+
+export const updateBudget = mutation({
+  args: {
+    id: v.id("financeBudgets"),
+    amount: v.optional(v.number()),
+    period: v.optional(v.union(v.literal("monthly"), v.literal("quarterly"), v.literal("yearly"))),
+    rollover: v.optional(v.boolean()),
+    alertThresholds: v.optional(v.array(v.number())),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, updates);
+  },
+});
+
+export const getBudgetProgress = query({
+  args: { month: v.string() }, // "YYYY-MM"
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const startDate = `${args.month}-01`;
+    const [year, month] = args.month.split("-").map(Number);
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${args.month}-${String(lastDay).padStart(2, "0")}`;
+
+    const budgets = await ctx.db
+      .query("financeBudgets")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    const txns = await ctx.db
+      .query("financeTransactions")
+      .withIndex("by_userId_date", (q) => q.eq("userId", userId).gte("date", startDate))
+      .filter((q) => q.and(q.lte(q.field("date"), endDate), q.eq(q.field("type"), "expense")))
+      .collect();
+
+    const spendByCategory: Record<string, number> = {};
+    for (const t of txns) {
+      const key = t.categoryId ?? "uncategorized";
+      spendByCategory[key] = (spendByCategory[key] ?? 0) + t.amount;
+    }
+
+    return budgets.map((b) => ({
+      ...b,
+      spent: spendByCategory[b.categoryId] ?? 0,
+    }));
+  },
+});
+
+// ── Investment Extended ───────────────────────────────────────────────────────
+
+export const updateInvestment = mutation({
+  args: {
+    id: v.id("financeInvestments"),
+    name: v.optional(v.string()),
+    quantity: v.optional(v.number()),
+    currentPrice: v.optional(v.number()),
+    platform: v.optional(v.string()),
+    isSip: v.optional(v.boolean()),
+    sipAmount: v.optional(v.number()),
+    sipDay: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    dividendYield: v.optional(v.number()),
+    taxType: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, { ...updates, updatedAt: Date.now() });
+  },
+});
+
+// ── Cash Flow History ─────────────────────────────────────────────────────────
+
+export const getCashflowHistory = query({
+  args: { months: v.optional(v.number()) }, // default 6
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const n = args.months ?? 6;
+    const now = new Date();
+    const results: { month: string; label: string; income: number; expenses: number }[] = [];
+
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const mm = String(month).padStart(2, "0");
+      const startDate = `${year}-${mm}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${mm}-${String(lastDay).padStart(2, "0")}`;
+      const label = d.toLocaleString("default", { month: "short" });
+
+      const txns = await ctx.db
+        .query("financeTransactions")
+        .withIndex("by_userId_date", (q) => q.eq("userId", userId).gte("date", startDate))
+        .filter((q) => q.lte(q.field("date"), endDate))
+        .collect();
+
+      const income = txns.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+      const expenses = txns.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+      results.push({ month: `${year}-${mm}`, label, income, expenses });
+    }
+    return results;
+  },
+});
+
+// ── Custom Category ───────────────────────────────────────────────────────────
+
+export const createCategory = mutation({
+  args: {
+    name: v.string(),
+    icon: v.string(),
+    color: v.string(),
+    type: v.union(v.literal("income"), v.literal("expense")),
+    parentId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    return await ctx.db.insert("financeCategories", {
+      userId,
+      name: args.name,
+      icon: args.icon,
+      color: args.color,
+      type: args.type,
+      parentId: args.parentId,
+      sortOrder: Date.now(),
+      isSystem: false,
+    });
   },
 });

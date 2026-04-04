@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import {
+  getWorkspaceAccessForUser,
+  requirePageAccess,
+  requireWorkspaceAccess,
+} from "./workspaceAccess";
 
 export const create = mutation({
   args: {
@@ -12,8 +17,7 @@ export const create = mutation({
     icon: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const { userId } = await requireWorkspaceAccess(ctx, args.workspaceId, "editor");
 
     const siblings = await ctx.db
       .query("pages")
@@ -63,8 +67,7 @@ export const createSpace = mutation({
     icon: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const { userId } = await requireWorkspaceAccess(ctx, args.workspaceId, "editor");
 
     const siblings = await ctx.db
       .query("pages")
@@ -154,8 +157,7 @@ export const update = mutation({
     maddySuggested: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.id, "editor");
 
     const { id, ...updates } = args;
     await ctx.db.patch(id, { ...updates, updatedAt: Date.now() });
@@ -166,8 +168,7 @@ export const update = mutation({
 export const archive = mutation({
   args: { id: v.id("pages") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.id, "editor");
 
     const recursiveArchive = async (pageId: any) => {
       const children = await ctx.db
@@ -193,8 +194,7 @@ export const archive = mutation({
 export const restore = mutation({
   args: { id: v.id("pages") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.id, "editor");
 
     const recursiveRestore = async (pageId: any) => {
       const children = await ctx.db
@@ -220,8 +220,7 @@ export const restore = mutation({
 export const remove = mutation({
   args: { id: v.id("pages") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.id, "editor");
 
     // Delete all blocks
     const blocks = await ctx.db
@@ -250,8 +249,7 @@ export const move = mutation({
     sortOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    await requirePageAccess(ctx, args.id, "editor");
 
     await ctx.db.patch(args.id, {
       parentId: args.newParentId,
@@ -264,7 +262,18 @@ export const move = mutation({
 export const get = query({
   args: { id: v.id("pages") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const page = await ctx.db.get(args.id);
+    if (!page) return null;
+
+    const access = await getWorkspaceAccessForUser(ctx, page.workspaceId, String(userId));
+    if (!access) {
+      return null;
+    }
+
+    return page;
   },
 });
 
@@ -272,6 +281,8 @@ export const get = query({
 export const getAncestors = query({
   args: { id: v.id("pages") },
   handler: async (ctx, args) => {
+    await requirePageAccess(ctx, args.id, "viewer");
+
     const ancestors: Array<{
       _id: string;
       title: string;
@@ -303,8 +314,7 @@ export const list = query({
     parentId: v.optional(v.union(v.id("pages"), v.null())),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
     return await ctx.db
       .query("pages")
@@ -323,8 +333,7 @@ export const list = query({
 export const listSpaceRoots = query({
   args: { workspaceId: v.id("workspaces") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
     return await ctx.db
       .query("pages")
@@ -344,8 +353,7 @@ export const listSpaceRoots = query({
 export const listAll = query({
   args: { workspaceId: v.id("workspaces") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
     return await ctx.db
       .query("pages")
@@ -359,8 +367,7 @@ export const listAll = query({
 export const listFavourites = query({
   args: { workspaceId: v.id("workspaces") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
     return await ctx.db
       .query("pages")
@@ -375,8 +382,7 @@ export const listFavourites = query({
 export const listArchived = query({
   args: { workspaceId: v.id("workspaces") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
     return await ctx.db
       .query("pages")
@@ -392,8 +398,7 @@ export const search = query({
     query: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
     if (!args.query.trim()) return [];
 

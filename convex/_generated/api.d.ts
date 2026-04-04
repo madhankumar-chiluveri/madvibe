@@ -18,14 +18,22 @@ import type * as databases from "../databases.js";
 import type * as feed from "../feed.js";
 import type * as feedSync from "../feedSync.js";
 import type * as files from "../files.js";
+import type * as financeShared from "../financeShared.js";
 import type * as habits from "../habits.js";
 import type * as http from "../http.js";
 import type * as ledger from "../ledger.js";
+import type * as ledgerCards from "../ledgerCards.js";
+import type * as ledgerInvestments from "../ledgerInvestments.js";
+import type * as ledgerLoans from "../ledgerLoans.js";
+import type * as ledgerRecurring from "../ledgerRecurring.js";
 import type * as maddy from "../maddy.js";
 import type * as maddyOrganise from "../maddyOrganise.js";
+import type * as marketData from "../marketData.js";
 import type * as notifications from "../notifications.js";
 import type * as pages from "../pages.js";
 import type * as reminders from "../reminders.js";
+import type * as workspaceAccess from "../workspaceAccess.js";
+import type * as workspaceShared from "../workspaceShared.js";
 import type * as workspaces from "../workspaces.js";
 
 import type {
@@ -45,14 +53,22 @@ declare const fullApi: ApiFromModules<{
   feed: typeof feed;
   feedSync: typeof feedSync;
   files: typeof files;
+  financeShared: typeof financeShared;
   habits: typeof habits;
   http: typeof http;
   ledger: typeof ledger;
+  ledgerCards: typeof ledgerCards;
+  ledgerInvestments: typeof ledgerInvestments;
+  ledgerLoans: typeof ledgerLoans;
+  ledgerRecurring: typeof ledgerRecurring;
   maddy: typeof maddy;
   maddyOrganise: typeof maddyOrganise;
+  marketData: typeof marketData;
   notifications: typeof notifications;
   pages: typeof pages;
   reminders: typeof reminders;
+  workspaceAccess: typeof workspaceAccess;
+  workspaceShared: typeof workspaceShared;
   workspaces: typeof workspaces;
 }>;
 

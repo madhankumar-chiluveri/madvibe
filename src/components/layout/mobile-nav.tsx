@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type MouseEvent } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ const TABS = [
 export function MobileNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const { maddyPanelOpen, openMaddyPanel, setActiveModule } = useAppStore();
+  const setActiveModule = useAppStore((state) => state.setActiveModule);
   const workspaceSegment = pathname.split("/")[2] ?? null;
 
   const active = TABS.find((t) => {
@@ -50,7 +50,6 @@ export function MobileNav() {
       {TABS.map((tab) => {
         const Icon = tab.icon;
         const isActive = active === tab.id;
-        const isDocked = tab.id === "ai" && maddyPanelOpen;
         return (
           <Link
             key={tab.id}
@@ -59,38 +58,25 @@ export function MobileNav() {
             className={cn(
               "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 min-h-[56px] transition-colors",
               "active:scale-95 transition-transform",
-              isActive
-                ? "text-primary"
-                : isDocked
-                  ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+              isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
             )}
-            onClick={(event: MouseEvent<HTMLAnchorElement>) => {
-              if (tab.id === "ai") {
-                event.preventDefault();
-                openMaddyPanel("chat");
-                return;
-              }
-
+            onClick={() => {
               setActiveModule(tab.id);
             }}
             onTouchStart={() => router.prefetch(tab.href)}
             aria-label={tab.label}
             aria-current={isActive ? "page" : undefined}
           >
-            <Icon
-              className={cn("w-5 h-5", isActive && "fill-primary/20", !isActive && isDocked && "text-foreground")}
-              strokeWidth={isActive ? 2.5 : 1.8}
-            />
+            <Icon className={cn("w-5 h-5", isActive && "fill-primary/20")} strokeWidth={isActive ? 2.5 : 1.8} />
             <span
               className={cn(
                 "text-[10px] font-medium leading-none",
-                isActive ? "text-primary" : isDocked ? "text-foreground" : "text-muted-foreground"
+                isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
               {tab.label}
             </span>
-            {(isActive || isDocked) && (
+            {isActive && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
             )}
           </Link>

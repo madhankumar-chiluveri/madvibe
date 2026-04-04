@@ -28,11 +28,17 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
 
 interface PageHeaderProps {
   page: any;
+  editable?: boolean;
   mobileToolbarOpen?: boolean;
   onMobileToolbarToggle?: () => void;
 }
 
-export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarToggle }: PageHeaderProps) {
+export function PageHeader({
+  page,
+  editable = true,
+  mobileToolbarOpen = false,
+  onMobileToolbarToggle,
+}: PageHeaderProps) {
   const updatePage = useMutation(api.pages.update);
   const tagPage = useAction(api.maddy.tagPage);
   const { geminiApiKey, maddyEnabled } = useAppStore();
@@ -55,6 +61,7 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
   // Debounced title save — fires 600 ms after the user stops typing
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!editable) return;
       const value = e.target.value;
       setTitle(value);
       latestTitle.current = value;
@@ -69,11 +76,12 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
         }
       }, 600);
     },
-    [page._id, page.title, updatePage]
+    [editable, page._id, page.title, updatePage]
   );
 
   // Flush save immediately on blur (covers Tab-away)
   const handleTitleBlur = useCallback(async () => {
+    if (!editable) return;
     if (titleSaveTimer.current) clearTimeout(titleSaveTimer.current);
     if (latestTitle.current !== page.title) {
       try {
@@ -82,30 +90,34 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
         toast.error("Failed to save title");
       }
     }
-  }, [page._id, page.title, updatePage]);
+  }, [editable, page._id, page.title, updatePage]);
 
   const handleFavourite = useCallback(async () => {
+    if (!editable) return;
     try {
       await updatePage({ id: page._id, isFavourite: !page.isFavourite });
     } catch {
       toast.error("Failed to update favourite");
     }
-  }, [page._id, page.isFavourite, updatePage]);
+  }, [editable, page._id, page.isFavourite, updatePage]);
 
   const handleFullWidth = useCallback(async () => {
+    if (!editable) return;
     try {
       await updatePage({ id: page._id, isFullWidth: !page.isFullWidth });
     } catch {
       toast.error("Failed to update width");
     }
-  }, [page._id, page.isFullWidth, updatePage]);
+  }, [editable, page._id, page.isFullWidth, updatePage]);
 
   const handleRemoveCover = useCallback(async () => {
+    if (!editable) return;
     await updatePage({ id: page._id, coverImage: null });
-  }, [page._id, updatePage]);
+  }, [editable, page._id, updatePage]);
 
   const handleEmojiSelect = useCallback(
     async (emojiData: any) => {
+      if (!editable) return;
       setShowEmoji(false);
       try {
         await updatePage({ id: page._id, icon: emojiData.emoji });
@@ -113,14 +125,16 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
         toast.error("Failed to set icon");
       }
     },
-    [page._id, updatePage]
+    [editable, page._id, updatePage]
   );
 
   const handleRemoveIcon = useCallback(async () => {
+    if (!editable) return;
     await updatePage({ id: page._id, icon: null });
-  }, [page._id, updatePage]);
+  }, [editable, page._id, updatePage]);
 
   const openPicker = useCallback(() => {
+    if (!editable) return;
     if (titleAreaRef.current) {
       const rect = titleAreaRef.current.getBoundingClientRect();
       setPickerPos({
@@ -129,9 +143,10 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
       });
     }
     setShowEmoji(true);
-  }, []);
+  }, [editable]);
 
   const handleAutoTag = useCallback(async () => {
+    if (!editable) return;
     if (!geminiApiKey) {
       toast.error("Add your Gemini API key in Settings to use Maddy AI");
       return;
@@ -147,12 +162,12 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
     } finally {
       setTagging(false);
     }
-  }, [geminiApiKey, page._id, tagPage]);
+  }, [editable, geminiApiKey, page._id, tagPage]);
 
   // Shared toolbar actions list (reused on desktop hover + mobile menu)
   const toolbarActions = (
     <>
-      {!page.icon && (
+      {editable && !page.icon && (
         <button
           className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs whitespace-nowrap"
           onClick={() => { openPicker(); onMobileToolbarToggle?.(); }}
@@ -160,7 +175,7 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
           <Smile className="w-3.5 h-3.5" /> Add icon
         </button>
       )}
-      {page.icon && (
+      {editable && page.icon && (
         <button
           className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs whitespace-nowrap"
           onClick={() => { openPicker(); onMobileToolbarToggle?.(); }}
@@ -168,7 +183,7 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
           <Smile className="w-3.5 h-3.5" /> Change icon
         </button>
       )}
-      {page.icon && (
+      {editable && page.icon && (
         <button
           className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs whitespace-nowrap"
           onClick={() => { handleRemoveIcon(); onMobileToolbarToggle?.(); }}
@@ -176,7 +191,7 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
           <X className="w-3.5 h-3.5" /> Remove icon
         </button>
       )}
-      {maddyEnabled && (
+      {editable && maddyEnabled && (
         <button
           className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs text-foreground whitespace-nowrap"
           onClick={() => { handleAutoTag(); onMobileToolbarToggle?.(); }}
@@ -197,23 +212,27 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
           sourceUrl: `/workspace/${page._id}`,
         }}
       />
-      <button
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs whitespace-nowrap"
-        onClick={() => { handleFavourite(); onMobileToolbarToggle?.(); }}
-      >
-        <AppIcon className="w-3.5 h-3.5 rounded-sm" />
-        {page.isFavourite ? "Unfavourite" : "Favourite"}
-      </button>
-      <button
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs whitespace-nowrap"
-        onClick={() => { handleFullWidth(); onMobileToolbarToggle?.(); }}
-      >
-        {page.isFullWidth ? (
-          <><Minimize2 className="w-3.5 h-3.5" /> Full width off</>
-        ) : (
-          <><Maximize2 className="w-3.5 h-3.5" /> Full width</>
-        )}
-      </button>
+      {editable && (
+        <button
+          className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs whitespace-nowrap"
+          onClick={() => { handleFavourite(); onMobileToolbarToggle?.(); }}
+        >
+          <AppIcon className="w-3.5 h-3.5 rounded-sm" />
+          {page.isFavourite ? "Unfavourite" : "Favourite"}
+        </button>
+      )}
+      {editable && (
+        <button
+          className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs whitespace-nowrap"
+          onClick={() => { handleFullWidth(); onMobileToolbarToggle?.(); }}
+        >
+          {page.isFullWidth ? (
+            <><Minimize2 className="w-3.5 h-3.5" /> Full width off</>
+          ) : (
+            <><Maximize2 className="w-3.5 h-3.5" /> Full width</>
+          )}
+        </button>
+      )}
     </>
   );
 
@@ -235,12 +254,14 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
             className="object-cover"
             priority
           />
-          <button
-            className="absolute top-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded hover:bg-black/60 transition"
-            onClick={handleRemoveCover}
-          >
-            Remove cover
-          </button>
+          {editable ? (
+            <button
+              className="absolute top-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded hover:bg-black/60 transition"
+              onClick={handleRemoveCover}
+            >
+              Remove cover
+            </button>
+          ) : null}
         </div>
       )}
 
@@ -250,8 +271,8 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
         {page.icon && (
           <div className="relative inline-block mb-2">
             <span
-              className="text-4xl md:text-5xl leading-none cursor-pointer"
-              onClick={openPicker}
+              className={cn("text-4xl md:text-5xl leading-none", editable && "cursor-pointer")}
+              onClick={editable ? openPicker : undefined}
             >
               {page.icon}
             </span>
@@ -275,7 +296,9 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
           value={title}
           onChange={handleTitleChange}
           onBlur={handleTitleBlur}
+          readOnly={!editable}
           onKeyDown={(e) => {
+            if (!editable) return;
             if (e.key === "Enter") {
               e.preventDefault();
               (e.target as HTMLInputElement).blur();
@@ -285,7 +308,8 @@ export function PageHeader({ page, mobileToolbarOpen = false, onMobileToolbarTog
           className={cn(
             "w-full text-2xl sm:text-3xl md:text-4xl font-bold bg-transparent border-none outline-none",
             "placeholder:text-muted-foreground/40 text-foreground",
-            "focus:ring-0 focus:outline-none"
+            "focus:ring-0 focus:outline-none",
+            !editable && "cursor-default"
           )}
         />
 

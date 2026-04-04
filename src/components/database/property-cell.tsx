@@ -27,7 +27,7 @@ import {
 interface PropertyCellProps {
   property: PropertySchema;
   value: unknown;
-  onChange: (value: unknown) => void;
+  onChange?: (value: unknown) => void;
   fullWidth?: boolean;
   rowCreatedAt?: number;
   rowData?: Record<string, unknown>;
@@ -50,6 +50,23 @@ function formatDateValue(rawValue: unknown) {
   }).format(date);
 }
 
+function formatDateTimeValue(rawValue: unknown) {
+  if (rawValue === null || rawValue === undefined || rawValue === "") {
+    return "";
+  }
+
+  const date = new Date(Number(rawValue));
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function PropertyCell({
   property,
   value,
@@ -62,6 +79,7 @@ export function PropertyCell({
 }: PropertyCellProps) {
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value ?? "");
+  const isEditable = typeof onChange === "function";
   const fieldWidthClass = fullWidth ? "w-full" : "min-w-[140px] max-w-[280px]";
   const displayWidthClass = fullWidth ? "w-full" : "max-w-[280px]";
   const wrapDisplay = property.config?.wrap ? "whitespace-normal break-words" : "truncate";
@@ -95,6 +113,10 @@ export function PropertyCell({
 
   const commitTextLike = () => {
     setEditing(false);
+    if (!onChange) {
+      return;
+    }
+
     onChange(normalizeValueForProperty(property, localValue));
   };
 
@@ -145,6 +167,45 @@ export function PropertyCell({
         ) : property.type === "url" ? (
           <Link2 className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
         ) : null;
+
+      if (!isEditable) {
+        return (
+          <div
+            className={cn(
+              "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-left text-[13px]",
+              displayWidthClass
+            )}
+          >
+            <div className="flex min-w-0 items-center gap-1.5">
+              {prefixIcon}
+              {href && resolvedValue ? (
+                <a
+                  href={href}
+                  target={property.type === "url" ? "_blank" : undefined}
+                  rel={property.type === "url" ? "noopener noreferrer" : undefined}
+                  className={cn(
+                    "max-w-full text-zinc-100 underline decoration-zinc-600 underline-offset-2",
+                    wrapDisplay
+                  )}
+                >
+                  {String(resolvedValue)}
+                </a>
+              ) : (
+                <span
+                  className={cn(
+                    "max-w-full",
+                    wrapDisplay,
+                    property.type === "title" ? "font-medium text-zinc-100" : "text-zinc-200",
+                    !resolvedValue && "font-normal text-zinc-500"
+                  )}
+                >
+                  {resolvedValue ? String(resolvedValue) : property.type === "title" ? "Untitled" : "Empty"}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
 
       return editing ? (
         <input
@@ -218,6 +279,23 @@ export function PropertyCell({
     }
 
     case "number":
+      if (!isEditable) {
+        return (
+          <div
+            className={cn(
+              "flex min-h-[38px] items-center justify-end rounded-lg px-2.5 py-1.5 text-right text-[13px]",
+              displayWidthClass
+            )}
+          >
+            {resolvedValue === null || resolvedValue === undefined || resolvedValue === "" ? (
+              <span className="text-zinc-500">Empty</span>
+            ) : (
+              <span className="text-zinc-100">{Number(resolvedValue).toLocaleString()}</span>
+            )}
+          </div>
+        );
+      }
+
       return editing ? (
         <input
           type="number"
@@ -260,6 +338,30 @@ export function PropertyCell({
     case "select": {
       const selected = getPropertyOption(property, resolvedValue);
 
+      if (!isEditable) {
+        return (
+          <div
+            className={cn(
+              "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-left",
+              displayWidthClass
+            )}
+          >
+            {selected ? (
+              <span
+                className={cn(
+                  "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                  getSelectColorClasses(selected.color)
+                )}
+              >
+                <span className="truncate">{selected.label}</span>
+              </span>
+            ) : (
+              <span className="text-[13px] text-zinc-500">Empty</span>
+            )}
+          </div>
+        );
+      }
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -290,7 +392,7 @@ export function PropertyCell({
             align="start"
             className="w-[220px] border-white/10 bg-[#191816] text-zinc-100"
           >
-            <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={() => onChange(null)}>
+            <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={() => onChange?.(null)}>
               Clear
             </DropdownMenuItem>
 
@@ -303,7 +405,7 @@ export function PropertyCell({
                 <DropdownMenuItem
                   key={option.id}
                   className="focus:bg-white/[0.06]"
-                  onSelect={() => onChange(option.id)}
+                  onSelect={() => onChange?.(option.id)}
                 >
                   <span
                     className={cn(
@@ -325,6 +427,35 @@ export function PropertyCell({
     case "multi_select": {
       const selectedOptions = getPropertyOptionList(property, resolvedValue);
       const selectedIds = new Set(selectedOptions.map((option) => option.id));
+
+      if (!isEditable) {
+        return (
+          <div
+            className={cn(
+              "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-left",
+              displayWidthClass
+            )}
+          >
+            {selectedOptions.length > 0 ? (
+              <div className="flex min-w-0 flex-wrap gap-1">
+                {selectedOptions.map((option) => (
+                  <span
+                    key={option.id}
+                    className={cn(
+                      "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                      getSelectColorClasses(option.color)
+                    )}
+                  >
+                    <span className="truncate">{option.label}</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-[13px] text-zinc-500">Empty</span>
+            )}
+          </div>
+        );
+      }
 
       return (
         <DropdownMenu>
@@ -380,7 +511,7 @@ export function PropertyCell({
                       next.delete(option.id);
                     }
 
-                    onChange(Array.from(next));
+                    onChange?.(Array.from(next));
                   }}
                 >
                   <span
@@ -395,7 +526,7 @@ export function PropertyCell({
               ))
             )}
 
-            <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={() => onChange([])}>
+            <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={() => onChange?.([])}>
               Clear all
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -404,22 +535,54 @@ export function PropertyCell({
     }
 
     case "checkbox":
+      if (!isEditable) {
+        return (
+          <div className={cn("flex min-h-[38px] items-center px-2.5", displayWidthClass)}>
+            <div
+              className={cn(
+                "flex h-4 w-4 items-center justify-center rounded border",
+                resolvedValue
+                  ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
+                  : "border-white/15 bg-white/[0.04] text-transparent"
+              )}
+            >
+              <Check className="h-3 w-3" />
+            </div>
+          </div>
+        );
+      }
+
       return (
         <label className={cn("flex min-h-[38px] items-center px-2.5", displayWidthClass)}>
           <input
             type="checkbox"
             checked={Boolean(resolvedValue)}
-            onChange={(event) => onChange(event.target.checked)}
+            onChange={(event) => onChange?.(event.target.checked)}
             className="h-4 w-4 cursor-pointer rounded border-white/15 bg-white/[0.04] accent-white"
           />
         </label>
       );
 
     case "date":
+      if (!isEditable) {
+        return (
+          <div
+            className={cn(
+              "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-[13px]",
+              displayWidthClass
+            )}
+          >
+            <span className={resolvedValue ? "text-zinc-200" : "text-zinc-500"}>
+              {formatDateValue(resolvedValue) || "Empty"}
+            </span>
+          </div>
+        );
+      }
+
       return (
         <PremiumDateTimePicker
           value={typeof resolvedValue === "number" ? resolvedValue : null}
-          onChange={(nextValue) => onChange(normalizeValueForProperty(property, nextValue))}
+          onChange={(nextValue) => onChange?.(normalizeValueForProperty(property, nextValue))}
           mode="date"
           variant="cell"
           placeholder="Empty"
@@ -429,10 +592,25 @@ export function PropertyCell({
       );
 
     case "created_time":
+      if (!isEditable) {
+        return (
+          <div
+            className={cn(
+              "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-[13px]",
+              displayWidthClass
+            )}
+          >
+            <span className={resolvedValue ? "text-zinc-200" : "text-zinc-500"}>
+              {formatDateTimeValue(resolvedValue) || "Empty"}
+            </span>
+          </div>
+        );
+      }
+
       return (
         <PremiumDateTimePicker
           value={typeof resolvedValue === "number" ? resolvedValue : null}
-          onChange={(nextValue) => onChange(normalizeValueForProperty(property, nextValue))}
+          onChange={(nextValue) => onChange?.(normalizeValueForProperty(property, nextValue))}
           mode="datetime"
           variant="cell"
           placeholder="Empty"
@@ -484,6 +662,21 @@ export function PropertyCell({
     }
 
     default:
+      if (!isEditable) {
+        return (
+          <div
+            className={cn(
+              "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-left text-[13px] text-zinc-300",
+              displayWidthClass
+            )}
+          >
+            <span className={cn("max-w-full", wrapDisplay, !resolvedValue && "text-zinc-500")}>
+              {String(resolvedValue ?? "") || "Empty"}
+            </span>
+          </div>
+        );
+      }
+
       return (
         <button
           type="button"

@@ -14,7 +14,7 @@ export type MaddyProvider =
   | "anthropic"
   | "groq"
   | "openrouter";
-type LedgerTab = "dashboard" | "transactions" | "budget" | "investments" | "reports";
+export type LedgerTab = "dashboard" | "transactions" | "credit_cards" | "loans" | "investments" | "budget" | "goals" | "recurring" | "reports" | "market";
 type FeedCategory = "for_you" | "ai_ml" | "tech_it" | "productivity" | "must_know" | "general" | null;
 
 interface AppState {

@@ -31,6 +31,7 @@ import { ReminderTriggerButton } from "@/components/reminders/reminder-trigger-b
 import { cn } from "@/lib/utils";
 import { PageBreadcrumb } from "@/components/editor/breadcrumb";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { BoardView } from "./board-view";
 import { DatabaseQuickFilterBar } from "./database-quick-filter-bar";
 import { DatabaseQuickSortBar } from "./database-quick-sort-bar";
@@ -451,6 +452,7 @@ function ActiveControlChip({
 }
 
 export function DatabaseView({ page }: DatabaseViewProps) {
+  const { currentWorkspace } = useResolvedWorkspace();
   const [viewType, setViewType] = useState<ViewType>("table");
   const [title, setTitle] = useState(page.title);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -478,6 +480,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   const [formulaNow, setFormulaNow] = useState(() => Date.now());
   const [viewStateHydrated, setViewStateHydrated] = useState(false);
   const ensuringDefaultViewDatabaseIdRef = useRef<string | null>(null);
+  const canEditWorkspace = (currentWorkspace?.role ?? "owner") !== "viewer";
 
   const updatePage = useMutation(api.pages.update);
   const addRowMutation = useMutation(api.databases.addRow);
@@ -770,6 +773,11 @@ export function DatabaseView({ page }: DatabaseViewProps) {
 
   const handleTitleSave = async () => {
     setEditingTitle(false);
+    if (!canEditWorkspace) {
+      setTitle(page.title);
+      return;
+    }
+
     if (title !== page.title) {
       await updatePage({ id: page._id, title });
     }
@@ -777,6 +785,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
 
   const handleAddRow = useCallback(
     async (initialData?: Record<string, unknown>) => {
+      if (!canEditWorkspace) return;
       if (!database || rows === undefined) return;
 
       const before = createSnapshot();
@@ -835,6 +844,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     [
       addRowMutation,
       createSnapshot,
+      canEditWorkspace,
       database,
       formulaNow,
       properties,
@@ -846,6 +856,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
 
   const handleUpdateRow = useCallback(
     async (rowId: Id<"rows">, data: Record<string, unknown>) => {
+      if (!canEditWorkspace) return;
       if (rows === undefined) return;
 
       const before = createSnapshot();
@@ -877,11 +888,12 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         });
       }
     },
-    [createSnapshot, properties, pushHistoryEntry, rows, updateRowMutation]
+    [canEditWorkspace, createSnapshot, properties, pushHistoryEntry, rows, updateRowMutation]
   );
 
   const handleDeleteRow = useCallback(
     async (rowId: Id<"rows">) => {
+      if (!canEditWorkspace) return;
       if (rows === undefined) return;
 
       const before = createSnapshot();
@@ -902,11 +914,12 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         });
       }
     },
-    [createSnapshot, deleteRowMutation, properties, pushHistoryEntry, rows]
+    [canEditWorkspace, createSnapshot, deleteRowMutation, properties, pushHistoryEntry, rows]
   );
 
   const handleBatchUpdateRows = useCallback(
     async (updates: Array<{ rowId: Id<"rows">; data: Record<string, unknown> }>) => {
+      if (!canEditWorkspace) return;
       if (rows === undefined || updates.length === 0) return;
 
       const before = createSnapshot();
@@ -949,11 +962,12 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         });
       }
     },
-    [createSnapshot, properties, pushHistoryEntry, rows, updateRowMutation]
+    [canEditWorkspace, createSnapshot, properties, pushHistoryEntry, rows, updateRowMutation]
   );
 
   const handleBatchDeleteRows = useCallback(
     async (rowIds: Id<"rows">[]) => {
+      if (!canEditWorkspace) return;
       if (rows === undefined || rowIds.length === 0) return;
 
       const before = createSnapshot();
@@ -981,11 +995,12 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         });
       }
     },
-    [createSnapshot, deleteRowMutation, properties, pushHistoryEntry, rows]
+    [canEditWorkspace, createSnapshot, deleteRowMutation, properties, pushHistoryEntry, rows]
   );
 
   const handleUpdateProperties = useCallback(
     async (updater: (current: PropertySchema[]) => PropertySchema[]) => {
+      if (!canEditWorkspace) return;
       if (!database || rows === undefined) return;
 
       const before = createSnapshot();
@@ -1026,6 +1041,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     },
     [
       createSnapshot,
+      canEditWorkspace,
       database,
       properties,
       pushHistoryEntry,
@@ -1045,7 +1061,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         visibleProperties: string[];
       }>
     ) => {
-      if (!activeView) {
+      if (!activeView || !canEditWorkspace) {
         return;
       }
 
@@ -1060,7 +1076,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
           : {}),
       });
     },
-    [activeView, updateViewMutation]
+    [activeView, canEditWorkspace, updateViewMutation]
   );
 
   const handleViewTypeChange = useCallback(
@@ -1125,6 +1141,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   );
 
   const handleQuickAddRow = async () => {
+    if (!canEditWorkspace) return;
     setQuickAddLoading(true);
     try {
       await handleAddRow();
@@ -1134,6 +1151,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   };
 
   const handleUndo = useCallback(async () => {
+    if (!canEditWorkspace) return;
     const entry = undoStack[undoStack.length - 1];
     if (!entry || historyBusy) return;
 
@@ -1148,9 +1166,10 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     } finally {
       setHistoryBusy(false);
     }
-  }, [applySnapshot, historyBusy, undoStack]);
+  }, [applySnapshot, canEditWorkspace, historyBusy, undoStack]);
 
   const handleRedo = useCallback(async () => {
+    if (!canEditWorkspace) return;
     const entry = redoStack[redoStack.length - 1];
     if (!entry || historyBusy) return;
 
@@ -1165,7 +1184,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     } finally {
       setHistoryBusy(false);
     }
-  }, [applySnapshot, historyBusy, redoStack]);
+  }, [applySnapshot, canEditWorkspace, historyBusy, redoStack]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1266,6 +1285,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   };
 
   const handleSaveFilters = async () => {
+    if (!canEditWorkspace) return;
     const nextFilterGroup = getPersistableFilterGroup(filterGroup, properties);
     setFilterGroup(nextFilterGroup);
     setSavedFilterGroup(cloneFilterGroup(nextFilterGroup));
@@ -1294,6 +1314,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     );
   };
   const handleSaveSorts = async () => {
+    if (!canEditWorkspace) return;
     const nextSortRules = cloneSortRules(sanitizeSortRules(sortRules, properties));
     setSortRules(nextSortRules);
     setSavedSortRules(cloneSortRules(nextSortRules));
@@ -1457,8 +1478,14 @@ export function DatabaseView({ page }: DatabaseViewProps) {
             />
           ) : (
             <h1
-              className="mb-4 cursor-text text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-white transition-opacity hover:opacity-80"
-              onClick={() => setEditingTitle(true)}
+              className={cn(
+                "mb-4 text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-white transition-opacity",
+                canEditWorkspace ? "cursor-text hover:opacity-80" : "cursor-default"
+              )}
+              onClick={() => {
+                if (!canEditWorkspace) return;
+                setEditingTitle(true);
+              }}
             >
               {page.title || <span className="text-zinc-600">Untitled</span>}
             </h1>
@@ -1503,6 +1530,11 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               </div>
 
               <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                {!canEditWorkspace ? (
+                  <span className="mr-1 inline-flex h-9 items-center rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-400">
+                    View only
+                  </span>
+                ) : null}
                 <ToolbarIconButton
                   active={filtersOpen || activeFilters.length > 0 || hasPendingFilterChanges}
                   count={activeFilters.length}
@@ -1578,8 +1610,8 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                 <Button
                   type="button"
                   size="sm"
-                  onClick={handleQuickAddRow}
-                  disabled={!database || quickAddLoading}
+                  onClick={() => void handleQuickAddRow()}
+                  disabled={!database || quickAddLoading || !canEditWorkspace}
                   className="h-9 gap-1.5 rounded-xl bg-white px-3 text-[13px] font-medium text-black hover:bg-zinc-200"
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -1593,7 +1625,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               properties={properties}
               filterGroup={filterGroup}
               open={filtersOpen}
-              hasPendingChanges={hasPendingFilterChanges}
+              hasPendingChanges={canEditWorkspace ? hasPendingFilterChanges : false}
               onOpenChange={setFiltersOpen}
               onChange={updateQuickFilterGroup}
               onReset={handleResetFilters}
@@ -1607,7 +1639,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               properties={properties}
               sortRules={sortRules}
               open={sortsOpen}
-              hasPendingChanges={hasPendingSortChanges}
+              hasPendingChanges={canEditWorkspace ? hasPendingSortChanges : false}
               onOpenChange={setSortsOpen}
               onChange={updateQuickSortRules}
               onReset={handleResetSorts}
@@ -1642,7 +1674,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
           {database === undefined ? (
             <div className="py-8 text-sm text-zinc-500">Loading database...</div>
           ) : database === null ? (
-            <CreateDatabase pageId={page._id} />
+            <CreateDatabase pageId={page._id} editable={canEditWorkspace} />
           ) : (
             <>
               <div className="mb-3 flex items-center justify-between px-1 text-sm text-zinc-500">
@@ -1666,6 +1698,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   rows={visibleRows}
                   totalRowCount={rows?.length}
                   now={formulaNow}
+                  editable={canEditWorkspace}
                   onAddRow={() => handleAddRow()}
                   onUpdateRow={handleUpdateRow}
                   onBatchUpdateRows={handleBatchUpdateRows}
@@ -1685,6 +1718,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   rows={visibleRows}
                   groupByPropertyId={boardGroupByPropertyId}
                   now={formulaNow}
+                  editable={canEditWorkspace}
                   onAddRow={handleAddRow}
                   onUpdateRow={handleUpdateRow}
                 />
@@ -1698,6 +1732,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   properties={orderedProperties}
                   rows={visibleRows}
                   now={formulaNow}
+                  editable={canEditWorkspace}
                   onAddRow={() => handleAddRow()}
                   onUpdateRow={handleUpdateRow}
                   onDeleteRow={handleDeleteRow}
@@ -1711,11 +1746,18 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   );
 }
 
-function CreateDatabase({ pageId }: { pageId: Id<"pages"> }) {
+function CreateDatabase({
+  pageId,
+  editable = true,
+}: {
+  pageId: Id<"pages">;
+  editable?: boolean;
+}) {
   const createDatabase = useMutation(api.databases.create);
   const [creating, setCreating] = useState(false);
 
   const handleCreate = async () => {
+    if (!editable) return;
     setCreating(true);
     try {
       const title = createProperty("title", "Tool Name");
@@ -1769,15 +1811,21 @@ function CreateDatabase({ pageId }: { pageId: Id<"pages"> }) {
       <p className="max-w-md text-sm text-zinc-400">
         No database schema exists on this page yet. Initialize one with a Notion-style starter setup.
       </p>
-      <Button
-        type="button"
-        onClick={handleCreate}
-        disabled={creating}
-        className="rounded-xl bg-white text-black hover:bg-zinc-200"
-      >
-        <Plus className="mr-2 h-4 w-4" />
-        {creating ? "Creating..." : "Initialize Database"}
-      </Button>
+      {editable ? (
+        <Button
+          type="button"
+          onClick={() => void handleCreate()}
+          disabled={creating}
+          className="rounded-xl bg-white text-black hover:bg-zinc-200"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          {creating ? "Creating..." : "Initialize Database"}
+        </Button>
+      ) : (
+        <p className="text-sm text-zinc-500">
+          You have view-only access to this workspace, so only editors can create the database schema.
+        </p>
+      )}
     </div>
   );
 }

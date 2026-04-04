@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
+import { requireCommentAccess, requirePageAccess } from "./workspaceAccess";
 
 // ── Mutations ──────────────────────────────────────────────────
 
@@ -15,6 +16,10 @@ export const add = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
+    const { page } = await requirePageAccess(ctx, args.pageId, "editor");
+    if (page.workspaceId !== args.workspaceId) {
+      throw new Error("Page does not belong to this workspace");
+    }
 
     const identity = await ctx.auth.getUserIdentity();
     const authorName =
@@ -47,8 +52,7 @@ export const edit = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const comment = await ctx.db.get(args.id);
-    if (!comment) throw new Error("Comment not found");
+    const { comment } = await requireCommentAccess(ctx, args.id, "editor");
     if (comment.authorId !== userId) throw new Error("Unauthorized");
 
     const now = Date.now();
@@ -66,8 +70,7 @@ export const remove = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const comment = await ctx.db.get(args.id);
-    if (!comment) throw new Error("Comment not found");
+    const { comment } = await requireCommentAccess(ctx, args.id, "editor");
     if (comment.authorId !== userId) throw new Error("Unauthorized");
 
     // Delete all replies first
@@ -91,8 +94,7 @@ export const resolve = mutation({
     resolved: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    const { userId } = await requireCommentAccess(ctx, args.id, "editor");
 
     const now = Date.now();
     await ctx.db.patch(args.id, {
@@ -109,6 +111,7 @@ export const resolve = mutation({
 export const listByPage = query({
   args: { pageId: v.id("pages") },
   handler: async (ctx, args) => {
+    await requirePageAccess(ctx, args.pageId, "viewer");
     const userId = await getAuthUserId(ctx);
 
     const comments = await ctx.db

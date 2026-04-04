@@ -2,17 +2,19 @@
 
 import { useState, useCallback } from "react";
 import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { cn, formatRelativeTime } from "@/lib/utils";
-import { PageHeader } from "./page-header";
-import { BlockNoteEditor } from "./blocknote-editor";
-import { PageBreadcrumb } from "./breadcrumb";
-import { PageComments } from "./page-comments";
-import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
-import { useAppStore } from "@/store/app.store";
-import { useEditorStore } from "@/store/editor.store";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
+
+import { api } from "../../../convex/_generated/api";
+import { PageBreadcrumb } from "./breadcrumb";
+import { BlockNoteEditor } from "./blocknote-editor";
+import { PageComments } from "./page-comments";
+import { PageHeader } from "./page-header";
+import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
+import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { useAppStore } from "@/store/app.store";
+import { useEditorStore } from "@/store/editor.store";
 
 interface PageViewProps {
   page: any;
@@ -20,60 +22,55 @@ interface PageViewProps {
 
 export function PageView({ page }: PageViewProps) {
   const { fontFamily } = useAppStore();
-  const saveStatus = useEditorStore((s) => s.saveStatus);
+  const saveStatus = useEditorStore((state) => state.saveStatus);
   const updatePage = useMutation(api.pages.update);
+  const { currentWorkspace } = useResolvedWorkspace();
 
   const [mobileToolbarOpen, setMobileToolbarOpen] = useState(false);
+  const canEditWorkspace = (currentWorkspace?.role ?? "owner") !== "viewer";
 
   const fontClass =
     fontFamily === "serif"
       ? "font-serif"
       : fontFamily === "mono"
-      ? "font-mono"
-      : "font-sans";
+        ? "font-mono"
+        : "font-sans";
 
   const handleFavourite = useCallback(async () => {
+    if (!canEditWorkspace) return;
+
     try {
       await updatePage({ id: page._id, isFavourite: !page.isFavourite });
     } catch {
       toast.error("Failed to update favourite");
     }
-  }, [page._id, page.isFavourite, updatePage]);
+  }, [canEditWorkspace, page._id, page.isFavourite, updatePage]);
 
-  const handleFullWidth = useCallback(async () => {
-    try {
-      await updatePage({ id: page._id, isFullWidth: !page.isFullWidth });
-    } catch {
-      toast.error("Failed to update width");
-    }
-  }, [page._id, page.isFullWidth, updatePage]);
-
-  // Save status text shown in the right side of the top bar
   const saveStatusNode = (
     <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
-      {saveStatus === "saving" && <span className="text-zinc-400">Saving…</span>}
-      {saveStatus === "saved"  && <span className="text-emerald-500">Saved</span>}
-      {saveStatus === "error"  && <span className="text-red-400">Save failed</span>}
-      {saveStatus === "idle" && page.updatedAt && (
+      {!canEditWorkspace && <span>View only</span>}
+      {canEditWorkspace && saveStatus === "saving" && <span className="text-zinc-400">Saving...</span>}
+      {canEditWorkspace && saveStatus === "saved" && <span className="text-emerald-500">Saved</span>}
+      {canEditWorkspace && saveStatus === "error" && <span className="text-red-400">Save failed</span>}
+      {canEditWorkspace && saveStatus === "idle" && page.updatedAt && (
         <span>Edited {formatRelativeTime(page.updatedAt)}</span>
       )}
     </span>
   );
 
-  // Favourite button shown in the right side
   const favouriteNode = (
     <button
       onClick={handleFavourite}
-      className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground"
+      disabled={!canEditWorkspace}
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent/50 disabled:opacity-50"
       title={page.isFavourite ? "Remove from favourites" : "Add to favourites"}
     >
-      <Star className={cn("w-4 h-4", page.isFavourite && "fill-amber-400 text-amber-400")} />
+      <Star className={cn("h-4 w-4", page.isFavourite && "fill-amber-400 text-amber-400")} />
     </button>
   );
 
   return (
     <div className={cn("min-h-screen pb-32", fontClass)}>
-      {/* ── Sticky top bar (WorkspaceTopBar handles workspace breadcrumb + … menu) */}
       <WorkspaceTopBar
         breadcrumbContent={
           <PageBreadcrumb
@@ -90,20 +87,28 @@ export function PageView({ page }: PageViewProps) {
         }
       />
 
-      {/* ── Page breadcrumb (ancestor trail inside content) */}
       <div className={cn(page.isFullWidth ? "px-4 md:px-10 xl:px-16" : "px-4 md:px-8")}>
-        <div className={cn(page.isFullWidth ? "max-w-none" : "max-w-3xl mx-auto")}>
+        <div className={cn(page.isFullWidth ? "max-w-none" : "mx-auto max-w-3xl")}>
           <PageHeader
             page={page}
+            editable={canEditWorkspace}
             mobileToolbarOpen={mobileToolbarOpen}
-            onMobileToolbarToggle={() => setMobileToolbarOpen((v) => !v)}
+            onMobileToolbarToggle={() => setMobileToolbarOpen((value) => !value)}
           />
 
           <div className="mt-4">
-            <BlockNoteEditor pageId={page._id} isFullWidth={page.isFullWidth} />
+            <BlockNoteEditor
+              pageId={page._id}
+              editable={canEditWorkspace}
+              isFullWidth={page.isFullWidth}
+            />
           </div>
 
-          <PageComments pageId={page._id} workspaceId={page.workspaceId} />
+          <PageComments
+            pageId={page._id}
+            workspaceId={page.workspaceId}
+            editable={canEditWorkspace}
+          />
         </div>
       </div>
     </div>

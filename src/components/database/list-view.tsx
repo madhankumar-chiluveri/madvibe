@@ -16,6 +16,7 @@ interface ListViewProps {
   properties: PropertySchema[];
   rows: any[] | undefined;
   now?: number;
+  editable?: boolean;
   onAddRow: () => Promise<void>;
   onUpdateRow: (rowId: Id<"rows">, data: Record<string, unknown>) => Promise<void>;
   onDeleteRow: (rowId: Id<"rows">) => Promise<void>;
@@ -29,6 +30,7 @@ export function ListView({
   properties,
   rows,
   now,
+  editable = true,
   onAddRow,
   onUpdateRow,
   onDeleteRow,
@@ -61,11 +63,14 @@ export function ListView({
                     allProperties={properties}
                     now={now}
                     fullWidth
-                    onChange={(nextValue) =>
-                      onUpdateRow(row._id, {
-                        ...row.data,
-                        [titleProperty.id]: normalizeValueForProperty(titleProperty, nextValue),
-                      })
+                    onChange={
+                      editable
+                        ? (nextValue) =>
+                            onUpdateRow(row._id, {
+                              ...row.data,
+                              [titleProperty.id]: normalizeValueForProperty(titleProperty, nextValue),
+                            })
+                        : undefined
                     }
                   />
                 ) : (
@@ -92,14 +97,16 @@ export function ListView({
                     sourceUrl: `/workspace/${pageId}`,
                   }}
                 />
-                <button
-                  type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 opacity-0 transition hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
-                  onClick={() => onDeleteRow(row._id)}
-                  aria-label="Delete row"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {editable ? (
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 opacity-0 transition hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
+                    onClick={() => onDeleteRow(row._id)}
+                    aria-label="Delete row"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -121,11 +128,14 @@ export function ListView({
                       allProperties={properties}
                       now={now}
                       fullWidth
-                      onChange={(nextValue) =>
-                        onUpdateRow(row._id, {
-                          ...row.data,
-                          [property.id]: normalizeValueForProperty(property, nextValue),
-                        })
+                      onChange={
+                        editable
+                          ? (nextValue) =>
+                              onUpdateRow(row._id, {
+                                ...row.data,
+                                [property.id]: normalizeValueForProperty(property, nextValue),
+                              })
+                          : undefined
                       }
                     />
                   </div>
@@ -136,14 +146,16 @@ export function ListView({
         ))
       )}
 
-      <button
-        type="button"
-        className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
-        onClick={() => onAddRow()}
-      >
-        <Plus className="h-3.5 w-3.5" />
-        New item
-      </button>
+      {editable ? (
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
+          onClick={() => onAddRow()}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          New item
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -31,6 +31,12 @@ export interface Workspace {
   _creationTime: number;
   name: string;
   userId: string;
+  role: "owner" | "editor" | "viewer";
+  isShared?: boolean;
+  ownerUserId?: string;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  memberCount?: number;
   icon?: string;
   createdAt: number;
 }
