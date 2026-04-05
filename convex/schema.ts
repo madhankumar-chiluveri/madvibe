@@ -675,6 +675,14 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_workspaceId_remindAt", ["workspaceId", "remindAt"])
-    .index("by_workspaceId_status_remindAt", ["workspaceId", "status", "remindAt"]),
+    .index("by_workspaceId_remindAt", ["workspaceId", "remindAt"]).index("by_workspaceId_status_remindAt", ["workspaceId", "status", "remindAt"]),
+
+  // -- Push Notification Subscriptions ----------------
+  pushSubscriptions: defineTable({
+    userId: v.string(),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    createdAt: v.number(),
+  }).index("by_userId", ["userId"]),
 });
