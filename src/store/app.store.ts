@@ -6,7 +6,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Id } from "../../convex/_generated/dataModel";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 
-type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "ai";
+type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "automation" | "ai";
 export type MaddyPanelTab = "chat" | "search" | "page";
 export type MaddyProvider =
   | "gemini"
@@ -15,6 +15,7 @@ export type MaddyProvider =
   | "groq"
   | "openrouter";
 export type LedgerTab = "dashboard" | "transactions" | "credit_cards" | "loans" | "investments" | "budget" | "goals" | "recurring" | "reports" | "market";
+export type AutomationTab = "pinterest-pin-generator";
 type FeedCategory = "for_you" | "ai_ml" | "tech_it" | "productivity" | "must_know" | "general" | null;
 
 interface AppState {
@@ -88,6 +89,9 @@ interface AppState {
 
   ledgerTab: LedgerTab;
   setLedgerTab: (t: LedgerTab) => void;
+
+  automationTab: AutomationTab;
+  setAutomationTab: (t: AutomationTab) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -181,6 +185,9 @@ export const useAppStore = create<AppState>()(
 
       ledgerTab: "dashboard",
       setLedgerTab: (t) => set({ ledgerTab: t }),
+
+      automationTab: "pinterest-pin-generator",
+      setAutomationTab: (t) => set({ automationTab: t }),
     }),
     {
       name: "madvibe-app-state",
@@ -207,6 +214,7 @@ export const useAppStore = create<AppState>()(
             state.contextPaneCollapsed ?? state.sidebarCollapsed ?? false,
           feedCategory: state.feedCategory ?? state.newsCategory ?? null,
           ledgerTab: state.ledgerTab ?? state.financeTab ?? "dashboard",
+          automationTab: state.automationTab ?? "pinterest-pin-generator",
         };
       },
       storage: createJSONStorage(() =>
@@ -232,6 +240,7 @@ export const useAppStore = create<AppState>()(
         focusMinutes: s.focusMinutes,
         feedCategory: s.feedCategory,
         ledgerTab: s.ledgerTab,
+        automationTab: s.automationTab,
       }),
     }
   )

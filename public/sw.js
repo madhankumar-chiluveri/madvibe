@@ -103,7 +103,7 @@ self.addEventListener("fetch", (event) => {
           cache.put(request, response);
         });
       })
-      .catch(() => {})
+      .catch(() => { })
   );
 });
 
@@ -119,3 +119,53 @@ async function syncOfflineMutations() {
   // This is a placeholder for custom offline queue implementation
   console.log("[SW] Syncing offline mutations");
 }
+
+// ── Web Push Notifications ──────────────────────────────────
+self.addEventListener("push", function (event) {
+  if (event.data) {
+    try {
+      const data = event.data.json();
+
+      const options = {
+        body: data.body,
+        icon: data.icon || "/icons/icon-192x192.png",
+        badge: data.badge || "/icons/icon-maskable-192x192.png",
+        vibrate: [100, 50, 100],
+        data: {
+          dateOfArrival: Date.now(),
+          url: data.url || "/",
+        },
+      };
+
+      event.waitUntil(self.registration.showNotification(data.title, options));
+    } catch (err) {
+      console.log("Error parsing push data", err);
+    }
+  }
+});
+
+self.addEventListener("notificationclick", function (event) {
+  console.log("Notification clicked.");
+  event.notification.close();
+
+  const urlToOpen = new URL(event.notification.data.url || "/", self.location.origin).href;
+
+  event.waitUntil(
+    clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+      .then(function (windowClients) {
+        for (let i = 0; i < windowClients.length; i++) {
+          const client = windowClients[i];
+          if (client.url === urlToOpen && "focus" in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});

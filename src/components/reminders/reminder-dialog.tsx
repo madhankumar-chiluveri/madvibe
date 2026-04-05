@@ -179,7 +179,6 @@ export function ReminderDialog({
               variant="input"
               placeholder="Pick a date and time"
               className="h-11 rounded-2xl border-white/10 bg-[#181715] hover:bg-[#1d1c1a]"
-              popoverClassName="w-[332px]"
             />
           </div>
 

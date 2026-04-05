@@ -44,7 +44,7 @@ import {
 
 type ActionTone = "neutral" | "amber" | "blue" | "emerald";
 
-function ActionTile({
+function ActionRow({
   icon: Icon,
   label,
   meta,
@@ -67,57 +67,57 @@ function ActionTile({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "group relative flex min-h-[92px] flex-col justify-between overflow-hidden rounded-[18px] border px-3 py-3.5 text-left transition-all",
+        "group relative flex w-full items-center gap-3 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
         disabled
           ? "cursor-not-allowed border-white/6 bg-white/[0.02] text-zinc-600 shadow-none"
-          : "border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:-translate-y-px hover:border-white/12 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))]",
+          : "border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:border-white/12 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))]",
         tone === "amber" &&
           !disabled &&
-          "hover:border-amber-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_28px_rgba(120,85,18,0.14)]",
+          "hover:border-amber-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_24px_rgba(120,85,18,0.12)]",
         tone === "blue" &&
           !disabled &&
-          "hover:border-sky-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_28px_rgba(34,94,147,0.14)]",
+          "hover:border-sky-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_24px_rgba(34,94,147,0.12)]",
         tone === "emerald" &&
           !disabled &&
-          "hover:border-emerald-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_28px_rgba(17,94,73,0.14)]"
+          "hover:border-emerald-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_24px_rgba(17,94,73,0.12)]"
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <span
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-[12px] border transition-colors",
-            disabled && "border-white/6 bg-white/[0.02] text-zinc-600",
-            !disabled &&
-              tone === "neutral" &&
-              "border-white/10 bg-black/24 text-zinc-100 group-hover:border-white/14",
-            !disabled &&
-              tone === "amber" &&
-              "border-amber-400/16 bg-amber-400/[0.08] text-amber-100 group-hover:border-amber-300/26",
-            !disabled &&
-              tone === "blue" &&
-              "border-sky-400/16 bg-sky-400/[0.08] text-sky-100 group-hover:border-sky-300/26",
-            !disabled &&
-              tone === "emerald" &&
-              "border-emerald-400/16 bg-emerald-400/[0.08] text-emerald-100 group-hover:border-emerald-300/26"
-          )}
-        >
-          <Icon className="h-4 w-4" />
-        </span>
+      <span
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] border transition-colors",
+          disabled && "border-white/6 bg-white/[0.02] text-zinc-600",
+          !disabled &&
+            tone === "neutral" &&
+            "border-white/10 bg-black/24 text-zinc-100 group-hover:border-white/14",
+          !disabled &&
+            tone === "amber" &&
+            "border-amber-400/16 bg-amber-400/[0.08] text-amber-100 group-hover:border-amber-300/26",
+          !disabled &&
+            tone === "blue" &&
+            "border-sky-400/16 bg-sky-400/[0.08] text-sky-100 group-hover:border-sky-300/26",
+          !disabled &&
+            tone === "emerald" &&
+            "border-emerald-400/16 bg-emerald-400/[0.08] text-emerald-100 group-hover:border-emerald-300/26"
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
 
-        {badge ? (
-          <span className="rounded-full border border-amber-400/18 bg-amber-400/[0.1] px-2 py-0.5 text-[10px] font-semibold text-amber-200">
-            {badge}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-4 min-w-0">
-        <div className="truncate text-sm font-semibold tracking-[-0.01em] text-white">
+      <span className="min-w-0 flex-1">
+        <span className="truncate text-sm font-semibold tracking-[-0.01em] text-white">
           {label}
-        </div>
-        <p className="mt-1 text-[11px] leading-4 text-zinc-500">{meta}</p>
-      </div>
+        </span>
+        <span className="mt-0.5 block text-[11px] leading-4 text-zinc-500">{meta}</span>
+      </span>
+
+      {badge ? (
+        <span className="rounded-full border border-amber-400/18 bg-amber-400/[0.1] px-2 py-0.5 text-[10px] font-semibold text-amber-200">
+          {badge}
+        </span>
+      ) : null}
+
+      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500 transition-colors group-hover:text-zinc-300" />
     </button>
   );
 }
@@ -126,7 +126,7 @@ export function WorkspaceActionMenu() {
   const router = useRouter();
   const pathname = usePathname();
   const setReminderCenterOpen = useAppStore((state) => state.setReminderCenterOpen);
-  const { currentWorkspace, resolvedWorkspaceId } = useResolvedWorkspace();
+  const { resolvedWorkspaceId } = useResolvedWorkspace();
 
   const [desktopOpen, setDesktopOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -146,8 +146,6 @@ export function WorkspaceActionMenu() {
   );
   const overdueCount = reminderSummary?.overdue ?? 0;
   const actionsDisabled = !resolvedWorkspaceId;
-  const workspaceLabel = currentWorkspace?.name ?? "Workspace";
-
   const closeMenus = () => {
     setDesktopOpen(false);
     setMobileOpen(false);
@@ -218,36 +216,15 @@ export function WorkspaceActionMenu() {
 
   const actionMenuContent = (
     <>
-      <div className="rounded-[18px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
-              Workspace
-            </div>
-            <div className="mt-1 truncate text-sm font-semibold tracking-[-0.01em] text-white">
-              {workspaceLabel}
-            </div>
-          </div>
-          {overdueCount > 0 ? (
-            <span className="shrink-0 rounded-full border border-amber-400/18 bg-amber-400/[0.1] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-200">
-              {overdueCount} overdue
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-2 text-[11px] leading-4 text-zinc-500">
-          Quick access to the actions you actually use.
-        </p>
-      </div>
-
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <ActionTile
+      <div className="space-y-2">
+        <ActionRow
           icon={Building2}
           label="Workspaces"
           meta="Switch or create"
           onClick={handleOpenWorkspaces}
           tone="neutral"
         />
-        <ActionTile
+        <ActionRow
           icon={BellRing}
           label="Reminders"
           meta={
@@ -259,7 +236,7 @@ export function WorkspaceActionMenu() {
           onClick={handleOpenReminders}
           tone="amber"
         />
-        <ActionTile
+        <ActionRow
           icon={Plus}
           label="New"
           meta="Page or database"
@@ -267,7 +244,7 @@ export function WorkspaceActionMenu() {
           disabled={actionsDisabled}
           tone="blue"
         />
-        <ActionTile
+        <ActionRow
           icon={FolderPlus}
           label="Space"
           meta="Dedicated project home"
@@ -275,7 +252,7 @@ export function WorkspaceActionMenu() {
           disabled={actionsDisabled}
           tone="emerald"
         />
-        <ActionTile
+        <ActionRow
           icon={FileUp}
           label="Import"
           meta="Markdown or CSV"
@@ -288,7 +265,7 @@ export function WorkspaceActionMenu() {
         type="button"
         onClick={handleOpenTrash}
         className={cn(
-          "mt-2 flex w-full items-center gap-3 rounded-[16px] border px-3 py-2.5 text-left transition-colors",
+          "mt-2 flex w-full items-center gap-3 rounded-[16px] border px-3 py-3 text-left transition-colors",
           pathname === "/workspace/trash"
             ? "border-red-400/16 bg-red-400/[0.08] text-red-100"
             : "border-white/8 bg-white/[0.03] text-zinc-200 hover:border-red-400/16 hover:bg-red-400/[0.08] hover:text-red-100"
@@ -340,7 +317,7 @@ export function WorkspaceActionMenu() {
         <DropdownMenuContent
           align="end"
           sideOffset={12}
-          className="w-[332px] max-w-[calc(100vw-1rem)] rounded-[22px] border-white/10 bg-[#141311]/96 p-2 text-zinc-100 shadow-[0_28px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl"
+          className="w-[312px] max-w-[calc(100vw-1rem)] rounded-[22px] border-white/10 bg-[#141311]/96 p-2 text-zinc-100 shadow-[0_28px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl"
         >
           {actionMenuContent}
         </DropdownMenuContent>
@@ -417,10 +394,10 @@ export function WorkspaceActionMenu() {
         <DialogContent
           title="Workspaces"
           hideTitleVisually={true}
-          className="max-h-[min(88vh,calc(100dvh-1.5rem))] w-[min(360px,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] overflow-hidden border-white/10 bg-[#161513] p-0 text-zinc-100"
+          className="flex max-h-[min(88vh,calc(100dvh-1.5rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-white/10 bg-[#161513] p-0 text-zinc-100 sm:w-[360px] sm:max-w-[360px]"
         >
           <WorkspaceSwitcherContent
-            className="rounded-[24px] pt-12 md:pt-0"
+            className="rounded-[24px] pt-12"
             onClose={() => setWorkspaceSwitcherOpen(false)}
             onRequestCreateWorkspace={() => {
               setWorkspaceSwitcherOpen(false);

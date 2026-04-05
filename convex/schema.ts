@@ -176,6 +176,27 @@ export default defineSchema({
   }).index("by_userId", ["userId"]),
 
   // ── News ───────────────────────────────────────────
+  ledgerPinConfigs: defineTable({
+    userId: v.string(),
+    pinHash: v.string(),
+    pinSalt: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastVerifiedAt: v.optional(v.number()),
+    lastResetEmailSentAt: v.optional(v.number()),
+  }).index("by_userId", ["userId"]),
+
+  ledgerPinResetTokens: defineTable({
+    userId: v.string(),
+    email: v.string(),
+    tokenHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_tokenHash", ["tokenHash"]),
+
   newsArticles: defineTable({
     title: v.string(),
     source: v.string(),
@@ -649,6 +670,7 @@ export default defineSchema({
     sourceUrl: v.optional(v.string()),
     completedAt: v.optional(v.union(v.number(), v.null())),
     notifiedAt: v.optional(v.union(v.number(), v.null())),
+    scheduledFunctionId: v.optional(v.id("_scheduled_functions")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

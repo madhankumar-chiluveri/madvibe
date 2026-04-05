@@ -1,11 +1,15 @@
 "use client";
 
+"use client";
+
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
+  Bell,
+  BellRing,
   Check,
   Loader2,
   LogOut,
@@ -40,6 +44,7 @@ import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { getWorkspaceSwitchTarget } from "@/lib/workspace-routing";
 import { useAppStore } from "@/store/app.store";
+import { usePush } from "@/hooks/use-push";
 
 type WorkspaceSwitcherContentProps = {
   onClose?: () => void;
@@ -293,6 +298,8 @@ export function WorkspaceSwitcherContent({
   const setCurrentWorkspaceId = useAppStore((state) => state.setCurrentWorkspaceId);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [inviteActionId, setInviteActionId] = useState<string | null>(null);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const { isSupported: pushSupported, permission: pushPermission, subscribe } = usePush();
   const {
     currentWorkspace,
     resolvedWorkspaceId,
@@ -307,10 +314,10 @@ export function WorkspaceSwitcherContent({
 
   const currentUser = user as
     | {
-        _id: string;
-        name?: string;
-        email?: string;
-      }
+      _id: string;
+      name?: string;
+      email?: string;
+    }
     | null
     | undefined;
 
@@ -365,6 +372,41 @@ export function WorkspaceSwitcherContent({
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  const handleEnableNotifications = async () => {
+    // If already denied, guide user to unblock manually
+    if (pushPermission === "denied") {
+      toast.error(
+        "Notifications are blocked for this site. To enable:",
+        {
+          description: "Click the 🔒 lock icon in your browser's address bar → Site settings → Notifications → Allow",
+          duration: 10000,
+        }
+      );
+      return;
+    }
+
+    setIsSubscribing(true);
+    try {
+      const result = await subscribe();
+      if (result.status === "granted") {
+        toast.success("Push notifications enabled! 🔔 You'll get alerts even when MadVibe is closed.", { duration: 5000 });
+      } else if (result.status === "denied") {
+        toast.error("Notifications blocked.", {
+          description: "Click the 🔒 lock icon in your browser's address bar → Site settings → Notifications → Allow, then refresh.",
+          duration: 10000,
+        });
+      } else if (result.status === "dismissed") {
+        toast.info("No problem — you can enable notifications anytime from here.", { duration: 4000 });
+      } else {
+        toast.error("Could not enable notifications: " + result.message);
+      }
+    } catch {
+      toast.error("Could not enable notifications");
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   const handleSignOut = async () => {
     if (isSigningOut) return;
 
@@ -381,153 +423,155 @@ export function WorkspaceSwitcherContent({
   return (
     <div
       className={cn(
-        "flex max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-y-auto overscroll-contain",
+        "flex h-full max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-hidden",
         className
       )}
     >
-      <AccountsSection currentUserId={currentUserId} userLoaded={userLoaded} onClose={onClose} />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <AccountsSection currentUserId={currentUserId} userLoaded={userLoaded} onClose={onClose} />
 
-      <div className="border-b border-border/70 px-4 py-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm font-semibold text-foreground">
-            {getWorkspaceInitial(currentWorkspace?.name)}
+        <div className="border-b border-border/70 px-4 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm font-semibold text-foreground">
+              {getWorkspaceInitial(currentWorkspace?.name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold leading-5 text-foreground break-words">
+                {currentWorkspace?.name ?? "Workspace"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {workspaceCount === 1 ? "1 workspace" : `${workspaceCount} workspaces`}
+              </p>
+            </div>
+            <WorkspaceRoleBadge role={(currentWorkspace as any)?.role ?? "owner"} />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold leading-5 text-foreground break-words">
-              {currentWorkspace?.name ?? "Workspace"}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {workspaceCount === 1 ? "1 workspace" : `${workspaceCount} workspaces`}
-            </p>
-          </div>
-          <WorkspaceRoleBadge role={(currentWorkspace as any)?.role ?? "owner"} />
+          <p className="mt-3 text-xs leading-5 text-muted-foreground break-all">
+            {currentUser?.email ?? displayName}
+          </p>
         </div>
-        <p className="mt-3 text-xs leading-5 text-muted-foreground break-all">
-          {currentUser?.email ?? displayName}
-        </p>
-      </div>
 
-      {pendingInvites.length > 0 ? (
-        <div className="border-b border-border/70 px-2 py-2">
+        {pendingInvites.length > 0 ? (
+          <div className="border-b border-border/70 px-2 py-2">
+            <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Invites
+            </div>
+
+            <div className="space-y-2 px-2 pb-1">
+              {pendingInvites.map((invite: any) => {
+                const isPending = inviteActionId === String(invite._id);
+
+                return (
+                  <div
+                    key={invite._id}
+                    className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium leading-5 text-foreground break-words">
+                          {invite.workspaceName}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Invited by {invite.ownerName}
+                        </div>
+                      </div>
+                      <WorkspaceRoleBadge role={invite.role} />
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 flex-1 rounded-xl"
+                        disabled={inviteActionId !== null}
+                        onClick={() => void handleAcceptInvite(invite._id)}
+                      >
+                        {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                        Join
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 flex-1 rounded-xl"
+                        disabled={inviteActionId !== null}
+                        onClick={() => void handleDeclineInvite(invite._id)}
+                      >
+                        Decline
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="px-2 py-2">
           <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            Invites
+            Workspaces
           </div>
 
-          <div className="space-y-2 px-2 pb-1">
-            {pendingInvites.map((invite: any) => {
-              const isPending = inviteActionId === String(invite._id);
+          {workspaces === undefined ? (
+            <div className="px-2 py-3 text-sm text-muted-foreground">
+              Loading workspaces...
+            </div>
+          ) : workspaceList.length === 0 ? (
+            <div className="px-2 py-3 text-sm text-muted-foreground">
+              No workspaces yet.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {workspaceList.map((workspace: any) => {
+                const isActive = workspace._id === resolvedWorkspaceId;
 
-              return (
-                <div
-                  key={invite._id}
-                  className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium leading-5 text-foreground break-words">
-                        {invite.workspaceName}
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Invited by {invite.ownerName}
-                      </div>
-                    </div>
-                    <WorkspaceRoleBadge role={invite.role} />
-                  </div>
-
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-8 flex-1 rounded-xl"
-                      disabled={inviteActionId !== null}
-                      onClick={() => void handleAcceptInvite(invite._id)}
-                    >
-                      {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-                      Join
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 flex-1 rounded-xl"
-                      disabled={inviteActionId !== null}
-                      onClick={() => void handleDeclineInvite(invite._id)}
-                    >
-                      Decline
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="px-2 py-2">
-        <div className="px-2 pb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Workspaces
-        </div>
-
-        {workspaces === undefined ? (
-          <div className="px-2 py-3 text-sm text-muted-foreground">
-            Loading workspaces...
-          </div>
-        ) : workspaceList.length === 0 ? (
-          <div className="px-2 py-3 text-sm text-muted-foreground">
-            No workspaces yet.
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {workspaceList.map((workspace: any) => {
-              const isActive = workspace._id === resolvedWorkspaceId;
-
-              return (
-                <button
-                  key={workspace._id}
-                  type="button"
-                  onClick={() => handleSelectWorkspace(workspace._id)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors",
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground hover:bg-accent/60"
-                  )}
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-xs font-semibold">
-                    {getWorkspaceInitial(workspace.name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium leading-5 break-words">{workspace.name}</div>
-                    <div className="mt-0.5 text-[11px] leading-4 text-muted-foreground break-words">
-                      {(workspace as any).role === "owner"
-                        ? `${(workspace as any).memberCount ?? 1} member${(workspace as any).memberCount === 1 ? "" : "s"}`
-                        : `Shared by ${(workspace as any).ownerName ?? "workspace owner"}`}
-                    </div>
-                  </div>
-                  <WorkspaceRoleBadge role={(workspace as any).role ?? "owner"} />
-                  <Check
+                return (
+                  <button
+                    key={workspace._id}
+                    type="button"
+                    onClick={() => handleSelectWorkspace(workspace._id)}
                     className={cn(
-                      "h-4 w-4 shrink-0 transition-opacity",
-                      isActive ? "opacity-100" : "opacity-0"
+                      "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors",
+                      isActive
+                        ? "bg-accent text-accent-foreground"
+                        : "text-foreground hover:bg-accent/60"
                     )}
-                  />
-                </button>
-              );
-            })}
-          </div>
-        )}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-xs font-semibold">
+                      {getWorkspaceInitial(workspace.name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium leading-5 break-words">{workspace.name}</div>
+                      <div className="mt-0.5 text-[11px] leading-4 text-muted-foreground break-words">
+                        {(workspace as any).role === "owner"
+                          ? `${(workspace as any).memberCount ?? 1} member${(workspace as any).memberCount === 1 ? "" : "s"}`
+                          : `Shared by ${(workspace as any).ownerName ?? "workspace owner"}`}
+                      </div>
+                    </div>
+                    <WorkspaceRoleBadge role={(workspace as any).role ?? "owner"} />
+                    <Check
+                      className={cn(
+                        "h-4 w-4 shrink-0 transition-opacity",
+                        isActive ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-        <button
-          type="button"
-          onClick={onRequestCreateWorkspace}
-          className="mt-2 flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-medium text-primary transition-colors hover:bg-accent/60"
-        >
-          <Plus className="h-4 w-4" />
-          New workspace
-        </button>
+          <button
+            type="button"
+            onClick={onRequestCreateWorkspace}
+            className="mt-2 flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-medium text-primary transition-colors hover:bg-accent/60"
+          >
+            <Plus className="h-4 w-4" />
+            New workspace
+          </button>
+        </div>
       </div>
 
-      <div className="border-t border-border/70 px-2 py-2">
+      <div className="shrink-0 border-t border-border/70 px-2 py-2">
         <button
           type="button"
           onClick={handleOpenSettings}
@@ -536,6 +580,38 @@ export function WorkspaceSwitcherContent({
           <Settings className="h-4 w-4 text-muted-foreground" />
           Settings
         </button>
+
+        {pushSupported && (
+          <button
+            type="button"
+            disabled={isSubscribing || pushPermission === "granted"}
+            onClick={() => void handleEnableNotifications()}
+            className={cn(
+              "flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm transition-colors",
+              pushPermission === "granted"
+                ? "cursor-default text-emerald-400"
+                : pushPermission === "denied"
+                  ? "text-amber-400 hover:bg-amber-500/10"
+                  : "text-foreground hover:bg-accent/60 disabled:opacity-60"
+            )}
+          >
+            {isSubscribing ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : pushPermission === "granted" ? (
+              <BellRing className="h-4 w-4" />
+            ) : (
+              <Bell className="h-4 w-4 text-muted-foreground" />
+            )}
+            {isSubscribing
+              ? "Enabling notifications..."
+              : pushPermission === "granted"
+                ? "Push alerts enabled"
+                : pushPermission === "denied"
+                  ? "Unblock in browser settings →"
+                  : "Enable push notifications"}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={handleToggleTheme}
@@ -610,7 +686,7 @@ export function CreateWorkspaceDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         title="Create workspace"
-        className="max-w-md border-white/10 bg-[#161513] text-zinc-100"
+        className="flex max-h-[min(88vh,calc(100dvh-1.5rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-white/10 bg-[#161513] text-zinc-100 sm:w-[28rem] sm:max-w-[28rem]"
       >
         <DialogHeader>
           <DialogTitle>Create a new workspace</DialogTitle>

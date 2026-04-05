@@ -1,6 +1,10 @@
 import { fetchAction } from "convex/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { api } from "../../../../../convex/_generated/api";
+import {
+  applyPersistentAuthCookieLifetime,
+  splitSetCookieHeader,
+} from "../../../../../shared/auth-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +17,13 @@ type AuthRouteContext = {
 
 const PROXIED_AUTH_PREFIXES = new Set(["signin", "callback"]);
 const ALLOWED_GOOGLE_PROMPTS = new Set(["select_account"]);
+
+function appendForwardedSetCookie(responseHeaders: Headers, setCookie: string) {
+  responseHeaders.append(
+    "set-cookie",
+    applyPersistentAuthCookieLifetime(setCookie)
+  );
+}
 
 function getConvexSiteUrl() {
   const convexSiteUrl = process.env.CONVEX_SITE_URL?.trim();
@@ -230,12 +241,14 @@ async function proxyAuthRequest(
 
     if (responseSetCookie.length > 0) {
       for (const setCookie of responseSetCookie) {
-        responseHeaders.append("set-cookie", setCookie);
+        appendForwardedSetCookie(responseHeaders, setCookie);
       }
     } else {
       const fallbackSetCookie = response.headers.get("set-cookie");
       if (fallbackSetCookie) {
-        responseHeaders.append("set-cookie", fallbackSetCookie);
+        for (const setCookie of splitSetCookieHeader(fallbackSetCookie)) {
+          appendForwardedSetCookie(responseHeaders, setCookie);
+        }
       }
     }
 

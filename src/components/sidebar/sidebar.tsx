@@ -33,6 +33,7 @@ import {
   Settings,
   Sparkles,
   Wallet,
+  Workflow,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -68,6 +69,7 @@ const MODULES = [
   { id: "feed" as const, label: "Feed", icon: Newspaper, href: "/workspace/feed" },
   { id: "brain" as const, label: "Brain", icon: BookOpen, href: "/workspace/brain" },
   { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
+  { id: "automation" as const, label: "Automation", icon: Workflow, href: "/workspace/automation" },
   { id: "ai" as const, label: "Maddy AI", icon: Sparkles, href: "/workspace/ai" },
 ] as const;
 
@@ -92,6 +94,10 @@ const LEDGER_PANE_ITEMS = [
   { id: "market", label: "Market" },
 ] as const;
 
+const AUTOMATION_PANE_ITEMS = [
+  { id: "pinterest-pin-generator", label: "Pinterest Pin Generator", icon: Workflow },
+] as const;
+
 const PANE_DETAILS = {
   overview: {
     eyebrow: "Workspace",
@@ -113,6 +119,11 @@ const PANE_DETAILS = {
     title: "Ledger",
     description: "Switch ledger sections without crowding the page header.",
   },
+  automation: {
+    eyebrow: "Automation",
+    title: "Automation",
+    description: "Keep generators and repeatable workflows organized in one place.",
+  },
 } as const;
 
 const SNAPPY_EASE_STYLE = {
@@ -124,7 +135,7 @@ function getRouteModule(pathname: string) {
 
   if (!pathname.startsWith("/workspace")) return "overview";
   if (!segment) return "overview";
-  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "ai") {
+  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "automation" || segment === "ai") {
     return segment;
   }
   if (segment === "settings") return "overview";
@@ -1112,7 +1123,7 @@ function OverviewContextPane() {
   const router = useRouter();
   const { openMaddyPanel, setCommandPaletteOpen, setActiveModule } = useAppStore();
 
-  const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger") => {
+  const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger" | "automation") => {
     setActiveModule(moduleId);
     router.push(href);
   };
@@ -1161,6 +1172,11 @@ function OverviewContextPane() {
             icon={<Wallet className="h-4 w-4" />}
             label="Open Ledger"
             onClick={() => goTo("/workspace/ledger", "ledger")}
+          />
+          <NavItem
+            icon={<Workflow className="h-4 w-4" />}
+            label="Open Automation"
+            onClick={() => goTo("/workspace/automation", "automation")}
           />
           <NavItem
             icon={<Settings className="h-4 w-4" />}
@@ -1236,6 +1252,44 @@ function LedgerContextPane() {
   );
 }
 
+function AutomationContextPane() {
+  const router = useRouter();
+  const { automationTab, setAutomationTab } = useAppStore();
+
+  return (
+    <div className="space-y-4 px-2 py-3">
+      <div className="px-3 py-1">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Live Automations
+        </span>
+      </div>
+
+      <div className="space-y-0.5">
+        {AUTOMATION_PANE_ITEMS.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <NavItem
+              key={item.id}
+              icon={<Icon className="h-4 w-4" />}
+              label={item.label}
+              active={automationTab === item.id}
+              onClick={() => {
+                setAutomationTab(item.id);
+                router.push("/workspace/automation");
+              }}
+            />
+          );
+        })}
+      </div>
+
+      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-xs leading-5 text-muted-foreground">
+        Pinterest pins ship first. Next automations can plug into this same module without growing the global nav again.
+      </div>
+    </div>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { contextPaneCollapsed, setActiveModule } = useAppStore();
@@ -1249,6 +1303,8 @@ export function Sidebar() {
         ? "brain"
         : routeModule === "ledger"
           ? "ledger"
+          : routeModule === "automation"
+            ? "automation"
           : "overview";
 
   useEffect(() => {
@@ -1287,6 +1343,8 @@ export function Sidebar() {
               <FeedContextPane />
             ) : paneModule === "ledger" ? (
               <LedgerContextPane />
+            ) : paneModule === "automation" ? (
+              <AutomationContextPane />
             ) : (
               <OverviewContextPane />
             )}
@@ -1317,6 +1375,8 @@ export function MobileWorkspaceContextSheet({
         ? "brain"
         : routeModule === "ledger"
           ? "ledger"
+          : routeModule === "automation"
+            ? "automation"
           : "overview";
 
   useEffect(() => {
@@ -1360,6 +1420,8 @@ export function MobileWorkspaceContextSheet({
               <FeedContextPane />
             ) : paneModule === "ledger" ? (
               <LedgerContextPane />
+            ) : paneModule === "automation" ? (
+              <AutomationContextPane />
             ) : (
               <OverviewContextPane />
             )}

@@ -128,7 +128,7 @@ export function UserMenu() {
         <DialogContent
           title="Profile"
           hideTitleVisually={true}
-          className="max-h-[min(88vh,calc(100dvh-1.5rem))] w-[min(360px,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] overflow-hidden border-white/10 bg-[#161513] p-0 text-zinc-100"
+          className="flex max-h-[min(88vh,calc(100dvh-1.5rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-white/10 bg-[#161513] p-0 text-zinc-100 sm:w-[360px] sm:max-w-[360px]"
         >
           <WorkspaceSwitcherContent
             className="rounded-[24px] pt-12"

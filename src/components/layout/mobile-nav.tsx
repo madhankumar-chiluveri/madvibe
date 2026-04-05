@@ -27,9 +27,12 @@ export function MobileNav() {
   const setActiveModule = useAppStore((state) => state.setActiveModule);
   const workspaceSegment = pathname.split("/")[2] ?? null;
 
-  const active = TABS.find((t) => {
+  const active =
+    workspaceSegment === "automation"
+      ? null
+      : TABS.find((t) => {
     if (t.id === "brain") {
-      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "ai"].includes(workspaceSegment ?? "");
+      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "automation", "ai"].includes(workspaceSegment ?? "");
     }
     return workspaceSegment === t.id;
   })?.id ?? "overview";

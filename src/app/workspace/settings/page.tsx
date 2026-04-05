@@ -36,7 +36,9 @@ import {
   Check,
   Eye,
   EyeOff,
+  LockKeyhole,
   Loader2,
+  Mail,
   Trash2,
   UserPlus,
   Users,
@@ -81,10 +83,13 @@ export default function SettingsPage() {
       ? { workspaceId: resolvedWorkspaceId }
       : "skip"
   );
+  const ledgerPinStatus = useQuery(api.ledgerSecurity.getPinStatus);
   const inviteToWorkspace = useMutation(api.workspaces.inviteToWorkspace);
   const updateWorkspaceMemberRole = useMutation(api.workspaces.updateWorkspaceMemberRole);
   const removeWorkspaceMember = useMutation(api.workspaces.removeWorkspaceMember);
   const cancelWorkspaceInvite = useMutation(api.workspaces.cancelWorkspaceInvite);
+  const createLedgerPin = useMutation(api.ledgerSecurity.createPin);
+  const sendLedgerPinResetEmail = useAction(api.ledgerSecurityNode.sendPinResetEmail);
   const authStatus = useQuery((api as any).accountConversion.getCurrentAuthStatus);
   const convertPasswordAccountToGoogle = useAction(
     (api as any).accountConversion.convertPasswordAccountToGoogle
@@ -95,6 +100,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [conversionPassword, setConversionPassword] = useState("");
   const [authAction, setAuthAction] = useState<"start-google" | "finish-google" | null>(null);
+  const [ledgerPin, setLedgerPin] = useState("");
+  const [ledgerPinConfirm, setLedgerPinConfirm] = useState("");
+  const [ledgerPinAction, setLedgerPinAction] = useState<"setup" | "reset" | null>(null);
   const [shareEmail, setShareEmail] = useState("");
   const [shareRole, setShareRole] = useState<"editor" | "viewer">("editor");
   const [workspaceAction, setWorkspaceAction] = useState<string | null>(null);
@@ -144,6 +152,51 @@ export default function SettingsPage() {
       setAuthAction(null);
     }
   };
+
+  const handleCreateLedgerPin = async () => {
+    if (ledgerPinAction) return;
+
+    const normalizedPin = ledgerPin.trim();
+    if (!/^\d{4}$/.test(normalizedPin)) {
+      toast.error("Use a 4-digit PIN for Ledger security.");
+      return;
+    }
+
+    if (normalizedPin !== ledgerPinConfirm.trim()) {
+      toast.error("PIN confirmation does not match.");
+      return;
+    }
+
+    setLedgerPinAction("setup");
+    try {
+      await createLedgerPin({ pin: normalizedPin });
+      setLedgerPin("");
+      setLedgerPinConfirm("");
+      toast.success("Ledger PIN created");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not create the Ledger PIN");
+    } finally {
+      setLedgerPinAction(null);
+    }
+  };
+
+  const handleSendLedgerResetLink = async () => {
+    if (ledgerPinAction) return;
+
+    setLedgerPinAction("reset");
+    try {
+      const result = await sendLedgerPinResetEmail({});
+      toast.success(`Reset link sent to ${result.maskedEmail ?? "your email"}`);
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not send the reset email");
+    } finally {
+      setLedgerPinAction(null);
+    }
+  };
+
+  const ledgerResetCoolingDown =
+    typeof ledgerPinStatus?.resetCooldownEndsAt === "number" &&
+    ledgerPinStatus.resetCooldownEndsAt > Date.now();
 
   const handleInviteMember = async () => {
     if (!resolvedWorkspaceId || !workspaceAccess?.canManageMembers || workspaceAction) return;
@@ -390,86 +443,94 @@ export default function SettingsPage() {
                 title="Workspace collaboration"
                 description="Share the current workspace so other accounts can open the same spaces, pages, comments, and databases with real-time sync."
               >
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {currentWorkspace?.name ?? "Workspace"}
+                <div className="space-y-3">
+                  <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+                    <div className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                        Workspace
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        {currentWorkspace?.name ?? "Workspace"}
+                      </p>
+                    </div>
+                    <div className="border-t border-border/60 px-4 py-3">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                          Access
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="text-sm text-foreground">
                           {workspaceAccess?.role === "owner"
-                            ? `You own this workspace${workspaceAccess.workspace.memberCount ? ` · ${workspaceAccess.workspace.memberCount} members` : ""}`
-                            : `You have ${workspaceAccess?.role ?? "viewer"} access to this shared workspace`}
+                            ? `Owner${workspaceAccess?.workspace.memberCount ? `, ${workspaceAccess.workspace.memberCount} members` : ""}`
+                            : `${workspaceAccess?.role ?? "viewer"} access`}
                         </p>
                       </div>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em]",
-                          workspaceAccess?.role === "owner" && "border-emerald-500/20 bg-emerald-500/6 text-emerald-600",
-                          workspaceAccess?.role === "editor" && "border-sky-500/20 bg-sky-500/6 text-sky-600",
-                          workspaceAccess?.role === "viewer" && "border-border bg-background text-muted-foreground"
-                        )}
-                      >
-                        {workspaceAccess?.role ?? "owner"}
-                      </span>
                     </div>
-                    <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                      Collaboration currently applies to shared workspace content. Personal modules like Ledger, habits, feed preferences, and account settings still stay private for each signed-in user.
-                    </p>
+                    <div className="border-t border-border/60 px-4 py-3">
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Shared pages, comments, and databases stay collaborative here. Personal modules like Ledger, habits, feed preferences, and account settings still stay private to each signed-in user.
+                      </p>
+                    </div>
                   </div>
 
                   {workspaceAccess?.canManageMembers ? (
-                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-                      <div className="flex items-center gap-2">
+                    <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+                      <div className="flex items-center gap-2 px-4 py-3">
                         <UserPlus className="h-4 w-4 text-muted-foreground" />
                         <p className="text-sm font-medium">Invite someone</p>
                       </div>
-                      <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px_auto]">
-                        <Input
-                          value={shareEmail}
-                          onChange={(event) => setShareEmail(event.target.value)}
-                          placeholder="name@example.com"
-                          type="email"
-                        />
-                        <Select
-                          value={shareRole}
-                          onValueChange={(value: "editor" | "viewer") => setShareRole(value)}
-                        >
-                          <SelectTrigger className="h-10">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="editor">Editor</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          onClick={() => void handleInviteMember()}
-                          disabled={workspaceAction !== null}
-                          className="h-10"
-                        >
-                          {workspaceAction === "invite" ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : null}
-                          Share
-                        </Button>
+                      <div className="border-t border-border/60 px-4 py-3">
+                        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]">
+                          <Input
+                            value={shareEmail}
+                            onChange={(event) => setShareEmail(event.target.value)}
+                            placeholder="name@example.com"
+                            type="email"
+                            className="h-9"
+                          />
+                          <Select
+                            value={shareRole}
+                            onValueChange={(value: "editor" | "viewer") => setShareRole(value)}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="editor">Editor</SelectItem>
+                              <SelectItem value="viewer">Viewer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            onClick={() => void handleInviteMember()}
+                            disabled={workspaceAction !== null}
+                            className="h-9"
+                          >
+                            {workspaceAction === "invite" ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : null}
+                            Share
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+                    <div className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
                       Only the workspace owner can invite people or change roles. Your current access is {workspaceAccess?.role ?? "viewer"}.
                     </div>
                   )}
 
-                  <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-                    <p className="text-sm font-medium">Members</p>
-                    <div className="mt-3 space-y-3">
+                  <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <p className="text-sm font-medium">Members</p>
+                      <p className="text-xs text-muted-foreground">
+                        {workspaceMembers?.length ?? 0}
+                      </p>
+                    </div>
+                    <div className="divide-y divide-border/60 border-t border-border/60">
                       {workspaceMembers === undefined ? (
-                        <div className="text-sm text-muted-foreground">Loading members...</div>
+                        <div className="px-4 py-3 text-sm text-muted-foreground">Loading members...</div>
                       ) : workspaceMembers.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">No members yet.</div>
+                        <div className="px-4 py-3 text-sm text-muted-foreground">No members yet.</div>
                       ) : (
                         workspaceMembers.map((member: any) => {
                           const isRoleUpdating = workspaceAction === `member:${member.userId}`;
@@ -478,7 +539,7 @@ export default function SettingsPage() {
                           return (
                             <div
                               key={`${member.userId}:${member.role}`}
-                              className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 sm:flex-row sm:items-center"
+                              className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center"
                             >
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
@@ -486,7 +547,7 @@ export default function SettingsPage() {
                                     {member.name}
                                   </p>
                                   {member.isCurrentUser ? (
-                                    <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                                    <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                                       You
                                     </span>
                                   ) : null}
@@ -497,7 +558,7 @@ export default function SettingsPage() {
                               </div>
 
                               {member.role === "owner" ? (
-                                <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/6 px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-emerald-600">
+                                <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
                                   Owner
                                 </span>
                               ) : workspaceAccess?.canManageMembers ? (
@@ -509,7 +570,7 @@ export default function SettingsPage() {
                                     }
                                     disabled={workspaceAction !== null}
                                   >
-                                    <SelectTrigger className="h-9 w-[130px]">
+                                    <SelectTrigger className="h-8 w-[126px]">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -521,7 +582,7 @@ export default function SettingsPage() {
                                     type="button"
                                     size="sm"
                                     variant="ghost"
-                                    className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    className="h-8 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                     disabled={workspaceAction !== null}
                                     onClick={() => void handleRemoveMember(member.userId)}
                                   >
@@ -534,7 +595,7 @@ export default function SettingsPage() {
                                   </Button>
                                 </div>
                               ) : (
-                                <span className="inline-flex items-center rounded-full border border-border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                                <span className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
                                   {member.role}
                                 </span>
                               )}
@@ -546,18 +607,23 @@ export default function SettingsPage() {
                   </div>
 
                   {workspaceAccess?.canManageMembers ? (
-                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-                      <p className="text-sm font-medium">Pending invites</p>
-                      <div className="mt-3 space-y-3">
+                    <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/70">
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <p className="text-sm font-medium">Pending invites</p>
+                        <p className="text-xs text-muted-foreground">
+                          {workspaceInvites?.length ?? 0}
+                        </p>
+                      </div>
+                      <div className="divide-y divide-border/60 border-t border-border/60">
                         {workspaceInvites === undefined ? (
-                          <div className="text-sm text-muted-foreground">Loading invites...</div>
+                          <div className="px-4 py-3 text-sm text-muted-foreground">Loading invites...</div>
                         ) : workspaceInvites.length === 0 ? (
-                          <div className="text-sm text-muted-foreground">No pending invites.</div>
+                          <div className="px-4 py-3 text-sm text-muted-foreground">No pending invites.</div>
                         ) : (
                           workspaceInvites.map((invite: any) => (
                             <div
                               key={invite._id}
-                              className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 sm:flex-row sm:items-center"
+                              className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center"
                             >
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium">{invite.email}</p>
@@ -569,7 +635,7 @@ export default function SettingsPage() {
                                 type="button"
                                 size="sm"
                                 variant="ghost"
-                                className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                className="h-8 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 disabled={workspaceAction !== null}
                                 onClick={() => void handleCancelInvite(invite._id)}
                               >
@@ -749,6 +815,115 @@ export default function SettingsPage() {
                       A Gmail address still counts as a password account until you
                       actually sign in with Google OAuth.
                     </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <LockKeyhole className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm font-medium">Ledger security PIN</p>
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Ledger opens only after a dedicated 4-digit PIN. Changing an existing PIN always goes through a reset link sent to your email.
+                        </p>
+                      </div>
+                      {ledgerPinStatus?.hasPin ? (
+                        <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/6 px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-emerald-600">
+                          Enabled
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full border border-border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                          Not set
+                        </span>
+                      )}
+                    </div>
+
+                    {ledgerPinStatus === undefined ? (
+                      <div className="mt-4 text-sm text-muted-foreground">
+                        Loading Ledger security status...
+                      </div>
+                    ) : ledgerPinStatus?.hasPin ? (
+                      <div className="mt-4 space-y-3">
+                        <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+                          Reset emails go to{" "}
+                          <span className="font-medium text-foreground">
+                            {ledgerPinStatus.maskedEmail ??
+                              ledgerPinStatus.email ??
+                              "your account email"}
+                          </span>
+                          .
+                        </div>
+                        {ledgerResetCoolingDown ? (
+                          <p className="text-xs text-muted-foreground">
+                            A reset link was sent recently. Wait a minute before sending another one.
+                          </p>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full sm:w-auto"
+                          onClick={() => void handleSendLedgerResetLink()}
+                          disabled={ledgerPinAction !== null || ledgerResetCoolingDown}
+                        >
+                          {ledgerPinAction === "reset" ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Mail className="mr-2 h-4 w-4" />
+                          )}
+                          Email reset link
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="ledger-pin">New Ledger PIN</Label>
+                            <Input
+                              id="ledger-pin"
+                              type="password"
+                              inputMode="numeric"
+                              maxLength={4}
+                              value={ledgerPin}
+                              onChange={(event) =>
+                                setLedgerPin(event.target.value.replace(/\D/g, "").slice(0, 4))
+                              }
+                              placeholder="4 digits"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="ledger-pin-confirm">Confirm PIN</Label>
+                            <Input
+                              id="ledger-pin-confirm"
+                              type="password"
+                              inputMode="numeric"
+                              maxLength={4}
+                              value={ledgerPinConfirm}
+                              onChange={(event) =>
+                                setLedgerPinConfirm(event.target.value.replace(/\D/g, "").slice(0, 4))
+                              }
+                              placeholder="Repeat PIN"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Future PIN changes will only happen through an emailed reset link.
+                        </p>
+                        <Button
+                          type="button"
+                          className="w-full sm:w-auto"
+                          onClick={() => void handleCreateLedgerPin()}
+                          disabled={ledgerPinAction !== null}
+                        >
+                          {ledgerPinAction === "setup" ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Shield className="mr-2 h-4 w-4" />
+                          )}
+                          Create Ledger PIN
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {authStatus === undefined ? (
