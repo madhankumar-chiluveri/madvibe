@@ -118,12 +118,15 @@ export function BlockNoteEditor({
       return () => clearTimeout(t);
     }
 
-    if (remoteSnapshot === previousRemoteSnapshot || hasPendingSave.current) {
+    // CRITICAL FIX: If we are the active editor, never pull content from the 
+    // network after the initial load. BlockNote (without a true Yjs provider)
+    // cannot seamlessly merge document states — calling replaceBlocks() steals 
+    // cursor focus and forces empty new lines.
+    if (editable) {
       return;
     }
 
-    // Ignore echoes of our own save to prevent editor dismounting/newlines
-    if (lastSavedSnapshot.current && remoteSnapshot === lastSavedSnapshot.current) {
+    if (remoteSnapshot === previousRemoteSnapshot) {
       return;
     }
 
@@ -133,9 +136,7 @@ export function BlockNoteEditor({
     }
 
     editor.replaceBlocks(editor.document, nextRemoteContent as any);
-    setDirty(false);
-    setSaveStatus("idle");
-  }, [blocks, editor, setDirty, setSaveStatus]);
+  }, [blocks, editor, editable, setDirty, setSaveStatus]);
 
   // ── beforeunload guard ────────────────────────────────────────────────────
   useEffect(() => {
