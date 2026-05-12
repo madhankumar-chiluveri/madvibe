@@ -33,6 +33,7 @@ import {
   Settings,
   Sparkles,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -69,6 +70,7 @@ const MODULES = [
   { id: "brain" as const, label: "Brain", icon: BookOpen, href: "/workspace/brain" },
   { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
   { id: "ai" as const, label: "Maddy AI", icon: Sparkles, href: "/workspace/ai" },
+  { id: "automation" as const, label: "Automation", icon: Zap, href: "/workspace/automation" },
 ] as const;
 
 const FEED_PANE_ITEMS = [
@@ -124,7 +126,7 @@ function getRouteModule(pathname: string) {
 
   if (!pathname.startsWith("/workspace")) return "overview";
   if (!segment) return "overview";
-  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "ai") {
+  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "ai" || segment === "automation") {
     return segment;
   }
   if (segment === "settings") return "overview";

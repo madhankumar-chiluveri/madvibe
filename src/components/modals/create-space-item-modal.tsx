@@ -8,14 +8,15 @@ import {
   Bot,
   Database,
   FileText,
+  FileUp,
   FolderKanban,
   ListTodo,
   Loader2,
-  Plus,
   Search,
   Sparkles,
   Users,
 } from "lucide-react";
+import { CsvImportModal } from "@/components/modals/csv-import-modal";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { useAppStore } from "@/store/app.store";
@@ -44,6 +45,7 @@ interface CreateSpaceItemModalProps {
 type TemplateId =
   | "empty_page"
   | "empty_database"
+  | "import_csv"
   | "maddy"
   | "project_brief"
   | "tasks_tracker"
@@ -78,6 +80,14 @@ const OPTIONS: TemplateOption[] = [
     category: "quick",
     icon: Database,
     accent: "from-slate-700/40 to-slate-800/10",
+  },
+  {
+    id: "import_csv",
+    title: "Import CSV",
+    description: "Create a database from a CSV file with smart column types.",
+    category: "quick",
+    icon: FileUp,
+    accent: "from-emerald-700/40 to-teal-900/10",
   },
   {
     id: "maddy",
@@ -140,6 +150,7 @@ export function CreateSpaceItemModal({
   const [loadingId, setLoadingId] = useState<TemplateId | null>(null);
   const [maddyProjectName, setMaddyProjectName] = useState("");
   const [maddyBrief, setMaddyBrief] = useState("");
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -208,6 +219,12 @@ export function CreateSpaceItemModal({
   };
 
   const handleCreate = async (optionId: TemplateId) => {
+    if (optionId === "import_csv") {
+      onClose();
+      setCsvImportOpen(true);
+      return;
+    }
+
     if (optionId === "maddy") {
       setMode("maddy");
       setMaddyProjectName(spaceLabel === "General" ? "" : `${spaceLabel} Starter`);
@@ -289,6 +306,13 @@ export function CreateSpaceItemModal({
   };
 
   return (
+    <>
+    <CsvImportModal
+      open={csvImportOpen}
+      onClose={() => setCsvImportOpen(false)}
+      workspaceId={workspaceId}
+      parentId={parentId}
+    />
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent
         title="Add item"
@@ -423,6 +447,7 @@ export function CreateSpaceItemModal({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 

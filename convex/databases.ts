@@ -320,6 +320,7 @@ export const updateView = mutation({
 export const importCsv = mutation({
   args: {
     workspaceId: v.id("workspaces"),
+    parentId: v.optional(v.union(v.id("pages"), v.null())),
     name: v.string(),
     properties: v.array(v.any()), // e.g. [{id: "col1", name: "Column 1", type: "text"}]
     rows: v.array(v.any()),       // array of objects mapping prop IDs to values
@@ -330,7 +331,7 @@ export const importCsv = mutation({
     // 1. Create a Database Page natively
     const pageId = await ctx.db.insert("pages", {
       workspaceId: args.workspaceId,
-      parentId: null,
+      parentId: args.parentId ?? null,
       type: "database",
       title: args.name,
       isFullWidth: true,

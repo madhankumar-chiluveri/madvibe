@@ -1,6 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import {
@@ -341,7 +342,7 @@ export const inviteToWorkspace = mutation({
 
     await clearWorkspaceInviteRecords(ctx, args.workspaceId, normalizedEmail);
 
-    await ctx.db.insert("workspaceInvites", {
+    const inviteId = await ctx.db.insert("workspaceInvites", {
       workspaceId: args.workspaceId,
       email: normalizedEmail,
       invitedUserId: undefined,
@@ -352,9 +353,25 @@ export const inviteToWorkspace = mutation({
       updatedAt: Date.now(),
     });
 
+    const inviterName =
+      (ownerUser?.name as string | undefined) ??
+      (ownerUser?.email as string | undefined) ??
+      "A MadVibe user";
+    const inviterEmail = (ownerUser?.email as string | undefined) ?? null;
+
+    await ctx.scheduler.runAfter(0, internal.emails.sendWorkspaceInviteEmail, {
+      to: normalizedEmail,
+      inviteId: String(inviteId),
+      workspaceName: access.workspace.name,
+      inviterName,
+      inviterEmail,
+      role: args.role,
+    });
+
     return {
       status: "created_invite" as const,
       workspaceId: args.workspaceId,
+      inviteId,
     };
   },
 });

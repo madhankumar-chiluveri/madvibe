@@ -6,7 +6,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Id } from "../../convex/_generated/dataModel";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 
-type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "ai";
+type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "ai" | "automation";
 export type MaddyPanelTab = "chat" | "search" | "page";
 export type MaddyProvider =
   | "gemini"

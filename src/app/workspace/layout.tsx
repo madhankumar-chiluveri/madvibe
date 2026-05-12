@@ -22,6 +22,10 @@ const ReminderNotificationBridge = dynamic(
   () => import("@/components/reminders/reminder-notification-bridge").then((m) => ({ default: m.ReminderNotificationBridge })),
   { ssr: false }
 );
+const InviteAcceptor = dynamic(
+  () => import("@/components/workspace/invite-acceptor").then((m) => ({ default: m.InviteAcceptor })),
+  { ssr: false }
+);
 
 const PREFETCH_ROUTES = [
   "/workspace/overview",
@@ -30,6 +34,8 @@ const PREFETCH_ROUTES = [
   "/workspace/ledger",
   "/workspace/settings",
   "/workspace/trash",
+  "/workspace/automation",
+  "/workspace/automation/pin-studio",
 ];
 
 export default function WorkspaceLayout({
@@ -68,6 +74,7 @@ export default function WorkspaceLayout({
       <CommandPalette />
       <ReminderCenter />
       <ReminderNotificationBridge />
+      <InviteAcceptor />
 
       {/* Mobile bottom nav - hidden on desktop */}
       {showMobileNav ? <MobileNav /> : null}
