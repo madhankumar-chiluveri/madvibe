@@ -33,7 +33,6 @@ import {
   Settings,
   Sparkles,
   Wallet,
-  Zap,
   Workflow,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -72,7 +71,6 @@ const MODULES = [
   { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
   { id: "automation" as const, label: "Automation", icon: Workflow, href: "/workspace/automation" },
   { id: "ai" as const, label: "Maddy AI", icon: Sparkles, href: "/workspace/ai" },
-  { id: "automation" as const, label: "Automation", icon: Zap, href: "/workspace/automation" },
 ] as const;
 
 const FEED_PANE_ITEMS = [
