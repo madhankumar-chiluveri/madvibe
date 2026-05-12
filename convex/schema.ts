@@ -755,7 +755,6 @@ export default defineSchema({
     rowId: v.optional(v.union(v.id("rows"), v.null())),
     sourceLabel: v.optional(v.string()),
     sourceUrl: v.optional(v.string()),
-    scheduledFunctionId: v.optional(v.union(v.string(), v.null())),
     completedAt: v.optional(v.union(v.number(), v.null())),
     notifiedAt: v.optional(v.union(v.number(), v.null())),
     scheduledFunctionId: v.optional(v.id("_scheduled_functions")),
