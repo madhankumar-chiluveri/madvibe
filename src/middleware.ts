@@ -4,6 +4,7 @@ import {
   nextjsMiddlewareRedirect,
 } from "@convex-dev/auth/nextjs/server";
 import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
+import { PERSISTENT_AUTH_COOKIE_MAX_AGE_SECONDS } from "../shared/auth-session";
 
 const isRootRoute = createRouteMatcher("/");
 const isLoginRoute = createRouteMatcher("/login");
@@ -33,6 +34,9 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
     return nextjsMiddlewareRedirect(request, "/login");
   }
 }, {
+  cookieConfig: {
+    maxAge: PERSISTENT_AUTH_COOKIE_MAX_AGE_SECONDS,
+  },
   shouldHandleCode: (request) => !request.nextUrl.pathname.startsWith("/api/auth/"),
 });
 

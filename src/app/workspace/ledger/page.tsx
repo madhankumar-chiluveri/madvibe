@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { LedgerSecurityGate } from "@/components/ledger/ledger-security-gate";
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
@@ -2669,49 +2670,51 @@ export default function LedgerPage() {
   };
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="sticky top-0 z-30 isolate bg-background/95 backdrop-blur-md">
-        <WorkspaceTopBar
-          moduleTitle="Ledger"
-          sticky={false}
-          className="bg-transparent backdrop-blur-0"
-        />
+    <LedgerSecurityGate>
+      <div className="min-h-full bg-background">
+        <div className="sticky top-0 z-30 isolate bg-background/95 backdrop-blur-md">
+          <WorkspaceTopBar
+            moduleTitle="Ledger"
+            sticky={false}
+            className="bg-transparent backdrop-blur-0"
+          />
 
-        <div className="border-b border-border/70">
-          <div className="max-w-5xl mx-auto px-4 py-2">
-            <div className="flex gap-1 overflow-x-auto overscroll-x-contain scrollbar-hide">
-              {TABS.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button key={tab.id} onClick={() => handleTabChange(tab.id)}
-                    className={cn(
-                      "shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-all min-h-[36px]",
-                      ledgerTab === tab.id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    )}>
-                    <Icon className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                  </button>
-                );
-              })}
+          <div className="border-b border-border/70">
+            <div className="max-w-5xl mx-auto px-4 py-2">
+              <div className="flex gap-1 overflow-x-auto overscroll-x-contain scrollbar-hide">
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button key={tab.id} onClick={() => handleTabChange(tab.id)}
+                      className={cn(
+                        "shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-all min-h-[36px]",
+                        ledgerTab === tab.id
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      )}>
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-4 pb-24 md:py-6 md:pb-6">
-        {mounted["dashboard"] && <div className={ledgerTab !== "dashboard" ? "hidden" : ""}><DashboardTab /></div>}
-        {mounted["transactions"] && <div className={ledgerTab !== "transactions" ? "hidden" : ""}><TransactionsTabV2 /></div>}
-        {mounted["credit_cards"] && <div className={ledgerTab !== "credit_cards" ? "hidden" : ""}><CreditCardsTab /></div>}
-        {mounted["loans"] && <div className={ledgerTab !== "loans" ? "hidden" : ""}><LoansTab /></div>}
-        {mounted["investments"] && <div className={ledgerTab !== "investments" ? "hidden" : ""}><InvestmentsTab /></div>}
-        {mounted["budget"] && <div className={ledgerTab !== "budget" ? "hidden" : ""}><BudgetTab /></div>}
-        {mounted["goals"] && <div className={ledgerTab !== "goals" ? "hidden" : ""}><GoalsTab /></div>}
-        {mounted["recurring"] && <div className={ledgerTab !== "recurring" ? "hidden" : ""}><RecurringTab /></div>}
-        {mounted["reports"] && <div className={ledgerTab !== "reports" ? "hidden" : ""}><ReportsTab /></div>}
-        {mounted["market"] && <div className={ledgerTab !== "market" ? "hidden" : ""}><MarketTab /></div>}
+        <div className="max-w-5xl mx-auto px-4 py-4 pb-24 md:py-6 md:pb-6">
+          {mounted["dashboard"] && <div className={ledgerTab !== "dashboard" ? "hidden" : ""}><DashboardTab /></div>}
+          {mounted["transactions"] && <div className={ledgerTab !== "transactions" ? "hidden" : ""}><TransactionsTabV2 /></div>}
+          {mounted["credit_cards"] && <div className={ledgerTab !== "credit_cards" ? "hidden" : ""}><CreditCardsTab /></div>}
+          {mounted["loans"] && <div className={ledgerTab !== "loans" ? "hidden" : ""}><LoansTab /></div>}
+          {mounted["investments"] && <div className={ledgerTab !== "investments" ? "hidden" : ""}><InvestmentsTab /></div>}
+          {mounted["budget"] && <div className={ledgerTab !== "budget" ? "hidden" : ""}><BudgetTab /></div>}
+          {mounted["goals"] && <div className={ledgerTab !== "goals" ? "hidden" : ""}><GoalsTab /></div>}
+          {mounted["recurring"] && <div className={ledgerTab !== "recurring" ? "hidden" : ""}><RecurringTab /></div>}
+          {mounted["reports"] && <div className={ledgerTab !== "reports" ? "hidden" : ""}><ReportsTab /></div>}
+          {mounted["market"] && <div className={ledgerTab !== "market" ? "hidden" : ""}><MarketTab /></div>}
+        </div>
       </div>
-    </div>
+    </LedgerSecurityGate>
   );
 }

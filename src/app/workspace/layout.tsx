@@ -32,6 +32,7 @@ const PREFETCH_ROUTES = [
   "/workspace/feed",
   "/workspace/brain",
   "/workspace/ledger",
+  "/workspace/automation",
   "/workspace/settings",
   "/workspace/trash",
   "/workspace/automation",

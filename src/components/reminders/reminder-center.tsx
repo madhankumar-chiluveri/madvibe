@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Bell,
   BellRing,
+  BellOff,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -13,11 +14,13 @@ import {
   Plus,
   RotateCcw,
   Trash2,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "../../../convex/_generated/api";
 import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
+import { usePush } from "@/hooks/use-push";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,6 +43,8 @@ export function ReminderCenter() {
   const { reminderCenterOpen, setReminderCenterOpen } = useAppStore();
   const [now, setNow] = useState(() => Date.now());
   const { resolvedWorkspaceId } = useResolvedWorkspace();
+  const { isSupported, permission: pushPermission, subscribe } = usePush();
+  const [isSubscribing, setIsSubscribing] = useState(false);
   const reminders = useQuery(
     api.reminders.listByWorkspace,
     resolvedWorkspaceId
@@ -66,7 +71,7 @@ export function ReminderCenter() {
     }
 
     setNotificationPermission(Notification.permission);
-  }, [reminderCenterOpen]);
+  }, [reminderCenterOpen, pushPermission]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -87,19 +92,45 @@ export function ReminderCenter() {
     };
   }, [now, reminders]);
 
-  const requestNotificationPermission = async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      toast.error("Browser notifications are not supported here");
+  const handleEnableNotifications = async () => {
+    if (!isSupported) {
+      toast.error("Push notifications are not supported in this browser");
       return;
     }
 
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
+    // Already blocked — guide the user to unblock manually
+    if (pushPermission === "denied") {
+      toast.error("Notifications are blocked for this site.", {
+        description: "Click the 🔒 lock icon in your browser's address bar → Site settings → Notifications → Allow, then refresh the page.",
+        duration: 10000,
+      });
+      return;
+    }
 
-    if (permission === "granted") {
-      toast.success("Browser alerts enabled for reminders");
-    } else {
-      toast.error("Browser alerts were not enabled");
+    setIsSubscribing(true);
+    try {
+      const result = await subscribe();
+      if (result.status === "granted") {
+        setNotificationPermission("granted");
+        toast.success("Push notifications enabled! You'll get alerts even when the app is closed.", {
+          icon: "🔔",
+          duration: 5000,
+        });
+      } else if (result.status === "denied") {
+        toast.error("Notifications blocked.", {
+          description: "Click the 🔒 lock icon → Site settings → Notifications → Allow, then refresh.",
+          duration: 10000,
+        });
+      } else if (result.status === "dismissed") {
+        toast.info("You can enable notifications anytime from here.", { duration: 4000 });
+      } else {
+        toast.error("Could not enable notifications");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not enable notifications");
+    } finally {
+      setIsSubscribing(false);
     }
   };
 
@@ -272,16 +303,38 @@ export function ReminderCenter() {
             </div>
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              {notificationPermission !== "unsupported" && notificationPermission !== "granted" && (
+              {isSupported && notificationPermission !== "granted" && (
                 <Button
                   type="button"
                   variant="ghost"
-                  className="rounded-xl border border-white/10 bg-white/[0.03] text-zinc-200 hover:bg-white/[0.06] hover:text-white"
-                  onClick={() => void requestNotificationPermission()}
+                  disabled={isSubscribing}
+                  className="rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 hover:text-blue-200"
+                  onClick={() => void handleEnableNotifications()}
                 >
-                  <BellRing className="mr-2 h-4 w-4" />
-                  Enable browser alerts
+                  {isSubscribing ? (
+                    <>
+                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                      Enabling...
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="mr-2 h-4 w-4" />
+                      Enable push alerts
+                    </>
+                  )}
                 </Button>
+              )}
+              {isSupported && notificationPermission === "granted" && (
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs font-medium text-green-300">
+                  <BellRing className="h-3.5 w-3.5" />
+                  Push alerts on
+                </span>
+              )}
+              {!isSupported && notificationPermission !== "unsupported" && notificationPermission !== "granted" && (
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-zinc-500">
+                  <BellOff className="h-3.5 w-3.5" />
+                  Notifications not supported
+                </span>
               )}
               <Button
                 type="button"

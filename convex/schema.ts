@@ -263,6 +263,27 @@ export default defineSchema({
   }).index("by_userId", ["userId"]),
 
   // ── News ───────────────────────────────────────────
+  ledgerPinConfigs: defineTable({
+    userId: v.string(),
+    pinHash: v.string(),
+    pinSalt: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastVerifiedAt: v.optional(v.number()),
+    lastResetEmailSentAt: v.optional(v.number()),
+  }).index("by_userId", ["userId"]),
+
+  ledgerPinResetTokens: defineTable({
+    userId: v.string(),
+    email: v.string(),
+    tokenHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_tokenHash", ["tokenHash"]),
+
   newsArticles: defineTable({
     title: v.string(),
     source: v.string(),
@@ -737,10 +758,19 @@ export default defineSchema({
     scheduledFunctionId: v.optional(v.union(v.string(), v.null())),
     completedAt: v.optional(v.union(v.number(), v.null())),
     notifiedAt: v.optional(v.union(v.number(), v.null())),
+    scheduledFunctionId: v.optional(v.id("_scheduled_functions")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_workspaceId_remindAt", ["workspaceId", "remindAt"])
-    .index("by_workspaceId_status_remindAt", ["workspaceId", "status", "remindAt"]),
+    .index("by_workspaceId_remindAt", ["workspaceId", "remindAt"]).index("by_workspaceId_status_remindAt", ["workspaceId", "status", "remindAt"]),
+
+  // -- Push Notification Subscriptions ----------------
+  pushSubscriptions: defineTable({
+    userId: v.string(),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+    createdAt: v.number(),
+  }).index("by_userId", ["userId"]),
 });

@@ -90,6 +90,9 @@ client_secret*.json
 /dist
 /build
 /.cache
+.crawl4ai/
+.playwright-browsers/
+.crawl4ai-profile/
 
 # Testing
 /coverage

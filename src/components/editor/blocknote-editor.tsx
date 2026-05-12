@@ -53,6 +53,7 @@ export function BlockNoteEditor({
   const hasPendingSave = useRef(false);
   const mountedPageId = useRef<string>(pageId);
   const lastRemoteSnapshot = useRef<string | null>(null);
+  const lastSavedSnapshot = useRef<string | null>(null);
 
   // true = show shimmer, false = show editor
   const [isLoadingContent, setIsLoadingContent] = useState(true);
@@ -76,6 +77,7 @@ export function BlockNoteEditor({
     blockId.current = null;
     hasPendingSave.current = false;
     lastRemoteSnapshot.current = null;
+    lastSavedSnapshot.current = null;
     setSaveStatus("idle");
     setDirty(false);
     // Show shimmer while new page's blocks load
@@ -116,7 +118,15 @@ export function BlockNoteEditor({
       return () => clearTimeout(t);
     }
 
-    if (remoteSnapshot === previousRemoteSnapshot || hasPendingSave.current) {
+    // CRITICAL FIX: If we are the active editor, never pull content from the 
+    // network after the initial load. BlockNote (without a true Yjs provider)
+    // cannot seamlessly merge document states — calling replaceBlocks() steals 
+    // cursor focus and forces empty new lines.
+    if (editable) {
+      return;
+    }
+
+    if (remoteSnapshot === previousRemoteSnapshot) {
       return;
     }
 
@@ -126,9 +136,7 @@ export function BlockNoteEditor({
     }
 
     editor.replaceBlocks(editor.document, nextRemoteContent as any);
-    setDirty(false);
-    setSaveStatus("idle");
-  }, [blocks, editor, setDirty, setSaveStatus]);
+  }, [blocks, editor, editable, setDirty, setSaveStatus]);
 
   // ── beforeunload guard ────────────────────────────────────────────────────
   useEffect(() => {
@@ -198,11 +206,14 @@ export function BlockNoteEditor({
       setSaving(true);
       try {
         const editorBlocks = editor.document;
+        const sanitizedBlocks = sanitizeForConvex(editorBlocks);
+        lastSavedSnapshot.current = JSON.stringify(sanitizedBlocks);
+
         await upsert({
           id: blockId.current ?? undefined,
           pageId,
           type: "document",
-          content: sanitizeForConvex(editorBlocks),
+          content: sanitizedBlocks,
           sortOrder: 1000,
           properties: {},
         });
