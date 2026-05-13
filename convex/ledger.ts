@@ -86,45 +86,6 @@ export const listCategories = query({
   },
 });
 
-export const seedDefaultCategories = mutation({
-  handler: async (ctx) => {
-    const existing = await ctx.db
-      .query("financeCategories")
-      .filter((q) => q.eq(q.field("isSystem"), true))
-      .first();
-    if (existing) return; // already seeded
-
-    const defaults = [
-      { name: "Housing", icon: "🏠", color: "#6366f1", type: "expense" as const, sortOrder: 1 },
-      { name: "Transport", icon: "🚗", color: "#f59e0b", type: "expense" as const, sortOrder: 2 },
-      { name: "Food & Dining", icon: "🍔", color: "#ef4444", type: "expense" as const, sortOrder: 3 },
-      { name: "Utilities", icon: "💡", color: "#3b82f6", type: "expense" as const, sortOrder: 4 },
-      { name: "Healthcare", icon: "🏥", color: "#10b981", type: "expense" as const, sortOrder: 5 },
-      { name: "Education", icon: "🎓", color: "#8b5cf6", type: "expense" as const, sortOrder: 6 },
-      { name: "Shopping", icon: "🛍", color: "#ec4899", type: "expense" as const, sortOrder: 7 },
-      { name: "Entertainment", icon: "🎬", color: "#f97316", type: "expense" as const, sortOrder: 8 },
-      { name: "Travel", icon: "✈️", color: "#06b6d4", type: "expense" as const, sortOrder: 9 },
-      { name: "Business", icon: "💼", color: "#64748b", type: "expense" as const, sortOrder: 10 },
-      { name: "Subscriptions", icon: "📱", color: "#a855f7", type: "expense" as const, sortOrder: 11 },
-      { name: "Debt Payment", icon: "💳", color: "#dc2626", type: "expense" as const, sortOrder: 12 },
-      { name: "Savings", icon: "💰", color: "#16a34a", type: "expense" as const, sortOrder: 13 },
-      { name: "Gifts", icon: "🎁", color: "#db2777", type: "expense" as const, sortOrder: 14 },
-      { name: "Miscellaneous", icon: "🔧", color: "#78716c", type: "expense" as const, sortOrder: 15 },
-      // Income
-      { name: "Salary", icon: "💵", color: "#22c55e", type: "income" as const, sortOrder: 1 },
-      { name: "Freelance", icon: "💻", color: "#3b82f6", type: "income" as const, sortOrder: 2 },
-      { name: "Investment Returns", icon: "📈", color: "#10b981", type: "income" as const, sortOrder: 3 },
-      { name: "Business Income", icon: "🏢", color: "#6366f1", type: "income" as const, sortOrder: 4 },
-      { name: "Rental Income", icon: "🏘", color: "#f59e0b", type: "income" as const, sortOrder: 5 },
-      { name: "Other Income", icon: "💫", color: "#84cc16", type: "income" as const, sortOrder: 6 },
-    ];
-
-    for (const cat of defaults) {
-      await ctx.db.insert("financeCategories", { ...cat, isSystem: true });
-    }
-  },
-});
-
 // ── Transactions ─────────────────────────────────────────────────────────────
 
 export const listTransactions = query({
