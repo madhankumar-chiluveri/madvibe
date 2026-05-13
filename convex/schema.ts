@@ -690,16 +690,6 @@ export default defineSchema({
     .index("by_habitId_date", ["habitId", "date"])
     .index("by_userId_date", ["userId", "date"]),
 
-  // ── Focus Sessions ─────────────────────────────────
-  focusSessions: defineTable({
-    userId: v.string(),
-    duration: v.number(), // minutes
-    taskNote: v.optional(v.string()),
-    pageId: v.optional(v.string()),
-    completedAt: v.number(),
-    wasCompleted: v.boolean(),
-  }).index("by_userId", ["userId"]),
-
   // ── Notifications ──────────────────────────────────
   notifications: defineTable({
     userId: v.string(),
