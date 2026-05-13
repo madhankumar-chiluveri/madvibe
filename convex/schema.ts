@@ -690,27 +690,6 @@ export default defineSchema({
     .index("by_habitId_date", ["habitId", "date"])
     .index("by_userId_date", ["userId", "date"]),
 
-  // ── Notifications ──────────────────────────────────
-  notifications: defineTable({
-    userId: v.string(),
-    type: v.union(
-      v.literal("task_due"), v.literal("budget_alert"), v.literal("bill_reminder"),
-      v.literal("breaking_news"), v.literal("ai_insight"), v.literal("weekly_review"),
-      v.literal("habit_streak"), v.literal("investment_alert")
-    ),
-    title: v.string(),
-    body: v.string(),
-    module: v.union(
-      v.literal("overview"), v.literal("feed"), v.literal("brain"),
-      v.literal("ledger"), v.literal("ai")
-    ),
-    actionUrl: v.optional(v.string()),
-    isRead: v.boolean(),
-    createdAt: v.number(),
-  })
-    .index("by_userId", ["userId"])
-    .index("by_userId_isRead", ["userId", "isRead"]),
-
   // ── Page Comments ──────────────────────────────────
   comments: defineTable({
     pageId: v.id("pages"),
