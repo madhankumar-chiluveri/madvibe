@@ -1,0 +1,205 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.theme-shell {
+  font-family: 'Geist', sans-serif;
+  display: flex;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.t-sidebar { width: 130px; padding: 10px 8px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1px; }
+.t-content { flex: 1; padding: 14px 16px; }
+.t-ws { font-size: 11px; font-weight: 700; padding: 4px 6px; margin-bottom: 4px; opacity: 0.9; }
+.t-nav { padding: 4px 6px; border-radius: 6px; font-size: 11px; display: flex; align-items: center; gap: 5px; opacity: 0.7; }
+.t-nav.active { opacity: 1; font-weight: 600; }
+.t-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 3px; }
+.t-sub { font-size: 11px; opacity: 0.5; margin-bottom: 10px; }
+.t-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.t-chip { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+.t-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.t-card { border-radius: 6px; padding: 8px 10px; }
+.t-stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.45; margin-bottom: 2px; }
+.t-stat-val { font-size: 15px; font-weight: 700; }
+
+/* ── NOTION WARM LIGHT (B) ── */
+.notion-light { background: #FFFFFF; color: #37352F; }
+.notion-light .t-sidebar { background: #F7F6F3; border-right: 1px solid #E5E4E0; }
+.notion-light .t-nav.active { background: rgba(55,53,47,0.08); }
+.notion-light .chip-orange { background: #FAEBDD; color: #D9730D; }
+.notion-light .chip-blue { background: #DDEBF1; color: #0B6E99; }
+.notion-light .chip-green { background: #DDEDEA; color: #0F7B6C; }
+.notion-light .t-card { background: #F7F6F3; border: 1px solid #E5E4E0; }
+
+/* ── NOTION DARK (C) ── */
+.notion-dark { background: #191918; color: #E5E4E1; }
+.notion-dark .t-sidebar { background: #141413; border-right: 1px solid #2A2926; }
+.notion-dark .t-nav { color: #9B9A97; }
+.notion-dark .t-nav.active { background: rgba(255,255,255,0.07); color: #E5E4E1; }
+.notion-dark .chip-orange { background: #594A3A; color: #FFA344; }
+.notion-dark .chip-blue { background: #364954; color: #529CCA; }
+.notion-dark .chip-green { background: #354C4B; color: #4DAB9A; }
+.notion-dark .t-card { background: #1E1E1C; border: 1px solid #2A2926; }
+.notion-dark .t-title { color: #FFFFFE; }
+
+/* ── MIDNIGHT (Linear-inspired) ── */
+.midnight { background: #0F1117; color: #E2E4E9; }
+.midnight .t-sidebar { background: #0A0C12; border-right: 1px solid #1E2030; }
+.midnight .t-nav { color: #717892; }
+.midnight .t-nav.active { background: rgba(99,102,241,0.12); color: #A5B4FC; font-weight: 600; }
+.midnight .chip-orange { background: #2D1F0E; color: #FB923C; }
+.midnight .chip-blue { background: #1E1B4B; color: #818CF8; }
+.midnight .chip-green { background: #052E16; color: #4ADE80; }
+.midnight .t-card { background: #161820; border: 1px solid #1E2030; }
+.midnight .t-title { color: #F1F3F9; }
+.midnight .t-ws { color: #A5B4FC; }
+
+/* ── FOREST ── */
+.forest-light { background: #FAFAF8; color: #1C2415; }
+.forest-light .t-sidebar { background: #F0F4EC; border-right: 1px solid #D4DEC8; }
+.forest-light .t-nav.active { background: rgba(34,85,34,0.1); color: #2D5016; font-weight: 600; }
+.forest-light .chip-orange { background: #FEF3C7; color: #92400E; }
+.forest-light .chip-blue { background: #DBEAFE; color: #1E40AF; }
+.forest-light .chip-green { background: #DCFCE7; color: #166534; }
+.forest-light .t-card { background: #F0F4EC; border: 1px solid #D4DEC8; }
+.forest-light .t-ws { color: #2D5016; }
+
+.forest-dark { background: #131A10; color: #C8D5C0; }
+.forest-dark .t-sidebar { background: #0D1209; border-right: 1px solid #1E2E18; }
+.forest-dark .t-nav { color: #6B8060; }
+.forest-dark .t-nav.active { background: rgba(74,153,48,0.12); color: #86EFAC; font-weight: 600; }
+.forest-dark .chip-orange { background: #291B0A; color: #FCD34D; }
+.forest-dark .chip-blue { background: #0F1F35; color: #60A5FA; }
+.forest-dark .chip-green { background: #0A2210; color: #4ADE80; }
+.forest-dark .t-card { background: #1A2415; border: 1px solid #1E2E18; }
+.forest-dark .t-title { color: #EEF5E8; }
+.forest-dark .t-ws { color: #86EFAC; }
+
+/* ── SLATE (cool, Vercel-like) ── */
+.slate-light { background: #FFFFFF; color: #0F172A; }
+.slate-light .t-sidebar { background: #F8FAFC; border-right: 1px solid #E2E8F0; }
+.slate-light .t-nav.active { background: #EFF6FF; color: #1D4ED8; font-weight: 600; }
+.slate-light .chip-orange { background: #FFF7ED; color: #C2410C; }
+.slate-light .chip-blue { background: #EFF6FF; color: #1D4ED8; }
+.slate-light .chip-green { background: #F0FDF4; color: #15803D; }
+.slate-light .t-card { background: #F8FAFC; border: 1px solid #E2E8F0; }
+.slate-light .t-ws { color: #1E40AF; }
+
+.slate-dark { background: #0D1117; color: #C9D1D9; }
+.slate-dark .t-sidebar { background: #090D13; border-right: 1px solid #161B22; }
+.slate-dark .t-nav { color: #6E7681; }
+.slate-dark .t-nav.active { background: rgba(56,139,253,0.1); color: #58A6FF; font-weight: 600; }
+.slate-dark .chip-orange { background: #1F0A00; color: #F97316; }
+.slate-dark .chip-blue { background: #0D1F33; color: #58A6FF; }
+.slate-dark .chip-green { background: #071A0E; color: #3FB950; }
+.slate-dark .t-card { background: #131920; border: 1px solid #161B22; }
+.slate-dark .t-title { color: #F0F6FC; }
+.slate-dark .t-ws { color: #58A6FF; }
+
+.pair-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; opacity: 0.4; margin-bottom: 6px; margin-top: 2px; }
+.theme-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 2px; }
+
+.badge-default { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; background: rgba(99,102,241,0.2); color: #818CF8; margin-left: 6px; vertical-align: middle; }
+</style>
+
+<h2>Additional Themes — Pick 2 or 3 to add</h2>
+<p class="subtitle">Notion Warm (your locked default) is already decided. Choose which extra themes to bundle. Each has its own light + dark pair.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="notion-default" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content" style="flex:1;">
+      <h3>Notion Warm <span class="badge-default">Default — already locked</span></h3>
+      <div class="theme-pair">
+        <div>
+          <div class="pair-label">Light</div>
+          <div class="theme-shell notion-light">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="pair-label">Dark</div>
+          <div class="theme-shell notion-dark">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="midnight" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content" style="flex:1;">
+      <h3>Midnight — Linear / indigo-tinted dark</h3>
+      <div class="theme-pair">
+        <div>
+          <div class="pair-label">Light (slate base)</div>
+          <div class="theme-shell slate-light">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="pair-label">Dark (deep midnight)</div>
+          <div class="theme-shell midnight">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="forest" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content" style="flex:1;">
+      <h3>Forest — earthy green, calm & focused</h3>
+      <div class="theme-pair">
+        <div>
+          <div class="pair-label">Light</div>
+          <div class="theme-shell forest-light">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="pair-label">Dark</div>
+          <div class="theme-shell forest-dark">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="slate" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content" style="flex:1;">
+      <h3>Slate — cool blue-gray, GitHub / Vercel energy</h3>
+      <div class="theme-pair">
+        <div>
+          <div class="pair-label">Light</div>
+          <div class="theme-shell slate-light">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="pair-label">Dark</div>
+          <div class="theme-shell slate-dark">
+            <div class="t-sidebar"><div class="t-ws">⬛ MadVibe</div><div class="t-nav active">📋 Overview</div><div class="t-nav">🧠 Brain</div><div class="t-nav">💰 Ledger</div></div>
+            <div class="t-content"><div class="t-title">Good morning</div><div class="t-sub">Wednesday, 13 May</div><div class="t-chips"><span class="t-chip chip-blue">Brain</span><span class="t-chip chip-green">Ledger</span><span class="t-chip chip-orange">Feed</span></div><div class="t-cards"><div class="t-card"><div class="t-stat-label">Pages</div><div class="t-stat-val">24</div></div><div class="t-card"><div class="t-stat-label">Balance</div><div class="t-stat-val">₹42k</div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

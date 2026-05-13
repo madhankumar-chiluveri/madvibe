@@ -1,0 +1,159 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+* { box-sizing: border-box; }
+body { font-family: 'Geist', sans-serif; }
+
+.demo-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  padding: 16px 20px;
+}
+
+/* Light palette */
+.notion-colors-light {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.c-gray-l  { background:#EBECED; color:#787774; }
+.c-brown-l { background:#E9E5E3; color:#64473A; }
+.c-orange-l{ background:#FAEBDD; color:#D9730D; }
+.c-yellow-l{ background:#FBF3DB; color:#DFAB01; }
+.c-green-l { background:#DDEDEA; color:#0F7B6C; }
+.c-blue-l  { background:#DDEBF1; color:#0B6E99; }
+.c-purple-l{ background:#EAE4F2; color:#6940A5; }
+.c-pink-l  { background:#F4DFEB; color:#AD1A72; }
+.c-red-l   { background:#FBE4E4; color:#E03E3E; }
+
+/* Dark palette */
+.c-gray-d  { background:#454B4E; color:#9EA0A2; }
+.c-brown-d { background:#434040; color:#937264; }
+.c-orange-d{ background:#594A3A; color:#FFA344; }
+.c-yellow-d{ background:#59563B; color:#FFDC49; }
+.c-green-d { background:#354C4B; color:#4DAB9A; }
+.c-blue-d  { background:#364954; color:#529CCA; }
+.c-purple-d{ background:#443F57; color:#9A6DD7; }
+.c-pink-d  { background:#533B4C; color:#E255A1; }
+.c-red-d   { background:#594141; color:#FF7369; }
+
+.section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.45; margin-bottom: 8px; }
+
+/* Mock UI panels */
+.panel-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.panel { border-radius: 8px; padding: 14px; }
+.panel-light { background: #fff; border: 1px solid #E5E4E0; color: #37352F; }
+.panel-dark  { background: #1E1E1C; border: 1px solid #2A2926; color: #E5E4E1; }
+
+.panel-row-inner { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid; font-size: 13px; }
+.panel-light .panel-row-inner { border-color: #F0EFEC; }
+.panel-dark  .panel-row-inner { border-color: #2A2926; }
+.panel-row-inner:last-child { border-bottom: none; }
+
+.row-label { font-weight: 400; }
+.row-amount { font-weight: 600; }
+.amount-green-l { color: #0F7B6C; }
+.amount-red-l   { color: #E03E3E; }
+.amount-green-d { color: #4DAB9A; }
+.amount-red-d   { color: #FF7369; }
+
+.panel-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.panel-light .panel-header { color: #9B9A97; }
+.panel-dark  .panel-header { color: #6B6A68; }
+
+.status-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+</style>
+
+<h2>Notion Semantic Colors — Where should they appear?</h2>
+<p class="subtitle">Notion has 9 named colors (gray, brown, orange, yellow, green, blue, purple, pink, red) each with text + background variants. Pick how deep they go in MadVibe.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="tags-only" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 12px;">
+      <div class="section-title">Light mode — tags &amp; labels only</div>
+      <div class="notion-colors-light">
+        <span class="chip c-gray-l">Gray</span>
+        <span class="chip c-brown-l">Brown</span>
+        <span class="chip c-orange-l">Orange</span>
+        <span class="chip c-yellow-l">Yellow</span>
+        <span class="chip c-green-l">Green</span>
+        <span class="chip c-blue-l">Blue</span>
+        <span class="chip c-purple-l">Purple</span>
+        <span class="chip c-pink-l">Pink</span>
+        <span class="chip c-red-l">Red</span>
+      </div>
+      <div class="section-title" style="margin-top:8px;">Dark mode — same tags</div>
+      <div class="notion-colors-light">
+        <span class="chip c-gray-d">Gray</span>
+        <span class="chip c-brown-d">Brown</span>
+        <span class="chip c-orange-d">Orange</span>
+        <span class="chip c-yellow-d">Yellow</span>
+        <span class="chip c-green-d">Green</span>
+        <span class="chip c-blue-d">Blue</span>
+        <span class="chip c-purple-d">Purple</span>
+        <span class="chip c-pink-d">Pink</span>
+        <span class="chip c-red-d">Red</span>
+      </div>
+      <div style="font-size:12px; opacity:0.5; margin-top:8px;">Used in: page tags, database cell values, Brain labels, category chips</div>
+    </div>
+    <div class="card-body">
+      <h3>A — Tags &amp; Labels Only</h3>
+      <p>Notion colors appear only on tags, status chips, database cells. Core UI stays neutral. Safe, focused, less risk of visual clutter.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="full-semantic" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 12px;">
+      <div class="panel-row">
+        <div class="panel panel-light">
+          <div class="panel-header">Ledger — light</div>
+          <div class="panel-row-inner">
+            <span class="row-label">Salary</span>
+            <span class="row-amount amount-green-l">+₹85,000</span>
+          </div>
+          <div class="panel-row-inner">
+            <span class="row-label">Rent</span>
+            <span class="row-amount amount-red-l">−₹22,000</span>
+          </div>
+          <div class="panel-row-inner">
+            <span class="row-label">Food</span>
+            <span class="row-amount amount-red-l">−₹4,200</span>
+          </div>
+          <div class="status-row">
+            <span class="chip c-green-l">Income</span>
+            <span class="chip c-red-l">Expense</span>
+            <span class="chip c-blue-l">Savings</span>
+          </div>
+        </div>
+        <div class="panel panel-dark">
+          <div class="panel-header">Ledger — dark</div>
+          <div class="panel-row-inner">
+            <span class="row-label">Salary</span>
+            <span class="row-amount amount-green-d">+₹85,000</span>
+          </div>
+          <div class="panel-row-inner">
+            <span class="row-label">Rent</span>
+            <span class="row-amount amount-red-d">−₹22,000</span>
+          </div>
+          <div class="panel-row-inner">
+            <span class="row-label">Food</span>
+            <span class="row-amount amount-red-d">−₹4,200</span>
+          </div>
+          <div class="status-row">
+            <span class="chip c-green-d">Income</span>
+            <span class="chip c-red-d">Expense</span>
+            <span class="chip c-blue-d">Savings</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Full Semantic (Recommended)</h3>
+      <p>Colors apply everywhere they carry meaning: income green, expense red, status badges, module accents, info callouts, focus states. Notion palette becomes the app's visual language.</p>
+    </div>
+  </div>
+
+</div>

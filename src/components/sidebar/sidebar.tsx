@@ -130,6 +130,18 @@ const SNAPPY_EASE_STYLE = {
   transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
 } as const;
 
+const CONTEXT_PANE_WIDTH_STORAGE_KEY = "madvibe-context-pane-width";
+const CONTEXT_PANE_DEFAULT_WIDTH = 320;
+const CONTEXT_PANE_MIN_WIDTH = 280;
+const CONTEXT_PANE_MAX_WIDTH = 520;
+
+function clampContextPaneWidth(width: number) {
+  return Math.max(
+    CONTEXT_PANE_MIN_WIDTH,
+    Math.min(CONTEXT_PANE_MAX_WIDTH, Math.round(width))
+  );
+}
+
 function getRouteModule(pathname: string) {
   const segment = pathname.split("/")[2] ?? "";
 
@@ -173,20 +185,20 @@ const ModuleRailItem = memo(function ModuleRailItem({
         onFocus={onPrefetch}
         style={SNAPPY_EASE_STYLE}
         className={cn(
-          "relative flex h-11 items-center overflow-hidden rounded-2xl border transition-[width,padding,gap,background-color,border-color] duration-300",
-          showLabel ? "w-full justify-start gap-3 px-3" : "w-11 justify-center",
+          "relative flex h-11 items-center overflow-hidden rounded-lg border text-[13px] font-medium transition-[width,padding,gap,background-color,border-color] duration-300",
+          showLabel ? "w-full justify-start gap-3 px-2 py-[5px]" : "w-11 justify-center",
           isActive
-            ? "border-primary/30 bg-primary/12 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+            ? "border-transparent bg-[rgba(55,53,47,0.08)] text-foreground dark:bg-[rgba(255,255,255,0.07)]"
             : isDocked
-              ? "border-white/12 bg-white/[0.05] text-zinc-100"
-              : "border-transparent text-muted-foreground hover:border-white/10 hover:bg-white/[0.04] hover:text-foreground"
+              ? "border-border/60 bg-[rgba(55,53,47,0.08)] text-foreground dark:bg-[rgba(255,255,255,0.07)]"
+              : "border-transparent text-muted-foreground hover:bg-[rgba(55,53,47,0.04)] hover:text-foreground dark:hover:bg-[rgba(255,255,255,0.04)]"
         )}
       >
         <Icon
           className={cn(
             "h-[18px] w-[18px]",
             isActive && "text-primary",
-            !isActive && isDocked && "text-zinc-100"
+            !isActive && isDocked && "text-foreground"
           )}
           strokeWidth={isActive ? 2.4 : 2}
         />
@@ -208,14 +220,14 @@ const ModuleRailItem = memo(function ModuleRailItem({
               showLabel
                 ? "right-3 top-1/2 -translate-y-1/2"
                 : "right-1 top-1",
-              isActive ? "bg-primary" : "bg-zinc-200"
+              isActive ? "bg-primary" : "bg-foreground/30"
             )}
           />
         ) : null}
       </Link>
 
       {showTooltip ? (
-        <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#181715] px-2 py-1 text-[11px] text-zinc-100 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+        <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/60 bg-card px-2 py-1 text-[11px] text-foreground opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
           {mod.label}
         </span>
       ) : null}
@@ -233,15 +245,10 @@ function ModuleRail() {
     setActiveModule,
     setContextPaneCollapsed,
   } = useAppStore();
-  const [, startTransition] = useTransition();
-  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showRailPeek, setShowRailPeek] = useState(false);
-  const [showCollapsedLabels, setShowCollapsedLabels] = useState(false);
 
   const active = useMemo(() => getRouteModule(pathname), [pathname]);
-  const showExpandedRail = contextPaneCollapsed && showRailPeek;
-  const showExpandedRailLabels = showExpandedRail && showCollapsedLabels;
+  const showExpandedRail = false;
+  const showExpandedRailLabels = false;
 
   const handleModuleClick = useCallback(
     (modId: typeof MODULES[number]["id"]) => {
@@ -250,14 +257,12 @@ function ModuleRail() {
         openMaddyPanel("chat");
         return;
       }
-      // Wrap sidebar state updates in a transition so the route change renders first
-      startTransition(() => {
-        if (contextPaneCollapsed) {
-          setContextPaneCollapsed(false);
-        }
-      });
+
+      if (contextPaneCollapsed) {
+        setContextPaneCollapsed(false);
+      }
     },
-    [contextPaneCollapsed, openMaddyPanel, setContextPaneCollapsed, startTransition]
+    [contextPaneCollapsed, openMaddyPanel, setContextPaneCollapsed]
   );
 
   const handlePrefetch = useCallback(
@@ -273,85 +278,15 @@ function ModuleRail() {
     });
   }, [router]);
 
-  const openRailPeek = useCallback(() => {
-    if (!contextPaneCollapsed) return;
-
-    if (collapseTimerRef.current) {
-      clearTimeout(collapseTimerRef.current);
-      collapseTimerRef.current = null;
-    }
-    if (revealTimerRef.current) {
-      clearTimeout(revealTimerRef.current);
-      revealTimerRef.current = null;
-    }
-
-    setShowRailPeek(true);
-    revealTimerRef.current = setTimeout(() => {
-      setShowCollapsedLabels(true);
-      revealTimerRef.current = null;
-    }, 90);
-  }, [contextPaneCollapsed]);
-
-  const closeRailPeek = useCallback(() => {
-    if (revealTimerRef.current) {
-      clearTimeout(revealTimerRef.current);
-      revealTimerRef.current = null;
-    }
-    if (collapseTimerRef.current) {
-      clearTimeout(collapseTimerRef.current);
-      collapseTimerRef.current = null;
-    }
-
-    setShowCollapsedLabels(false);
-    collapseTimerRef.current = setTimeout(() => {
-      setShowRailPeek(false);
-      collapseTimerRef.current = null;
-    }, 130);
-  }, []);
-
-  useEffect(() => {
-    if (!contextPaneCollapsed) {
-      if (revealTimerRef.current) {
-        clearTimeout(revealTimerRef.current);
-        revealTimerRef.current = null;
-      }
-      if (collapseTimerRef.current) {
-        clearTimeout(collapseTimerRef.current);
-        collapseTimerRef.current = null;
-      }
-      setShowRailPeek(false);
-      setShowCollapsedLabels(false);
-    }
-  }, [contextPaneCollapsed]);
-
-  useEffect(() => {
-    return () => {
-      if (revealTimerRef.current) {
-        clearTimeout(revealTimerRef.current);
-      }
-      if (collapseTimerRef.current) {
-        clearTimeout(collapseTimerRef.current);
-      }
-    };
-  }, []);
-
   return (
     <div
       style={SNAPPY_EASE_STYLE}
       className={cn(
-        "flex h-full shrink-0 flex-col border-r border-border/80 bg-sidebar/95 transition-[width] duration-300",
+        "flex h-full shrink-0 flex-col border-r border-border/60 bg-sidebar transition-[width] duration-300",
         showExpandedRail ? "w-[208px]" : "w-[72px]"
       )}
-      onMouseEnter={openRailPeek}
-      onMouseLeave={closeRailPeek}
-      onFocusCapture={openRailPeek}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          closeRailPeek();
-        }
-      }}
     >
-      <div className="flex h-16 items-center justify-center border-b border-border/80">
+      <div className="flex h-16 items-center justify-center border-b border-border/60">
         <div className="group relative">
           <Link
             href="/workspace/overview"
@@ -364,7 +299,7 @@ function ModuleRail() {
             }}
             style={SNAPPY_EASE_STYLE}
             className={cn(
-              "flex h-11 items-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition-[width,padding,gap,background-color,border-color] duration-300 hover:border-white/16 hover:bg-white/[0.05]",
+              "flex h-11 items-center overflow-hidden rounded-lg border border-border/60 bg-card/80 transition-[width,padding,gap,background-color,border-color] duration-300 hover:bg-[var(--notion-gray-bg)] dark:hover:bg-accent",
               showExpandedRail ? "w-[184px] justify-start gap-3 px-3" : "w-11 justify-center"
             )}
           >
@@ -382,7 +317,7 @@ function ModuleRail() {
             </span>
           </Link>
           {!showExpandedRail ? (
-            <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#181715] px-2 py-1 text-[11px] text-zinc-100 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
+            <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/60 bg-card px-2 py-1 text-[11px] text-foreground opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
               Workspace overview
             </span>
           ) : null}
@@ -411,7 +346,7 @@ function ModuleRail() {
         </div>
       </nav>
 
-      <div className="border-t border-border/80 p-3">
+      <div className="border-t border-border/60 p-3">
         {contextPaneCollapsed ? (
           <div className="group relative flex">
             <button
@@ -421,7 +356,7 @@ function ModuleRail() {
               onClick={() => setContextPaneCollapsed(false)}
               style={SNAPPY_EASE_STYLE}
               className={cn(
-                "flex h-11 items-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] text-muted-foreground transition-[width,padding,gap,background-color,border-color] duration-300 hover:border-white/16 hover:bg-white/[0.05] hover:text-foreground",
+                "flex h-11 items-center overflow-hidden rounded-lg border border-border/60 bg-card/80 text-muted-foreground transition-[width,padding,gap,background-color,border-color] duration-300 hover:bg-[var(--notion-gray-bg)] hover:text-foreground dark:hover:bg-accent",
                 showExpandedRail ? "w-full justify-start gap-3 px-3" : "w-11 justify-center"
               )}
             >
@@ -439,7 +374,7 @@ function ModuleRail() {
               </span>
             </button>
             {!showExpandedRail ? (
-              <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#181715] px-2 py-1 text-[11px] text-zinc-100 opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
+              <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/60 bg-card px-2 py-1 text-[11px] text-foreground opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
                 Open pane
               </span>
             ) : null}
@@ -532,9 +467,9 @@ function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
     <div>
       <div
         className={cn(
-          "group flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors",
-          "hover:bg-accent/50",
-          isActive && "bg-accent text-accent-foreground"
+          "group flex items-center gap-1 rounded-md px-2 py-[5px] text-[13px] font-medium transition-colors",
+          "hover:bg-[rgba(55,53,47,0.04)] dark:hover:bg-[rgba(255,255,255,0.04)]",
+          isActive && "bg-[rgba(55,53,47,0.08)] text-foreground dark:bg-[rgba(255,255,255,0.07)]"
         )}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
       >
@@ -639,14 +574,14 @@ function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
 function SpaceBadge({ page, fallbackLabel }: { page?: any; fallbackLabel: string }) {
   if (page?.icon) {
     return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/[0.06] text-xs">
+      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
         {page.icon}
       </span>
     );
   }
 
   return (
-    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/[0.08] text-[11px] font-semibold text-zinc-200">
+    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">
       {fallbackLabel.slice(0, 1).toUpperCase()}
     </span>
   );
@@ -713,7 +648,7 @@ function SpaceSection({
   };
 
   return (
-    <div className="mb-2 rounded-xl border border-white/6 bg-black/10">
+    <div className="mb-2 rounded-xl border border-border/60 bg-card/40">
       <div className="flex items-center gap-2 px-2 py-2">
         <button
           type="button"
@@ -776,8 +711,8 @@ function SpaceSection({
             href={spaceHref}
             prefetch
             className={cn(
-              "mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent/40",
-              isHomeActive && "bg-accent text-accent-foreground"
+              "mx-2 flex items-center gap-2 rounded-md px-2 py-[5px] text-[13px] font-medium transition-colors hover:bg-[rgba(55,53,47,0.04)] dark:hover:bg-[rgba(255,255,255,0.04)]",
+              isHomeActive && "bg-[rgba(55,53,47,0.08)] text-foreground dark:bg-[rgba(255,255,255,0.07)]"
             )}
             onClick={() => setContextPaneCollapsed(true)}
             onMouseEnter={handlePrefetch}
@@ -812,7 +747,7 @@ function SpaceSection({
 
           <button
             type="button"
-            className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+            className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-[5px] text-[13px] font-medium text-muted-foreground transition-colors hover:bg-[rgba(55,53,47,0.04)] hover:text-foreground dark:hover:bg-[rgba(255,255,255,0.04)]"
             onClick={() => onAddNew(space._id, space.title)}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -909,7 +844,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
       {favourites && favourites.length > 0 ? (
         <div className="mt-3">
           <div className="flex items-center gap-1.5 px-3 py-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
               Favourites
             </span>
           </div>
@@ -923,7 +858,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 
       <div className="mt-3">
         <div className="flex items-center justify-between px-3 py-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
             Spaces
           </span>
           <button
@@ -946,7 +881,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
             </div>
           ) : (
             <>
-              <div className="mb-2 rounded-xl border border-white/6 bg-black/10">
+              <div className="mb-2 rounded-xl border border-border/60 bg-card/40">
                 <div className="flex items-center gap-2 px-2 py-2">
                   <SpaceBadge fallbackLabel="G" />
                   <span className="flex-1 text-sm font-medium text-foreground">General</span>
@@ -967,7 +902,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 
                   <button
                     type="button"
-                    className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+                    className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-[5px] text-[13px] font-medium text-muted-foreground transition-colors hover:bg-[rgba(55,53,47,0.04)] hover:text-foreground dark:hover:bg-[rgba(255,255,255,0.04)]"
                     onClick={() => handleOpenCreateItem(null, "General")}
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -1018,11 +953,11 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
       <Dialog open={createSpaceOpen} onOpenChange={setCreateSpaceOpen}>
         <DialogContent
           title="Create space"
-          className="max-w-md border-white/10 bg-[#161513] text-zinc-100"
+          className="max-w-md"
         >
           <DialogHeader>
             <DialogTitle>Create a new project space</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               Each space gets its own home page and isolated pages, notes, and databases.
             </DialogDescription>
           </DialogHeader>
@@ -1032,7 +967,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
               value={newSpaceName}
               onChange={(event) => setNewSpaceName(event.target.value)}
               placeholder="Space name"
-              className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+              className="h-10 rounded-xl"
             />
           </div>
 
@@ -1040,14 +975,14 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
             <Button
               type="button"
               variant="ghost"
-              className="rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+              className="rounded-xl"
               onClick={() => setCreateSpaceOpen(false)}
             >
               Cancel
             </Button>
             <Button
               type="button"
-              className="rounded-xl bg-white text-black hover:bg-zinc-200"
+              className="rounded-xl"
               onClick={handleCreateSpace}
               disabled={newSpaceLoading}
             >
@@ -1082,7 +1017,7 @@ function ContextPaneFrame({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-sidebar">
-      <div className="border-b border-border/80 px-3 py-3">
+      <div className="border-b border-border/60 px-3 py-3">
         <div className="flex items-center gap-2">
           <UserMenu />
           {!mobile ? (
@@ -1091,7 +1026,7 @@ function ContextPaneFrame({
               aria-label="Hide context pane"
               title="Hide context pane"
               onClick={toggleContextPaneCollapsed}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:border-white/16 hover:bg-white/[0.05] hover:text-white"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-muted-foreground transition-all hover:bg-[var(--notion-gray-bg)] hover:text-foreground dark:hover:bg-accent"
             >
               <PanelLeftClose className="h-4 w-4" />
             </button>
@@ -1132,7 +1067,7 @@ function OverviewContextPane() {
     <div className="space-y-4 px-2 py-3">
       <div>
         <div className="px-3 py-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
             Quick Actions
           </span>
         </div>
@@ -1153,7 +1088,7 @@ function OverviewContextPane() {
 
       <div>
         <div className="px-3 py-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
             Workspace Shortcuts
           </span>
         </div>
@@ -1195,7 +1130,7 @@ function FeedContextPane() {
   return (
     <div className="space-y-4 px-2 py-3">
       <div className="px-3 py-1">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
           Channels
         </span>
       </div>
@@ -1215,7 +1150,7 @@ function FeedContextPane() {
         })}
       </div>
 
-      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-xs leading-5 text-muted-foreground">
+      <div className="rounded-2xl border border-border/60 bg-card/40 px-3 py-3 text-xs leading-5 text-muted-foreground">
         Pick a channel here and the desktop feed updates instantly. Mobile keeps the tab row.
       </div>
     </div>
@@ -1228,7 +1163,7 @@ function LedgerContextPane() {
   return (
     <div className="space-y-4 px-2 py-3">
       <div className="px-3 py-1">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
           Views
         </span>
       </div>
@@ -1245,7 +1180,7 @@ function LedgerContextPane() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-xs leading-5 text-muted-foreground">
+      <div className="rounded-2xl border border-border/60 bg-card/40 px-3 py-3 text-xs leading-5 text-muted-foreground">
         The ledger section switcher now lives here so the content canvas gets more room.
       </div>
     </div>
@@ -1259,7 +1194,7 @@ function AutomationContextPane() {
   return (
     <div className="space-y-4 px-2 py-3">
       <div className="px-3 py-1">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
           Live Automations
         </span>
       </div>
@@ -1283,7 +1218,7 @@ function AutomationContextPane() {
         })}
       </div>
 
-      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-xs leading-5 text-muted-foreground">
+      <div className="rounded-2xl border border-border/60 bg-card/40 px-3 py-3 text-xs leading-5 text-muted-foreground">
         Pinterest pins ship first. Next automations can plug into this same module without growing the global nav again.
       </div>
     </div>
@@ -1294,6 +1229,12 @@ export function Sidebar() {
   const pathname = usePathname();
   const { contextPaneCollapsed, setActiveModule } = useAppStore();
   const { resolvedWorkspaceId, workspaceList, workspaces } = useResolvedWorkspace();
+  const [contextPaneWidth, setContextPaneWidth] = useState(CONTEXT_PANE_DEFAULT_WIDTH);
+  const [resizingContextPane, setResizingContextPane] = useState(false);
+  const contextPaneResizeRef = useRef<{
+    startX: number;
+    startWidth: number;
+  } | null>(null);
 
   const routeModule = useMemo(() => getRouteModule(pathname), [pathname]);
   const paneModule: keyof typeof PANE_DETAILS =
@@ -1311,6 +1252,91 @@ export function Sidebar() {
     setActiveModule(routeModule);
   }, [routeModule, setActiveModule]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedWidth = window.localStorage.getItem(CONTEXT_PANE_WIDTH_STORAGE_KEY);
+    if (!storedWidth) {
+      return;
+    }
+
+    const parsedWidth = Number(storedWidth);
+    if (!Number.isFinite(parsedWidth)) {
+      return;
+    }
+
+    setContextPaneWidth(clampContextPaneWidth(parsedWidth));
+  }, []);
+
+  useEffect(() => {
+    if (!resizingContextPane) {
+      return;
+    }
+
+    const handleMouseMove = (event: globalThis.MouseEvent) => {
+      const dragState = contextPaneResizeRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      const nextWidth = clampContextPaneWidth(
+        dragState.startWidth + (event.clientX - dragState.startX)
+      );
+      setContextPaneWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      setResizingContextPane(false);
+      contextPaneResizeRef.current = null;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [resizingContextPane]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(
+      CONTEXT_PANE_WIDTH_STORAGE_KEY,
+      String(clampContextPaneWidth(contextPaneWidth))
+    );
+  }, [contextPaneWidth]);
+
+  const handleContextPaneResizeStart = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      if (contextPaneCollapsed) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      contextPaneResizeRef.current = {
+        startX: event.clientX,
+        startWidth: contextPaneWidth,
+      };
+      setResizingContextPane(true);
+    },
+    [contextPaneCollapsed, contextPaneWidth]
+  );
+
   if (workspaces !== undefined && workspaceList.length === 0) {
     return <WorkspaceSetup />;
   }
@@ -1321,15 +1347,18 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "overflow-hidden border-r border-border/80 bg-sidebar transition-[width,opacity,transform,border-color] duration-300",
+          "relative overflow-hidden border-r border-border/60 bg-sidebar transition-[width,opacity,transform,border-color] duration-300",
           contextPaneCollapsed
-            ? "pointer-events-none w-0 -translate-x-2 border-transparent opacity-0"
-            : "w-[320px] translate-x-0 opacity-100"
+            ? "pointer-events-none -translate-x-2 border-transparent opacity-0"
+            : "translate-x-0 opacity-100"
         )}
-        style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+        style={{
+          width: contextPaneCollapsed ? 0 : contextPaneWidth,
+          transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
         aria-hidden={contextPaneCollapsed}
       >
-        <div className="h-full w-[320px]">
+        <div className="h-full w-full">
           <ContextPaneFrame moduleId={paneModule}>
             {paneModule === "brain" ? (
               resolvedWorkspaceId ? (
@@ -1350,6 +1379,23 @@ export function Sidebar() {
             )}
           </ContextPaneFrame>
         </div>
+
+        {!contextPaneCollapsed ? (
+          <button
+            type="button"
+            aria-label="Resize context pane"
+            title="Resize context pane"
+            onMouseDown={handleContextPaneResizeStart}
+            className="absolute right-0 top-0 z-50 h-full w-2 cursor-col-resize touch-none hover:[&>span]:bg-border"
+          >
+            <span
+              className={cn(
+                "pointer-events-none absolute right-0 top-0 h-full w-px bg-border/70 transition-colors",
+                resizingContextPane && "bg-primary/90"
+              )}
+            />
+          </button>
+        ) : null}
       </aside>
     </div>
   );
@@ -1404,7 +1450,7 @@ export function MobileWorkspaceContextSheet({
       <DialogContent
         title="Workspace navigation"
         hideTitleVisually
-        className="left-0 top-0 h-[100dvh] w-[min(360px,88vw)] max-w-[88vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-r border-white/10 bg-sidebar p-0 text-zinc-100"
+        className="left-0 top-0 h-[100dvh] w-[min(360px,88vw)] max-w-[88vw] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-r border-border/60 bg-sidebar p-0"
       >
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
           <ContextPaneFrame moduleId={paneModule} mobile>
@@ -1449,9 +1495,9 @@ function NavItem({
     <button
       type="button"
       className={cn(
-        "flex min-h-[44px] w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors md:min-h-0",
-        "hover:bg-accent/50",
-        active && "bg-accent text-accent-foreground"
+        "flex min-h-[44px] w-full items-center gap-2 rounded-md px-2 py-[5px] text-[13px] font-medium transition-colors md:min-h-0",
+        "hover:bg-[rgba(55,53,47,0.04)] dark:hover:bg-[rgba(255,255,255,0.04)]",
+        active && "bg-[rgba(55,53,47,0.08)] text-foreground dark:bg-[rgba(255,255,255,0.07)]"
       )}
       onClick={onClick}
     >
@@ -1465,3 +1511,5 @@ function NavItem({
     </button>
   );
 }
+
+

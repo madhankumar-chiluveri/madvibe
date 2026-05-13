@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { Plus, Rows3, Trash2 } from "lucide-react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -21,6 +28,12 @@ import { PropertyHeaderMenu } from "./property-header-menu";
 import { PropertyCell } from "./property-cell";
 
 const SELECTION_COLUMN_WIDTH = 44;
+const MIN_COLUMN_WIDTH = 96;
+const MAX_COLUMN_WIDTH = 720;
+
+function clampColumnWidth(width: number) {
+  return Math.max(MIN_COLUMN_WIDTH, Math.min(MAX_COLUMN_WIDTH, Math.round(width)));
+}
 
 interface TableViewProps {
   workspaceId: Id<"workspaces">;
@@ -62,19 +75,35 @@ export function TableView({
   const [newRowLoading, setNewRowLoading] = useState(false);
   const [newPropertyLoading, setNewPropertyLoading] = useState(false);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
+  const [resizingPropertyId, setResizingPropertyId] = useState<string | null>(null);
+  const [columnWidthDrafts, setColumnWidthDrafts] = useState<Record<string, number>>({});
   const titleProperty = properties.find((property) => property.type === "title");
   const selectAllRef = useRef<HTMLInputElement | null>(null);
+  const resizeDragRef = useRef<{
+    propertyId: string;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+  const resizeWidthRef = useRef<number | null>(null);
+
+  const getColumnWidth = useCallback(
+    (property: PropertySchema) => {
+      const draftWidth = columnWidthDrafts[property.id];
+      return clampColumnWidth(draftWidth ?? getPropertyWidth(property));
+    },
+    [columnWidthDrafts]
+  );
 
   const tableMinWidth = useMemo(() => {
     const dataColumnsWidth = properties.reduce(
-      (total, property) => total + getPropertyWidth(property),
+      (total, property) => total + getColumnWidth(property),
       0
     );
     return Math.max(
       dataColumnsWidth + ACTION_COLUMN_WIDTH + SELECTION_COLUMN_WIDTH,
       MIN_TABLE_WIDTH + SELECTION_COLUMN_WIDTH
     );
-  }, [properties]);
+  }, [getColumnWidth, properties]);
 
   const frozenState = useMemo(() => {
     let currentOffset = SELECTION_COLUMN_WIDTH;
@@ -84,7 +113,7 @@ export function TableView({
     for (const property of properties) {
       if (!property.config?.frozen) continue;
       offsets[property.id] = currentOffset;
-      currentOffset += getPropertyWidth(property);
+      currentOffset += getColumnWidth(property);
       frozenIds.push(property.id);
     }
 
@@ -92,7 +121,7 @@ export function TableView({
       offsets,
       lastFrozenId: frozenIds[frozenIds.length - 1] ?? null,
     };
-  }, [properties]);
+  }, [getColumnWidth, properties]);
 
   useEffect(() => {
     if (!rows) {
@@ -108,12 +137,37 @@ export function TableView({
     });
   }, [rows]);
 
-  const persistProperties = async (
-    updater: (current: PropertySchema[]) => PropertySchema[]
-  ) => {
-    if (!editable) return;
-    await onUpdateProperties(updater);
-  };
+  const persistProperties = useCallback(
+    async (updater: (current: PropertySchema[]) => PropertySchema[]) => {
+      if (!editable) return;
+      await onUpdateProperties(updater);
+    },
+    [editable, onUpdateProperties]
+  );
+
+  const handleColumnResizeStart = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>, property: PropertySchema) => {
+      if (!editable) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const startWidth = getColumnWidth(property);
+      resizeDragRef.current = {
+        propertyId: property.id,
+        startX: event.clientX,
+        startWidth,
+      };
+      resizeWidthRef.current = startWidth;
+      setResizingPropertyId(property.id);
+      setColumnWidthDrafts((current) =>
+        current[property.id] === startWidth ? current : { ...current, [property.id]: startWidth }
+      );
+    },
+    [editable, getColumnWidth]
+  );
 
   const getUniquePropertyName = (type: PropertyType, current: PropertySchema[]) => {
     const baseName = type === "text" ? "Property" : createProperty(type).name;
@@ -181,6 +235,94 @@ export function TableView({
 
     selectAllRef.current.indeterminate = selectedCount > 0 && !allRowsSelected;
   }, [allRowsSelected, selectedCount]);
+
+  useEffect(() => {
+    if (resizingPropertyId) {
+      return;
+    }
+
+    setColumnWidthDrafts((current) => {
+      let changed = false;
+      const nextDrafts = { ...current };
+
+      for (const [propertyId, draftWidth] of Object.entries(current)) {
+        const property = properties.find((candidate) => candidate.id === propertyId);
+
+        if (!property) {
+          delete nextDrafts[propertyId];
+          changed = true;
+          continue;
+        }
+
+        const persistedWidth = clampColumnWidth(getPropertyWidth(property));
+        if (persistedWidth === clampColumnWidth(draftWidth)) {
+          delete nextDrafts[propertyId];
+          changed = true;
+        }
+      }
+
+      return changed ? nextDrafts : current;
+    });
+  }, [properties, resizingPropertyId]);
+
+  useEffect(() => {
+    if (!resizingPropertyId) {
+      return;
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const dragState = resizeDragRef.current;
+      if (!dragState || dragState.propertyId !== resizingPropertyId) {
+        return;
+      }
+
+      const width = clampColumnWidth(dragState.startWidth + (event.clientX - dragState.startX));
+      resizeWidthRef.current = width;
+      setColumnWidthDrafts((current) =>
+        current[dragState.propertyId] === width
+          ? current
+          : { ...current, [dragState.propertyId]: width }
+      );
+    };
+
+    const handleMouseUp = () => {
+      const dragState = resizeDragRef.current;
+
+      resizeDragRef.current = null;
+      const finalWidth = clampColumnWidth(
+        resizeWidthRef.current ?? dragState?.startWidth ?? MIN_COLUMN_WIDTH
+      );
+      resizeWidthRef.current = null;
+      setResizingPropertyId(null);
+
+      if (!dragState) {
+        return;
+      }
+
+      void persistProperties((current) =>
+        current.map((candidate) =>
+          candidate.id === dragState.propertyId
+            ? updateProperty(candidate, { config: { width: finalWidth } })
+            : candidate
+        )
+      );
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [persistProperties, resizingPropertyId]);
 
   const toggleRowSelection = (rowId: Id<"rows">, checked: boolean) => {
     if (!editable) return;
@@ -286,7 +428,7 @@ export function TableView({
           <colgroup>
             <col style={{ width: SELECTION_COLUMN_WIDTH }} />
             {properties.map((property) => (
-              <col key={property.id} style={{ width: getPropertyWidth(property) }} />
+              <col key={property.id} style={{ width: getColumnWidth(property) }} />
             ))}
             <col style={{ width: ACTION_COLUMN_WIDTH }} />
           </colgroup>
@@ -319,15 +461,17 @@ export function TableView({
                     key={property.id}
                     style={isFrozen ? { left } : undefined}
                     className={cn(
-                      "border-r border-white/6 bg-[#171614] px-2.5 py-0 text-left align-middle font-medium text-zinc-300",
+                      "group/column relative border-r border-white/6 bg-[#171614] px-2.5 py-0 text-left align-middle font-medium text-zinc-300",
                       isFrozen && "sticky z-40",
+                      resizingPropertyId === property.id && "bg-[#1c1a17]",
                       isFrozen &&
                         property.id === frozenState.lastFrozenId &&
                         "shadow-[1px_0_0_0_rgba(255,255,255,0.06),14px_0_28px_rgba(0,0,0,0.18)]"
                     )}
                   >
                     {editable ? (
-                      <PropertyHeaderMenu
+                      <>
+                        <PropertyHeaderMenu
                         property={property}
                         onRename={(name) =>
                           persistProperties((current) =>
@@ -409,7 +553,24 @@ export function TableView({
                             )
                           )
                         }
-                      />
+                        />
+                        <button
+                          type="button"
+                          aria-label={`Resize ${property.name || "column"}`}
+                          title={`Resize ${property.name || "column"}`}
+                          onMouseDown={(event) => handleColumnResizeStart(event, property)}
+                          className="absolute -right-1 top-0 z-20 h-full w-2 cursor-col-resize touch-none"
+                        >
+                          <span
+                            className={cn(
+                              "pointer-events-none absolute right-[3px] top-2 bottom-2 w-px rounded bg-white/25 transition-opacity",
+                              resizingPropertyId === property.id
+                                ? "opacity-100 bg-sky-300/80"
+                                : "opacity-0 group-hover/column:opacity-100"
+                            )}
+                          />
+                        </button>
+                      </>
                     ) : (
                       <div className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left">
                         <span className="truncate">{property.name || "Untitled"}</span>
@@ -482,7 +643,7 @@ export function TableView({
                         key={property.id}
                         style={isFrozen ? { left } : undefined}
                         className={cn(
-                          "border-r border-white/6 px-1 py-0 align-middle",
+                          "border-r border-white/6 px-0 py-0 align-middle overflow-hidden",
                           isFrozen &&
                             "sticky z-20",
                           isFrozen &&

@@ -114,8 +114,8 @@ const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
     shortLabel: "Savings",
     helper: "Emergency funds and long-term reserves.",
     icon: PiggyBank,
-    iconWrapClassName: "bg-emerald-500/15 text-emerald-600",
-    badgeClassName: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    iconWrapClassName: "bg-notion-green-bg text-notion-green-text",
+    badgeClassName: "bg-notion-green-bg text-notion-green-text",
   },
   {
     value: "checking",
@@ -123,8 +123,8 @@ const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
     shortLabel: "Current",
     helper: "Everyday operating money and incoming salary flows.",
     icon: Building2,
-    iconWrapClassName: "bg-blue-500/15 text-blue-600",
-    badgeClassName: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    iconWrapClassName: "bg-notion-blue-bg text-notion-blue-text",
+    badgeClassName: "bg-notion-blue-bg text-notion-blue-text",
   },
   {
     value: "cash",
@@ -132,8 +132,8 @@ const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
     shortLabel: "Cash",
     helper: "Physical cash or petty cash balances.",
     icon: DollarSign,
-    iconWrapClassName: "bg-amber-500/15 text-amber-600",
-    badgeClassName: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    iconWrapClassName: "bg-notion-yellow-bg text-notion-yellow-text",
+    badgeClassName: "bg-notion-yellow-bg text-notion-yellow-text",
   },
   {
     value: "wallet",
@@ -141,8 +141,8 @@ const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
     shortLabel: "Wallet",
     helper: "UPI, prepaid, and stored-value balances.",
     icon: Wallet,
-    iconWrapClassName: "bg-orange-500/15 text-orange-600",
-    badgeClassName: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+    iconWrapClassName: "bg-notion-orange-bg text-notion-orange-text",
+    badgeClassName: "bg-notion-orange-bg text-notion-orange-text",
   },
   {
     value: "credit_card",
@@ -150,8 +150,8 @@ const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
     shortLabel: "Credit card",
     helper: "Card-linked liabilities and dues.",
     icon: CreditCard,
-    iconWrapClassName: "bg-violet-500/15 text-violet-600",
-    badgeClassName: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+    iconWrapClassName: "bg-notion-purple-bg text-notion-purple-text",
+    badgeClassName: "bg-notion-purple-bg text-notion-purple-text",
   },
   {
     value: "investment",
@@ -159,8 +159,8 @@ const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
     shortLabel: "Investment",
     helper: "Brokerage and wealth-management accounts.",
     icon: TrendingUp,
-    iconWrapClassName: "bg-cyan-500/15 text-cyan-600",
-    badgeClassName: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300",
+    iconWrapClassName: "bg-notion-blue-bg text-notion-blue-text",
+    badgeClassName: "bg-notion-blue-bg text-notion-blue-text",
   },
   {
     value: "loan",
@@ -168,8 +168,8 @@ const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
     shortLabel: "Loan",
     helper: "Borrowed balances, payables, or lending accounts.",
     icon: Landmark,
-    iconWrapClassName: "bg-rose-500/15 text-rose-600",
-    badgeClassName: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    iconWrapClassName: "bg-notion-red-bg text-notion-red-text",
+    badgeClassName: "bg-notion-red-bg text-notion-red-text",
   },
 ];
 
@@ -276,8 +276,8 @@ function sortLedgerAccounts(accounts: FinanceAccount[]) {
 function getTransactionPresentation(transaction: FinanceTransaction) {
   if (transaction.type === "income") {
     return {
-      amountClassName: "text-emerald-600",
-      iconWrapClassName: "bg-emerald-500/15 text-emerald-600",
+      amountClassName: "text-notion-green-text",
+      iconWrapClassName: "bg-notion-green-bg text-notion-green-text",
       prefix: "+",
       icon: ArrowDownRight,
       badgeLabel: "Income",
@@ -287,8 +287,8 @@ function getTransactionPresentation(transaction: FinanceTransaction) {
   if (transaction.type === "transfer") {
     const incoming = transaction.transferDirection === "in";
     return {
-      amountClassName: "text-blue-600",
-      iconWrapClassName: "bg-blue-500/15 text-blue-600",
+      amountClassName: "text-notion-blue-text",
+      iconWrapClassName: "bg-notion-blue-bg text-notion-blue-text",
       prefix: incoming ? "+" : "-",
       icon: incoming ? ArrowDownRight : ArrowUpRight,
       badgeLabel: incoming ? "Transfer in" : "Transfer out",
@@ -297,8 +297,8 @@ function getTransactionPresentation(transaction: FinanceTransaction) {
 
   if (transaction.type === "investment") {
     return {
-      amountClassName: "text-cyan-600",
-      iconWrapClassName: "bg-cyan-500/15 text-cyan-600",
+      amountClassName: "text-notion-blue-text",
+      iconWrapClassName: "bg-notion-blue-bg text-notion-blue-text",
       prefix: "-",
       icon: TrendingUp,
       badgeLabel: "Investment",
@@ -306,8 +306,8 @@ function getTransactionPresentation(transaction: FinanceTransaction) {
   }
 
   return {
-    amountClassName: "text-red-500",
-    iconWrapClassName: "bg-red-500/15 text-red-500",
+    amountClassName: "text-notion-red-text",
+    iconWrapClassName: "bg-notion-red-bg text-notion-red-text",
     prefix: "-",
     icon: ArrowUpRight,
     badgeLabel: "Expense",
@@ -406,7 +406,7 @@ function Field({
     <div className="space-y-1.5">
       <label className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
         {label}
-        {required ? <span className="ml-1 text-red-500">*</span> : null}
+        {required ? <span className="ml-1 text-notion-red-text">*</span> : null}
       </label>
       {children}
       {helper ? <p className="text-xs text-muted-foreground">{helper}</p> : null}
@@ -912,7 +912,7 @@ export function TransactionsTabV2() {
                     <p
                       className={cn(
                         "mt-1 text-xl font-semibold",
-                        account.balance < 0 ? "text-red-500" : "text-foreground"
+                        account.balance < 0 ? "text-notion-red-text" : "text-foreground"
                       )}
                     >
                       {fmt(account.balance)}
@@ -963,7 +963,7 @@ export function TransactionsTabV2() {
                     <button
                       type="button"
                       onClick={() => void handleArchiveAccount(account)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border text-red-500 transition-colors hover:bg-red-500/10"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border text-notion-red-text transition-colors hover:bg-notion-red-bg"
                       aria-label={`Archive ${account.name}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1190,7 +1190,7 @@ export function TransactionsTabV2() {
                         <th className="w-12" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-border/40">
                       {visibleTransactions.map((transaction) => {
                         const presentation =
                           getTransactionPresentation(transaction);
@@ -1259,7 +1259,7 @@ export function TransactionsTabV2() {
                                 onClick={() =>
                                   void handleDeleteTransaction(transaction)
                                 }
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-500 opacity-0 transition-all hover:bg-red-500/10 group-hover:opacity-100"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-notion-red-text opacity-0 transition-all hover:bg-notion-red-bg group-hover:opacity-100"
                                 aria-label={`Delete ${transaction.description}`}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -1331,7 +1331,7 @@ export function TransactionsTabV2() {
                           <button
                             type="button"
                             onClick={() => void handleDeleteTransaction(transaction)}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-red-500 transition-colors hover:bg-red-500/10"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-notion-red-text transition-colors hover:bg-notion-red-bg"
                             aria-label={`Delete ${transaction.description}`}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -1752,3 +1752,6 @@ export function TransactionsTabV2() {
     </div>
   );
 }
+
+
+

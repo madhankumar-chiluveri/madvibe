@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 import { OciConfigSection } from "@/components/settings/oci-config-section";
+import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 
 type Section = "appearance" | "workspace" | "maddy" | "integrations" | "keyboard" | "account";
 
@@ -347,7 +348,16 @@ export default function SettingsPage() {
             {/* ── Appearance ── */}
             {section === "appearance" && (
               <>
-                <SettingSection title="Theme">
+                <SettingSection
+                  title="Workspace theme"
+                  description="Choose the visual token pack used across the workspace shell."
+                >
+                  <ThemeSwitcher />
+                </SettingSection>
+
+                <Separator />
+
+                <SettingSection title="Color mode">
                   <div className="grid grid-cols-3 gap-2 md:flex md:gap-3">
                     {(
                       [
@@ -1043,11 +1053,13 @@ function SettingSection({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 border-b border-border/40 pb-6 last:border-b-0">
       <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
+        <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          {title}
+        </h3>
         {description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
         )}
       </div>
       {children}

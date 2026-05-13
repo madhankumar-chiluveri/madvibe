@@ -30,7 +30,7 @@ export function WorkspaceTopBar({
       className={cn(
         sticky ? "sticky top-0 z-40" : "relative z-10",
         "flex items-center justify-between gap-2 px-4 py-2 md:px-8",
-        "border-b border-border/40 bg-background/80 backdrop-blur-md",
+        "border-b border-border/50 bg-background",
         className
       )}
     >
@@ -38,31 +38,33 @@ export function WorkspaceTopBar({
         <button
           type="button"
           aria-label="Open workspace navigation"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 transition-colors hover:border-white/16 hover:bg-white/[0.06] hover:text-white md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-card text-muted-foreground transition-colors hover:bg-[var(--notion-gray-bg)] hover:text-foreground dark:hover:bg-accent md:hidden"
           onClick={() => setMobileNavOpen(true)}
         >
           <PanelLeft className="h-4 w-4" />
         </button>
 
-        <div className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground select-none">
+        <div className="flex min-w-0 items-center gap-1 text-[13px] text-muted-foreground select-none">
           <span className="flex items-center gap-1 shrink-0">
             {currentWorkspace?.icon && (
               <span className="text-sm leading-none">{currentWorkspace.icon}</span>
             )}
-            <span className="font-medium text-foreground truncate max-w-[120px] md:max-w-[160px]">
+            <span className="max-w-[120px] truncate text-[14px] font-semibold text-foreground md:max-w-[160px]">
               {currentWorkspace?.name ?? "Workspace"}
             </span>
           </span>
 
           {breadcrumbContent ? (
             <>
-              <ChevronRight className="w-3 h-3 opacity-40 shrink-0" />
+              <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
               <div className="min-w-0">{breadcrumbContent}</div>
             </>
           ) : moduleTitle ? (
             <>
-              <ChevronRight className="w-3 h-3 opacity-40 shrink-0" />
-              <span className="text-foreground font-medium truncate">{moduleTitle}</span>
+              <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+              <span className="truncate text-[14px] font-semibold text-foreground">
+                {moduleTitle}
+              </span>
             </>
           ) : null}
         </div>

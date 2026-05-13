@@ -1,0 +1,283 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.app-shell {
+  font-family: 'Geist', sans-serif;
+  display: flex;
+  height: 340px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 13px;
+}
+
+/* ── OPTION A: Pure Notion ── */
+.shell-a {
+  background: #FFFFFF;
+  color: #37352F;
+}
+.shell-a .sidebar {
+  width: 220px;
+  background: #F7F6F3;
+  border-right: 1px solid #E5E4E0;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.shell-a .ws-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #37352F;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.shell-a .nav-item {
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: #37352F;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+}
+.shell-a .nav-item.active { background: rgba(55,53,47,0.08); font-weight: 500; }
+.shell-a .nav-item:hover { background: rgba(55,53,47,0.06); }
+.shell-a .nav-divider { height: 1px; background: #E5E4E0; margin: 6px 4px; }
+.shell-a .content { flex: 1; padding: 32px 40px; overflow: hidden; }
+.shell-a .page-title { font-size: 30px; font-weight: 700; color: #37352F; letter-spacing: -0.02em; margin-bottom: 6px; }
+.shell-a .page-meta { font-size: 13px; color: #9B9A97; margin-bottom: 20px; }
+.shell-a .tag { display: inline-flex; align-items: center; font-size: 12px; font-weight: 500; padding: 1px 6px; border-radius: 3px; }
+.shell-a .tag-gray { background: #E5E4E0; color: #37352F; }
+.shell-a .tag-blue { background: #DDEBF1; color: #0B6E99; }
+.shell-a .tag-green { background: #DDEDEA; color: #0F7B6C; }
+.shell-a .tag-orange { background: #FAEBDD; color: #D9730D; }
+.shell-a .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.shell-a .stat-card { background: #F7F6F3; border: 1px solid #E5E4E0; border-radius: 4px; padding: 12px 14px; }
+.shell-a .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9B9A97; margin-bottom: 4px; }
+.shell-a .stat-val { font-size: 20px; font-weight: 700; color: #37352F; }
+
+/* ── OPTION B: Notion tokens + MadVibe rounded ── */
+.shell-b {
+  background: #FFFFFF;
+  color: #37352F;
+}
+.shell-b .sidebar {
+  width: 220px;
+  background: #FAFAF8;
+  border-right: 1px solid #ECEAE4;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.shell-b .ws-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #37352F;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+}
+.shell-b .nav-item {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: #37352F;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 400;
+}
+.shell-b .nav-item.active { background: rgba(55,53,47,0.08); font-weight: 500; }
+.shell-b .nav-divider { height: 1px; background: #ECEAE4; margin: 6px 4px; }
+.shell-b .content { flex: 1; padding: 28px 36px; overflow: hidden; }
+.shell-b .page-title { font-size: 28px; font-weight: 700; color: #37352F; letter-spacing: -0.02em; margin-bottom: 6px; }
+.shell-b .page-meta { font-size: 13px; color: #9B9A97; margin-bottom: 16px; }
+.shell-b .tag { display: inline-flex; align-items: center; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
+.shell-b .tag-gray { background: #E5E4E0; color: #37352F; }
+.shell-b .tag-blue { background: #DDEBF1; color: #0B6E99; }
+.shell-b .tag-green { background: #DDEDEA; color: #0F7B6C; }
+.shell-b .tag-orange { background: #FAEBDD; color: #D9730D; }
+.shell-b .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.shell-b .stat-card {
+  background: #FAFAF8;
+  border: 1px solid #ECEAE4;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(55,53,47,0.06);
+}
+.shell-b .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9B9A97; margin-bottom: 4px; }
+.shell-b .stat-val { font-size: 20px; font-weight: 700; color: #37352F; }
+
+/* ── OPTION C: Notion palette + dark-first premium ── */
+.shell-c {
+  background: #191918;
+  color: #E5E4E1;
+}
+.shell-c .sidebar {
+  width: 220px;
+  background: #141413;
+  border-right: 1px solid #2A2926;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.shell-c .ws-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #E5E4E1;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+}
+.shell-c .nav-item {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: #B5B4B0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 400;
+}
+.shell-c .nav-item.active { background: rgba(255,255,255,0.07); color: #E5E4E1; font-weight: 500; }
+.shell-c .nav-divider { height: 1px; background: #2A2926; margin: 6px 4px; }
+.shell-c .content { flex: 1; padding: 28px 36px; overflow: hidden; }
+.shell-c .page-title { font-size: 28px; font-weight: 700; color: #FFFFFE; letter-spacing: -0.02em; margin-bottom: 6px; }
+.shell-c .page-meta { font-size: 13px; color: #6B6A68; margin-bottom: 16px; }
+.shell-c .tag { display: inline-flex; align-items: center; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
+.shell-c .tag-gray { background: #454543; color: #B5B4B0; }
+.shell-c .tag-blue { background: #364954; color: #529CCA; }
+.shell-c .tag-green { background: #2F4140; color: #4DAB9A; }
+.shell-c .tag-orange { background: #4A3728; color: #FFA344; }
+.shell-c .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.shell-c .stat-card {
+  background: #1E1E1C;
+  border: 1px solid #2A2926;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.shell-c .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6B6A68; margin-bottom: 4px; }
+.shell-c .stat-val { font-size: 20px; font-weight: 700; color: #FFFFFE; }
+
+.tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.label-text { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.4; margin-bottom: 8px; }
+</style>
+
+<h2>Notion Design Fidelity — Which direction?</h2>
+<p class="subtitle">Same content, three interpretations of "inject Notion design system." Both light and dark mode will be built.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="pure-notion" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div class="app-shell shell-a">
+        <div class="sidebar">
+          <div class="ws-name">⬛ MadVibe</div>
+          <div class="nav-item active">📋 Overview</div>
+          <div class="nav-item">📰 Feed</div>
+          <div class="nav-item">🧠 Brain</div>
+          <div class="nav-item">💰 Ledger</div>
+          <div class="nav-divider"></div>
+          <div class="nav-item">⚙️ Settings</div>
+        </div>
+        <div class="content">
+          <div class="label-text">Overview</div>
+          <div class="page-title">Good morning</div>
+          <div class="page-meta">Wednesday, 13 May 2026</div>
+          <div class="tags-row">
+            <span class="tag tag-gray">All</span>
+            <span class="tag tag-blue">Brain</span>
+            <span class="tag tag-green">Ledger</span>
+            <span class="tag tag-orange">Reminders</span>
+          </div>
+          <div class="card-row">
+            <div class="stat-card"><div class="stat-label">Pages</div><div class="stat-val">24</div></div>
+            <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-val">₹42,000</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Pure Notion Fidelity</h3>
+      <p>Exact Notion tokens: 4px radius, #37352F text, #F7F6F3 sidebar, hairline borders. Looks and feels like Notion. Most faithful, least MadVibe identity.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="notion-blend" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div class="app-shell shell-b">
+        <div class="sidebar">
+          <div class="ws-name">⬛ MadVibe</div>
+          <div class="nav-item active">📋 Overview</div>
+          <div class="nav-item">📰 Feed</div>
+          <div class="nav-item">🧠 Brain</div>
+          <div class="nav-item">💰 Ledger</div>
+          <div class="nav-divider"></div>
+          <div class="nav-item">⚙️ Settings</div>
+        </div>
+        <div class="content">
+          <div class="label-text">Overview</div>
+          <div class="page-title">Good morning</div>
+          <div class="page-meta">Wednesday, 13 May 2026</div>
+          <div class="tags-row">
+            <span class="tag tag-gray">All</span>
+            <span class="tag tag-blue">Brain</span>
+            <span class="tag tag-green">Ledger</span>
+            <span class="tag tag-orange">Reminders</span>
+          </div>
+          <div class="card-row">
+            <div class="stat-card"><div class="stat-label">Pages</div><div class="stat-val">24</div></div>
+            <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-val">₹42,000</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Notion Tokens + MadVibe Shape (Recommended)</h3>
+      <p>Notion's exact color palette + typography but keep 8px radius, subtle shadows, MadVibe's card depth. Best of both: reads Notion, feels MadVibe.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="notion-dark-premium" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div class="app-shell shell-c">
+        <div class="sidebar">
+          <div class="ws-name">⬛ MadVibe</div>
+          <div class="nav-item active">📋 Overview</div>
+          <div class="nav-item">📰 Feed</div>
+          <div class="nav-item">🧠 Brain</div>
+          <div class="nav-item">💰 Ledger</div>
+          <div class="nav-divider"></div>
+          <div class="nav-item">⚙️ Settings</div>
+        </div>
+        <div class="content">
+          <div class="label-text">Overview</div>
+          <div class="page-title">Good morning</div>
+          <div class="page-meta">Wednesday, 13 May 2026</div>
+          <div class="tags-row">
+            <span class="tag tag-gray">All</span>
+            <span class="tag tag-blue">Brain</span>
+            <span class="tag tag-green">Ledger</span>
+            <span class="tag tag-orange">Reminders</span>
+          </div>
+          <div class="card-row">
+            <div class="stat-card"><div class="stat-label">Pages</div><div class="stat-val">24</div></div>
+            <div class="stat-card"><div class="stat-label">Balance</div><div class="stat-val">₹42,000</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Notion Dark + Premium</h3>
+      <p>Notion's dark mode color palette (#191918 bg, exact dark token values) with 8px radius. Richer, more editorial. Preview above shows what dark mode looks like — light mode follows Notion light exactly.</p>
+    </div>
+  </div>
+
+</div>

@@ -74,8 +74,8 @@ const ACCOUNT_TYPE_OPTIONS = [
     shortLabel: "Savings",
     helper: "Emergency funds and reserves",
     icon: PiggyBank,
-    iconWrapClassName: "bg-emerald-500/15 text-emerald-600",
-    badgeClassName: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    iconWrapClassName: "bg-notion-green-bg text-notion-green-text",
+    badgeClassName: "bg-notion-green-bg text-notion-green-text",
   },
   {
     value: "checking",
@@ -83,8 +83,8 @@ const ACCOUNT_TYPE_OPTIONS = [
     shortLabel: "Current",
     helper: "Daily operating cash flow",
     icon: Building2,
-    iconWrapClassName: "bg-blue-500/15 text-blue-600",
-    badgeClassName: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    iconWrapClassName: "bg-notion-blue-bg text-notion-blue-text",
+    badgeClassName: "bg-notion-blue-bg text-notion-blue-text",
   },
   {
     value: "cash",
@@ -92,8 +92,8 @@ const ACCOUNT_TYPE_OPTIONS = [
     shortLabel: "Cash",
     helper: "Physical cash on hand",
     icon: DollarSign,
-    iconWrapClassName: "bg-amber-500/15 text-amber-600",
-    badgeClassName: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    iconWrapClassName: "bg-notion-yellow-bg text-notion-yellow-text",
+    badgeClassName: "bg-notion-yellow-bg text-notion-yellow-text",
   },
   {
     value: "wallet",
@@ -101,8 +101,8 @@ const ACCOUNT_TYPE_OPTIONS = [
     shortLabel: "Wallet",
     helper: "UPI and stored-value balances",
     icon: Wallet,
-    iconWrapClassName: "bg-orange-500/15 text-orange-600",
-    badgeClassName: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+    iconWrapClassName: "bg-notion-orange-bg text-notion-orange-text",
+    badgeClassName: "bg-notion-orange-bg text-notion-orange-text",
   },
   {
     value: "credit_card",
@@ -110,8 +110,8 @@ const ACCOUNT_TYPE_OPTIONS = [
     shortLabel: "Credit card",
     helper: "Card-linked liabilities",
     icon: CreditCard,
-    iconWrapClassName: "bg-violet-500/15 text-violet-600",
-    badgeClassName: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+    iconWrapClassName: "bg-notion-purple-bg text-notion-purple-text",
+    badgeClassName: "bg-notion-purple-bg text-notion-purple-text",
   },
   {
     value: "investment",
@@ -119,8 +119,8 @@ const ACCOUNT_TYPE_OPTIONS = [
     shortLabel: "Investment",
     helper: "Brokerage and wealth accounts",
     icon: TrendingUp,
-    iconWrapClassName: "bg-cyan-500/15 text-cyan-600",
-    badgeClassName: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300",
+    iconWrapClassName: "bg-notion-blue-bg text-notion-blue-text",
+    badgeClassName: "bg-notion-blue-bg text-notion-blue-text",
   },
   {
     value: "loan",
@@ -128,8 +128,8 @@ const ACCOUNT_TYPE_OPTIONS = [
     shortLabel: "Loan",
     helper: "Borrowed or lent balances",
     icon: Handshake,
-    iconWrapClassName: "bg-rose-500/15 text-rose-600",
-    badgeClassName: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    iconWrapClassName: "bg-notion-red-bg text-notion-red-text",
+    badgeClassName: "bg-notion-red-bg text-notion-red-text",
   },
 ] as const;
 
@@ -239,7 +239,7 @@ function Field({ label, children, required }: { label: string; children: React.R
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+        {label}{required && <span className="text-notion-red-text ml-0.5">*</span>}
       </label>
       {children}
     </div>
@@ -393,7 +393,7 @@ function DashboardTab() {
                 <p className="text-sm font-bold">{idx.price >= 1000 ? idx.price.toFixed(2) : idx.price.toFixed(4)}</p>
               </div>
               <div className={cn("ml-auto text-xs font-semibold px-2 py-1 rounded-lg",
-                (idx.changePercent ?? 0) >= 0 ? "bg-emerald-500/15 text-emerald-600" : "bg-red-500/15 text-red-500")}>
+                (idx.changePercent ?? 0) >= 0 ? "bg-notion-green-bg text-notion-green-text" : "bg-notion-red-bg text-notion-red-text")}>
                 {(idx.changePercent ?? 0) >= 0 ? "▲" : "▼"} {Math.abs(idx.changePercent ?? 0).toFixed(2)}%
               </div>
             </div>
@@ -453,8 +453,8 @@ function DashboardTab() {
           </h3>
           {upcomingLoans.map((l: any) => (
             <div key={l._id} className="flex items-center gap-3 py-1.5">
-              <div className="w-8 h-8 bg-amber-500/15 rounded-lg flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <div className="w-8 h-8 bg-notion-yellow-bg rounded-lg flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 text-notion-yellow-text" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">
@@ -466,8 +466,8 @@ function DashboardTab() {
           ))}
           {upcomingRecurring.map((r: any) => (
             <div key={r._id} className="flex items-center gap-3 py-1.5">
-              <div className="w-8 h-8 bg-blue-500/15 rounded-lg flex items-center justify-center shrink-0">
-                <Repeat className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 bg-notion-blue-bg rounded-lg flex items-center justify-center shrink-0">
+                <Repeat className="w-4 h-4 text-notion-blue-text" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">{r.title}</p>
@@ -504,7 +504,7 @@ function DashboardTab() {
                   <p className="text-sm font-medium truncate">{acc.name}</p>
                   <p className="text-xs text-muted-foreground">{formatAccountTypeLabel(acc.type)}</p>
                 </div>
-                <p className={cn("text-sm font-bold shrink-0", acc.balance < 0 ? "text-red-500" : "text-foreground")}>
+                <p className={cn("text-sm font-bold shrink-0", acc.balance < 0 ? "text-notion-red-text" : "text-foreground")}>
                   {fmtShort(acc.balance)}
                 </p>
               </div>
@@ -514,8 +514,8 @@ function DashboardTab() {
       )}
 
       {/* AI Insight */}
-      <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/5 border border-violet-500/20 rounded-2xl p-4">
-        <p className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide mb-1">
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="text-xs font-semibold text-notion-purple-text uppercase tracking-wide mb-1">
           💡 Maddy's Ledger Insight
         </p>
         <p className="text-sm text-foreground/80">
@@ -670,7 +670,7 @@ function TransactionsTab() {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">{t.date}</td>
                 <td className={cn("px-4 py-3 text-right font-semibold",
-                  t.type === "income" ? "text-emerald-600" : t.type === "transfer" ? "text-blue-500" : "text-red-500")}>
+                  t.type === "income" ? "text-notion-green-text" : t.type === "transfer" ? "text-notion-blue-text" : "text-notion-red-text")}>
                   {t.type === "income" ? "+" : t.type === "transfer" ? (t.transferDirection === "in" ? "+" : "−") : "−"}{fmt(t.amount)}
                 </td>
                 <td className="px-2 py-3">
@@ -679,7 +679,7 @@ function TransactionsTab() {
                       if (!confirmDeleteRecord("transaction")) return;
                       void deleteTx({ id: t._id });
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/15 text-red-500 transition-all">
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-notion-red-bg text-notion-red-text transition-all">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </td>
@@ -694,7 +694,7 @@ function TransactionsTab() {
         {txns?.map((t: any) => (
           <div key={t._id} className="flex items-center gap-3 bg-card border rounded-xl px-3 py-3">
             <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0",
-              t.type === "income" ? "bg-emerald-500/15 text-emerald-600" : t.type === "transfer" ? "bg-blue-500/15 text-blue-500" : "bg-red-500/15 text-red-500")}>
+              t.type === "income" ? "bg-notion-green-bg text-notion-green-text" : t.type === "transfer" ? "bg-notion-blue-bg text-notion-blue-text" : "bg-notion-red-bg text-notion-red-text")}>
               {t.type === "income" ? "↑" : t.type === "transfer" ? "⇆" : "↓"}
             </div>
             <div className="flex-1 min-w-0">
@@ -702,7 +702,7 @@ function TransactionsTab() {
               <p className="text-xs text-muted-foreground">{t.date}</p>
             </div>
             <p className={cn("text-sm font-bold shrink-0",
-              t.type === "income" ? "text-emerald-600" : t.type === "transfer" ? "text-blue-500" : "text-red-500")}>
+              t.type === "income" ? "text-notion-green-text" : t.type === "transfer" ? "text-notion-blue-text" : "text-notion-red-text")}>
               {t.type === "income" ? "+" : "−"}{fmt(t.amount)}
             </p>
           </div>
@@ -941,7 +941,7 @@ function CreditCardsTab() {
                   {/* Utilization bar */}
                   <div className="mt-3 h-1.5 bg-white/20 rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all",
-                      utilPct >= 90 ? "bg-red-400" : utilPct >= 75 ? "bg-yellow-400" : "bg-white/70")}
+                      utilPct >= 90 ? "bg-notion-red-text" : utilPct >= 75 ? "bg-notion-yellow-text" : "bg-notion-blue-text")}
                       style={{ width: `${Math.min(100, utilPct)}%` }} />
                   </div>
                   <div className="flex justify-between mt-1">
@@ -978,7 +978,7 @@ function CreditCardsTab() {
                     <p className="text-sm font-medium truncate">{t.description}</p>
                     <p className="text-xs text-muted-foreground">{t.merchant ?? t.date}</p>
                   </div>
-                  <p className="text-sm font-bold text-red-500 shrink-0">−{fmt(t.amount)}</p>
+                  <p className="text-sm font-bold text-notion-red-text shrink-0">−{fmt(t.amount)}</p>
                 </div>
               ))}
             </div>
@@ -1141,10 +1141,10 @@ function LoansTab() {
   };
 
   const STATUS_COLORS: Record<string, string> = {
-    active: "bg-blue-500/15 text-blue-600",
-    partially_paid: "bg-amber-500/15 text-amber-600",
-    settled: "bg-emerald-500/15 text-emerald-600",
-    overdue: "bg-red-500/15 text-red-500",
+    active: "bg-notion-blue-bg text-notion-blue-text",
+    partially_paid: "bg-notion-yellow-bg text-notion-yellow-text",
+    settled: "bg-notion-green-bg text-notion-green-text",
+    overdue: "bg-notion-red-bg text-notion-red-text",
     written_off: "bg-muted text-muted-foreground",
   };
 
@@ -1152,7 +1152,7 @@ function LoansTab() {
     const repaymentDirectionLabel =
       loan.direction === "lent" ? "Received in" : "Paid from";
     const repaymentAmountClassName =
-      loan.direction === "lent" ? "text-emerald-600" : "text-red-500";
+      loan.direction === "lent" ? "text-notion-green-text" : "text-notion-red-text";
     const linkedAccount = loan.linkedAccountId
       ? accountsById[String(loan.linkedAccountId)]
       : null;
@@ -1167,7 +1167,7 @@ function LoansTab() {
                 {loan.status.replace("_", " ")}
               </span>
               {loan.daysOverdue > 0 && (
-                <span className="text-xs text-red-500">Overdue {loan.daysOverdue}d</span>
+                <span className="text-xs text-notion-red-text">Overdue {loan.daysOverdue}d</span>
               )}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -1203,7 +1203,7 @@ function LoansTab() {
         {loan.currentBalance < loan.principalAmount && (
           <div className="mt-3">
             <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full transition-all"
+              <div className="h-full bg-notion-green-text rounded-full transition-all"
                 style={{ width: `${((loan.principalAmount - loan.currentBalance) / loan.principalAmount) * 100}%` }} />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -1274,7 +1274,7 @@ function LoansTab() {
                 }
                 void deleteLoan({ id: loan._id });
               }}
-              className="p-1.5 border rounded-lg hover:bg-red-500/10 text-red-500 transition-colors">
+              className="p-1.5 border rounded-lg hover:bg-notion-red-bg text-notion-red-text transition-colors">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -1293,7 +1293,7 @@ function LoansTab() {
                 }
                 void deleteLoan({ id: loan._id });
               }}
-              className="p-1.5 border rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
+              className="p-1.5 border rounded-lg hover:bg-notion-red-bg text-notion-red-text transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -1310,21 +1310,21 @@ function LoansTab() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-card border rounded-xl p-3 text-center">
             <p className="text-xs text-muted-foreground">Total Lent</p>
-            <p className="text-lg font-bold text-emerald-600">{fmtShort(summary.totalLent)}</p>
+            <p className="text-lg font-bold text-notion-green-text">{fmtShort(summary.totalLent)}</p>
           </div>
           <div className="bg-card border rounded-xl p-3 text-center">
             <p className="text-xs text-muted-foreground">Total Borrowed</p>
-            <p className="text-lg font-bold text-red-500">{fmtShort(summary.totalBorrowed)}</p>
+            <p className="text-lg font-bold text-notion-red-text">{fmtShort(summary.totalBorrowed)}</p>
           </div>
           <div className="bg-card border rounded-xl p-3 text-center">
             <p className="text-xs text-muted-foreground">Net Position</p>
-            <p className={cn("text-lg font-bold", summary.totalLent >= summary.totalBorrowed ? "text-emerald-600" : "text-red-500")}>
+            <p className={cn("text-lg font-bold", summary.totalLent >= summary.totalBorrowed ? "text-notion-green-text" : "text-notion-red-text")}>
               {fmtShort(summary.totalLent - summary.totalBorrowed)}
             </p>
           </div>
           <div className="bg-card border rounded-xl p-3 text-center">
             <p className="text-xs text-muted-foreground">Overdue</p>
-            <p className={cn("text-lg font-bold", summary.overdue > 0 ? "text-red-500" : "text-muted-foreground")}>
+            <p className={cn("text-lg font-bold", summary.overdue > 0 ? "text-notion-red-text" : "text-muted-foreground")}>
               {summary.overdue}
             </p>
           </div>
@@ -1551,11 +1551,11 @@ function InvestmentsTab() {
 
       {/* Market Indices */}
       {indices && indices.length > 0 && (
-        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/5 border border-blue-500/20 rounded-2xl p-4">
+        <div className="rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">📊 Today's Market</p>
+            <p className="text-xs font-semibold text-notion-blue-text uppercase tracking-wide">📊 Today's Market</p>
             <button onClick={handleSync} disabled={syncing}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-500 disabled:opacity-50">
+              className="flex items-center gap-1 text-xs text-notion-blue-text hover:text-notion-blue-text disabled:opacity-50">
               <RefreshCw className={cn("w-3 h-3", syncing && "animate-spin")} />
               {syncing ? "Syncing…" : "Sync prices"}
             </button>
@@ -1565,7 +1565,7 @@ function InvestmentsTab() {
               <div key={idx.symbol} className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{idx.displayName ?? idx.symbol}</span>
                 <span className="text-sm font-bold">{idx.price >= 1000 ? idx.price.toFixed(0) : idx.price.toFixed(2)}</span>
-                <span className={cn("text-xs font-medium", (idx.changePercent ?? 0) >= 0 ? "text-emerald-600" : "text-red-500")}>
+                <span className={cn("text-xs font-medium", (idx.changePercent ?? 0) >= 0 ? "text-notion-green-text" : "text-notion-red-text")}>
                   {(idx.changePercent ?? 0) >= 0 ? "▲" : "▼"}{Math.abs(idx.changePercent ?? 0).toFixed(2)}%
                 </span>
               </div>
@@ -1606,7 +1606,7 @@ function InvestmentsTab() {
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                   <span className="text-xs flex-1">{ASSET_ICONS[cls.assetType] ?? "💰"} {ASSET_LABELS[cls.assetType] ?? cls.assetType}</span>
                   <span className="text-xs text-muted-foreground">{cls.allocationPct.toFixed(0)}%</span>
-                  <span className={cn("text-xs font-medium", cls.pnl >= 0 ? "text-emerald-600" : "text-red-500")}>
+                  <span className={cn("text-xs font-medium", cls.pnl >= 0 ? "text-notion-green-text" : "text-notion-red-text")}>
                     {cls.pnl >= 0 ? "+" : ""}{fmtShort(cls.pnl)}
                   </span>
                 </div>
@@ -1639,7 +1639,7 @@ function InvestmentsTab() {
                     <td className="px-4 py-3 text-xs">
                       {inv.currentPrice ? fmt(inv.currentPrice) : <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className={cn("px-4 py-3 font-semibold", inv.pnl >= 0 ? "text-emerald-600" : "text-red-500")}>
+                    <td className={cn("px-4 py-3 font-semibold", inv.pnl >= 0 ? "text-notion-green-text" : "text-notion-red-text")}>
                       {inv.pnl >= 0 ? "+" : ""}{fmtShort(inv.pnl)}
                       <span className="text-xs font-normal ml-1">({inv.pnlPct >= 0 ? "+" : ""}{inv.pnlPct.toFixed(1)}%)</span>
                     </td>
@@ -1649,7 +1649,7 @@ function InvestmentsTab() {
                           if (!confirmDeleteRecord("investment")) return;
                           void deleteInv({ id: inv._id });
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/15 text-red-500 transition-all">
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-notion-red-bg text-notion-red-text transition-all">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </td>
@@ -1666,7 +1666,7 @@ function InvestmentsTab() {
                     <p className="text-sm font-medium">{inv.name}</p>
                     <p className="text-xs text-muted-foreground">{inv.symbol} · {inv.platform ?? "—"}</p>
                   </div>
-                  <span className={cn("text-sm font-bold shrink-0", inv.pnl >= 0 ? "text-emerald-600" : "text-red-500")}>
+                  <span className={cn("text-sm font-bold shrink-0", inv.pnl >= 0 ? "text-notion-green-text" : "text-notion-red-text")}>
                     {inv.pnl >= 0 ? "+" : ""}{fmtShort(inv.pnl)}
                   </span>
                 </div>
@@ -1865,11 +1865,11 @@ function BudgetTab() {
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{cat?.icon ?? "💰"}</span>
                     <span className="text-sm font-medium">{cat?.name ?? "Budget"}</span>
-                    {over && <span className="text-xs text-red-500 font-medium flex items-center gap-0.5"><AlertCircle className="w-3 h-3" /> Over</span>}
+                    {over && <span className="text-xs text-notion-red-text font-medium flex items-center gap-0.5"><AlertCircle className="w-3 h-3" /> Over</span>}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <span className={cn("text-sm font-bold", over ? "text-red-500" : "")}>{fmt(b.spent)}</span>
+                      <span className={cn("text-sm font-bold", over ? "text-notion-red-text" : "")}>{fmt(b.spent)}</span>
                       <span className="text-xs text-muted-foreground"> / {fmt(b.amount)}</span>
                     </div>
                     <button
@@ -1877,18 +1877,18 @@ function BudgetTab() {
                         if (!confirmDeleteRecord("budget")) return;
                         void deleteBudget({ id: b._id });
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-red-500 transition-all ml-1">
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-notion-red-bg text-notion-red-text transition-all ml-1">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
                 <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                   <div className={cn("h-full rounded-full transition-all",
-                    pct >= 100 ? "bg-red-500" : pct >= 75 ? "bg-amber-500" : "bg-emerald-500")}
+                    pct >= 100 ? "bg-notion-red-text" : pct >= 75 ? "bg-notion-yellow-text" : "bg-notion-green-text")}
                     style={{ width: `${pct}%` }} />
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className={cn("text-xs", over ? "text-red-500 font-medium" : "text-muted-foreground")}>
+                  <span className={cn("text-xs", over ? "text-notion-red-text font-medium" : "text-muted-foreground")}>
                     {over ? `Over by ${fmt(b.spent - b.amount)}` : `${fmt(b.amount - b.spent)} left`}
                   </span>
                   <span className="text-xs text-muted-foreground">{Math.round(pct)}%</span>
@@ -1969,9 +1969,9 @@ function GoalsTab() {
   };
 
   const PRIORITY_COLORS: Record<string, string> = {
-    high: "bg-red-500/15 text-red-600",
-    medium: "bg-amber-500/15 text-amber-600",
-    low: "bg-blue-500/15 text-blue-600",
+    high: "bg-notion-red-bg text-notion-red-text",
+    medium: "bg-notion-yellow-bg text-notion-yellow-text",
+    low: "bg-notion-blue-bg text-notion-blue-text",
   };
 
   return (
@@ -2020,13 +2020,13 @@ function GoalsTab() {
                       if (!confirmDeleteRecord("goal")) return;
                       void deleteGoal({ id: g._id });
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-red-500 ml-1 transition-all">
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-notion-red-bg text-notion-red-text ml-1 transition-all">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
               <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                <div className={cn("h-full rounded-full transition-all", pct >= 100 ? "bg-emerald-500" : "bg-primary")}
+                <div className={cn("h-full rounded-full transition-all", pct >= 100 ? "bg-notion-green-text" : "bg-primary")}
                   style={{ width: `${pct}%` }} />
               </div>
               <div className="flex items-center justify-between mt-2">
@@ -2175,7 +2175,7 @@ function RecurringTab() {
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-3">
                 <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0",
-                  r.type === "income" ? "bg-emerald-500/15 text-emerald-600" : "bg-red-500/15 text-red-500")}>
+                  r.type === "income" ? "bg-notion-green-bg text-notion-green-text" : "bg-notion-red-bg text-notion-red-text")}>
                   {r.type === "income" ? "↑" : "↓"}
                 </div>
                 <div>
@@ -2190,7 +2190,7 @@ function RecurringTab() {
               <div className="flex gap-1 shrink-0">
                 <button onClick={() => toggleActive({ id: r._id, isActive: !r.isActive })}
                   className={cn("p-1.5 rounded-lg transition-colors text-xs",
-                    r.isActive ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground")}>
+                    r.isActive ? "bg-notion-green-bg text-notion-green-text" : "bg-muted text-muted-foreground")}>
                   {r.isActive ? <CheckCircle className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
                 </button>
                 <button
@@ -2198,7 +2198,7 @@ function RecurringTab() {
                     if (!confirmDeleteRecord("recurring transaction")) return;
                     void deleteRecurring({ id: r._id });
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 text-red-500 transition-all">
+                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-notion-red-bg text-notion-red-text transition-all">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -2366,7 +2366,7 @@ function ReportsTab() {
                       style={{ width: `${cls.allocationPct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                   </div>
                 </div>
-                <span className={cn("text-xs font-medium w-20 text-right", cls.pnl >= 0 ? "text-emerald-600" : "text-red-500")}>
+                <span className={cn("text-xs font-medium w-20 text-right", cls.pnl >= 0 ? "text-notion-green-text" : "text-notion-red-text")}>
                   {cls.pnl >= 0 ? "+" : ""}{fmtShort(cls.pnl)}
                 </span>
               </div>
@@ -2391,9 +2391,9 @@ function ReportsTab() {
               {savingsData.slice(-6).map((m: any) => (
                 <tr key={m.month} className="hover:bg-muted/20">
                   <td className="px-4 py-2.5 font-medium">{m.label}</td>
-                  <td className="px-4 py-2.5 text-right text-emerald-600">{fmtShort(m.income)}</td>
-                  <td className="px-4 py-2.5 text-right text-red-500">{fmtShort(m.expenses)}</td>
-                  <td className={cn("px-4 py-2.5 text-right font-semibold", m.savings >= 0 ? "text-foreground" : "text-red-500")}>
+                  <td className="px-4 py-2.5 text-right text-notion-green-text">{fmtShort(m.income)}</td>
+                  <td className="px-4 py-2.5 text-right text-notion-red-text">{fmtShort(m.expenses)}</td>
+                  <td className={cn("px-4 py-2.5 text-right font-semibold", m.savings >= 0 ? "text-foreground" : "text-notion-red-text")}>
                     {fmtShort(m.savings)}
                   </td>
                 </tr>
@@ -2455,11 +2455,11 @@ function MarketTab() {
   const recentIPOs = (ipos ?? []).filter((i: any) => ["closed", "listed"].includes(i.status));
 
   const IPO_STATUS_COLORS: Record<string, string> = {
-    upcoming: "bg-blue-500/15 text-blue-600",
-    open: "bg-emerald-500/15 text-emerald-600",
+    upcoming: "bg-notion-blue-bg text-notion-blue-text",
+    open: "bg-notion-green-bg text-notion-green-text",
     closed: "bg-muted text-muted-foreground",
-    listed: "bg-violet-500/15 text-violet-600",
-    watching: "bg-amber-500/15 text-amber-600",
+    listed: "bg-notion-purple-bg text-notion-purple-text",
+    watching: "bg-notion-yellow-bg text-notion-yellow-text",
   };
 
   return (
@@ -2483,7 +2483,7 @@ function MarketTab() {
               <div key={idx.symbol} className="border rounded-xl p-3">
                 <p className="text-xs text-muted-foreground mb-1">{idx.displayName ?? idx.symbol}</p>
                 <p className="text-base font-bold">{idx.price >= 1000 ? idx.price.toFixed(2) : idx.price.toFixed(4)}</p>
-                <p className={cn("text-xs font-medium mt-0.5", (idx.changePercent ?? 0) >= 0 ? "text-emerald-600" : "text-red-500")}>
+                <p className={cn("text-xs font-medium mt-0.5", (idx.changePercent ?? 0) >= 0 ? "text-notion-green-text" : "text-notion-red-text")}>
                   {(idx.changePercent ?? 0) >= 0 ? "▲" : "▼"} {Math.abs(idx.changePercent ?? 0).toFixed(2)}%
                 </p>
                 <p className="text-xs text-muted-foreground/60 mt-1">
@@ -2532,7 +2532,7 @@ function MarketTab() {
                         <span>₹{ipo.priceBandMin}–{ipo.priceBandMax}</span>
                       )}
                       {ipo.lotSize && <span>Lot: {ipo.lotSize}</span>}
-                      {ipo.gmp && <span className="text-emerald-600 font-medium">GMP: ₹{ipo.gmp}</span>}
+                      {ipo.gmp && <span className="text-notion-green-text font-medium">GMP: ₹{ipo.gmp}</span>}
                       {ipo.openDate && <span>Opens: {ipo.openDate}</span>}
                       {ipo.closeDate && <span>Closes: {ipo.closeDate}</span>}
                     </div>
@@ -2543,7 +2543,7 @@ function MarketTab() {
                       if (!confirmDeleteRecord("IPO watchlist entry")) return;
                       void deleteIPO({ id: ipo._id });
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-red-500 transition-all">
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-notion-red-bg text-notion-red-text transition-all">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -2570,7 +2570,7 @@ function MarketTab() {
                       if (!confirmDeleteRecord("IPO watchlist entry")) return;
                       void deleteIPO({ id: ipo._id });
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-red-500 transition-all">
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-notion-red-bg text-notion-red-text transition-all">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -2718,3 +2718,5 @@ export default function LedgerPage() {
     </LedgerSecurityGate>
   );
 }
+
+

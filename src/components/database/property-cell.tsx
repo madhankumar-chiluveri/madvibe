@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, FileText, Link2, Mail, Phone, Sigma } from "lucide-react";
 
 import {
@@ -79,10 +79,23 @@ export function PropertyCell({
 }: PropertyCellProps) {
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value ?? "");
+  const singleLineEditorRef = useRef<HTMLInputElement | null>(null);
+  const wrappedEditorRef = useRef<HTMLTextAreaElement | null>(null);
+  const wasEditingRef = useRef(false);
   const isEditable = typeof onChange === "function";
   const fieldWidthClass = fullWidth ? "w-full" : "min-w-[140px] max-w-[280px]";
-  const displayWidthClass = fullWidth ? "w-full" : "max-w-[280px]";
-  const wrapDisplay = property.config?.wrap ? "whitespace-normal break-words" : "truncate";
+  const displayWidthClass = fullWidth ? "w-full min-w-0" : "max-w-[280px] min-w-0";
+  const wrapDisplay = property.config?.wrap
+    ? "whitespace-normal break-words [overflow-wrap:anywhere]"
+    : "truncate";
+  const textValueClass = cn("block min-w-0 max-w-full", wrapDisplay);
+  const inlineContentClass = "flex w-full min-w-0 items-center gap-1.5";
+  const isTextLikeProperty =
+    property.type === "title" ||
+    property.type === "text" ||
+    property.type === "email" ||
+    property.type === "phone" ||
+    property.type === "url";
   const resolvedValue = useMemo(
     () =>
       getResolvedPropertyValue(property, value, {
@@ -99,6 +112,66 @@ export function PropertyCell({
       setLocalValue(value ?? "");
     }
   }, [value, editing]);
+
+  const syncWrappedEditorHeight = useCallback(() => {
+    const editor = wrappedEditorRef.current;
+    if (!editor) {
+      return;
+    }
+
+    editor.style.height = "0px";
+    editor.style.height = `${Math.max(32, editor.scrollHeight)}px`;
+  }, []);
+
+  const placeCaretAtEnd = useCallback(() => {
+    const editor = property.config?.wrap
+      ? wrappedEditorRef.current
+      : singleLineEditorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const textLength = editor.value.length;
+    editor.focus();
+    editor.setSelectionRange(textLength, textLength);
+  }, [property.config?.wrap]);
+
+  useEffect(() => {
+    const shouldAutoResizeEditor =
+      editing &&
+      Boolean(property.config?.wrap) &&
+      isTextLikeProperty;
+
+    if (!shouldAutoResizeEditor) {
+      return;
+    }
+
+    syncWrappedEditorHeight();
+  }, [editing, isTextLikeProperty, localValue, property.config?.wrap, syncWrappedEditorHeight]);
+
+  useEffect(() => {
+    if (!editing || !isTextLikeProperty || wasEditingRef.current) {
+      wasEditingRef.current = editing;
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      placeCaretAtEnd();
+      if (property.config?.wrap) {
+        syncWrappedEditorHeight();
+      }
+    });
+
+    wasEditingRef.current = true;
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    editing,
+    isTextLikeProperty,
+    placeCaretAtEnd,
+    property.config?.wrap,
+    syncWrappedEditorHeight,
+  ]);
 
   const formulaTextValue = useMemo(
     () =>
@@ -132,7 +205,9 @@ export function PropertyCell({
           {resolvedValue === null || resolvedValue === undefined || resolvedValue === "" ? (
             <span className="text-zinc-500">Auto</span>
           ) : (
-            <span className="font-medium tabular-nums text-zinc-300">{String(resolvedValue)}</span>
+            <span className="block max-w-full truncate font-medium tabular-nums text-zinc-300">
+              {String(resolvedValue)}
+            </span>
           )}
         </div>
       );
@@ -172,11 +247,11 @@ export function PropertyCell({
         return (
           <div
             className={cn(
-              "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-left text-[13px]",
+              "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px]",
               displayWidthClass
             )}
           >
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className={inlineContentClass}>
               {prefixIcon}
               {href && resolvedValue ? (
                 <a
@@ -184,8 +259,8 @@ export function PropertyCell({
                   target={property.type === "url" ? "_blank" : undefined}
                   rel={property.type === "url" ? "noopener noreferrer" : undefined}
                   className={cn(
-                    "max-w-full text-zinc-100 underline decoration-zinc-600 underline-offset-2",
-                    wrapDisplay
+                    textValueClass,
+                    "text-zinc-100 underline decoration-zinc-600 underline-offset-2"
                   )}
                 >
                   {String(resolvedValue)}
@@ -193,8 +268,7 @@ export function PropertyCell({
               ) : (
                 <span
                   className={cn(
-                    "max-w-full",
-                    wrapDisplay,
+                    textValueClass,
                     property.type === "title" ? "font-medium text-zinc-100" : "text-zinc-200",
                     !resolvedValue && "font-normal text-zinc-500"
                   )}
@@ -207,38 +281,79 @@ export function PropertyCell({
         );
       }
 
+      const useWrappedEditor = Boolean(property.config?.wrap);
+
       return editing ? (
-        <input
-          value={String(localValue ?? "")}
-          onChange={(event) => setLocalValue(event.target.value)}
-          onBlur={commitTextLike}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") commitTextLike();
-            if (event.key === "Escape") {
-              setLocalValue(value ?? "");
-              setEditing(false);
+        useWrappedEditor ? (
+          <textarea
+            ref={wrappedEditorRef}
+            rows={1}
+            value={String(localValue ?? "")}
+            onChange={(event) => setLocalValue(event.target.value)}
+            onInput={syncWrappedEditorHeight}
+            onBlur={commitTextLike}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setLocalValue(value ?? "");
+                setEditing(false);
+                return;
+              }
+
+              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                event.preventDefault();
+                commitTextLike();
+              }
+            }}
+            className={cn(
+              "my-1 min-h-[32px] resize-none overflow-hidden rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[13px] text-zinc-100 shadow-sm outline-none ring-0 focus:border-white/15 focus:ring-1 focus:ring-white/10",
+              "whitespace-pre-wrap break-words",
+              fieldWidthClass
+            )}
+            autoFocus
+            placeholder={
+              property.type === "url"
+                ? "https://"
+                : property.type === "email"
+                  ? "name@example.com"
+                  : property.type === "phone"
+                    ? "+1 555 000 0000"
+                    : undefined
             }
-          }}
-          className={cn(
-            "my-1 h-8 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-[13px] text-zinc-100 shadow-sm outline-none ring-0 focus:border-white/15 focus:ring-1 focus:ring-white/10",
-            fieldWidthClass
-          )}
-          autoFocus
-          placeholder={
-            property.type === "url"
-              ? "https://"
-              : property.type === "email"
-                ? "name@example.com"
-                : property.type === "phone"
-                  ? "+1 555 000 0000"
-                  : undefined
-          }
-        />
+          />
+        ) : (
+          <input
+            ref={singleLineEditorRef}
+            value={String(localValue ?? "")}
+            onChange={(event) => setLocalValue(event.target.value)}
+            onBlur={commitTextLike}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") commitTextLike();
+              if (event.key === "Escape") {
+                setLocalValue(value ?? "");
+                setEditing(false);
+              }
+            }}
+            className={cn(
+              "my-1 h-8 min-w-0 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-[13px] text-zinc-100 shadow-sm outline-none ring-0 focus:border-white/15 focus:ring-1 focus:ring-white/10",
+              fieldWidthClass
+            )}
+            autoFocus
+            placeholder={
+              property.type === "url"
+                ? "https://"
+                : property.type === "email"
+                  ? "name@example.com"
+                  : property.type === "phone"
+                    ? "+1 555 000 0000"
+                    : undefined
+            }
+          />
+        )
       ) : (
         <button
           type="button"
           className={cn(
-            "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors hover:bg-white/[0.05]",
+            "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors hover:bg-white/[0.05]",
             displayWidthClass
           )}
           onClick={() => {
@@ -246,7 +361,7 @@ export function PropertyCell({
             setEditing(true);
           }}
         >
-          <div className="flex min-w-0 items-center gap-1.5">
+          <div className={inlineContentClass}>
             {prefixIcon}
             {href && resolvedValue ? (
               <a
@@ -254,8 +369,8 @@ export function PropertyCell({
                 target={property.type === "url" ? "_blank" : undefined}
                 rel={property.type === "url" ? "noopener noreferrer" : undefined}
                 className={cn(
-                  "max-w-full text-zinc-100 underline decoration-zinc-600 underline-offset-2",
-                  wrapDisplay
+                  textValueClass,
+                  "text-zinc-100 underline decoration-zinc-600 underline-offset-2"
                 )}
                 onClick={(event) => event.stopPropagation()}
               >
@@ -264,8 +379,7 @@ export function PropertyCell({
             ) : (
               <span
                 className={cn(
-                  "max-w-full",
-                  wrapDisplay,
+                  textValueClass,
                   property.type === "title" ? "font-medium text-zinc-100" : "text-zinc-200",
                   !resolvedValue && "font-normal text-zinc-500"
                 )}
@@ -290,7 +404,9 @@ export function PropertyCell({
             {resolvedValue === null || resolvedValue === undefined || resolvedValue === "" ? (
               <span className="text-zinc-500">Empty</span>
             ) : (
-              <span className="text-zinc-100">{Number(resolvedValue).toLocaleString()}</span>
+              <span className="block max-w-full truncate text-zinc-100">
+                {Number(resolvedValue).toLocaleString()}
+              </span>
             )}
           </div>
         );
@@ -330,7 +446,9 @@ export function PropertyCell({
           {resolvedValue === null || resolvedValue === undefined || resolvedValue === "" ? (
             <span className="text-zinc-500">Empty</span>
           ) : (
-            <span className="text-zinc-100">{Number(resolvedValue).toLocaleString()}</span>
+            <span className="block max-w-full truncate text-zinc-100">
+              {Number(resolvedValue).toLocaleString()}
+            </span>
           )}
         </button>
       );
@@ -342,14 +460,14 @@ export function PropertyCell({
         return (
           <div
             className={cn(
-              "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-left",
+              "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left",
               displayWidthClass
             )}
           >
             {selected ? (
               <span
                 className={cn(
-                  "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                  "inline-flex max-w-full min-w-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium",
                   getSelectColorClasses(selected.color)
                 )}
               >
@@ -368,14 +486,14 @@ export function PropertyCell({
             <button
               type="button"
               className={cn(
-                "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.05]",
+                "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.05]",
                 displayWidthClass
               )}
             >
               {selected ? (
                 <span
                   className={cn(
-                    "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                    "inline-flex max-w-full min-w-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium",
                     getSelectColorClasses(selected.color)
                   )}
                 >
@@ -432,17 +550,17 @@ export function PropertyCell({
         return (
           <div
             className={cn(
-              "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-left",
+              "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left",
               displayWidthClass
             )}
           >
             {selectedOptions.length > 0 ? (
-              <div className="flex min-w-0 flex-wrap gap-1">
+              <div className="flex w-full min-w-0 flex-wrap gap-1 overflow-hidden">
                 {selectedOptions.map((option) => (
                   <span
                     key={option.id}
                     className={cn(
-                      "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                      "inline-flex max-w-full min-w-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium",
                       getSelectColorClasses(option.color)
                     )}
                   >
@@ -463,17 +581,17 @@ export function PropertyCell({
             <button
               type="button"
               className={cn(
-                "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.05]",
+                "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.05]",
                 displayWidthClass
               )}
             >
               {selectedOptions.length > 0 ? (
-                <div className="flex min-w-0 flex-wrap gap-1">
+                <div className="flex w-full min-w-0 flex-wrap gap-1 overflow-hidden">
                   {selectedOptions.map((option) => (
                     <span
                       key={option.id}
                       className={cn(
-                        "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+                        "inline-flex max-w-full min-w-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium",
                         getSelectColorClasses(option.color)
                       )}
                     >
@@ -568,7 +686,7 @@ export function PropertyCell({
         return (
           <div
             className={cn(
-              "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-[13px]",
+              "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-[13px]",
               displayWidthClass
             )}
           >
@@ -647,12 +765,12 @@ export function PropertyCell({
               )}
             >
               <Sigma className="h-3.5 w-3.5 shrink-0" />
-              <span className={cn("min-w-0", wrapDisplay)}>{displayText || "Empty"}</span>
+              <span className={cn(textValueClass)}>{displayText || "Empty"}</span>
             </span>
           ) : (
             <div className="flex min-w-0 items-center gap-2">
               <Sigma className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-              <span className={cn("max-w-full text-zinc-200", wrapDisplay, !displayText && "text-zinc-500")}>
+              <span className={cn(textValueClass, "text-zinc-200", !displayText && "text-zinc-500")}>
                 {displayText || "Empty"}
               </span>
             </div>
@@ -666,11 +784,11 @@ export function PropertyCell({
         return (
           <div
             className={cn(
-              "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-left text-[13px] text-zinc-300",
+              "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] text-zinc-300",
               displayWidthClass
             )}
           >
-            <span className={cn("max-w-full", wrapDisplay, !resolvedValue && "text-zinc-500")}>
+            <span className={cn(textValueClass, !resolvedValue && "text-zinc-500")}>
               {String(resolvedValue ?? "") || "Empty"}
             </span>
           </div>
@@ -681,7 +799,7 @@ export function PropertyCell({
         <button
           type="button"
           className={cn(
-            "flex min-h-[38px] items-center rounded-lg px-2.5 py-1.5 text-left text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.05]",
+            "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.05]",
             displayWidthClass
           )}
           onClick={() => {
@@ -689,7 +807,7 @@ export function PropertyCell({
             setEditing(true);
           }}
         >
-          <span className={cn("max-w-full", wrapDisplay, !resolvedValue && "text-zinc-500")}>
+          <span className={cn(textValueClass, !resolvedValue && "text-zinc-500")}>
             {String(resolvedValue ?? "") || "Empty"}
           </span>
         </button>

@@ -1,0 +1,98 @@
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  .font-demo {
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    margin-bottom: 4px;
+  }
+  .font-demo .page-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
+  .font-demo .body-text { font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.65); margin: 0 0 10px; }
+  .font-demo .ui-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .font-demo .tag { display: inline-flex; align-items: center; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+  .font-demo .btn { font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 6px; background: rgba(255,255,255,0.15); border: none; color: inherit; }
+  .font-demo .sidebar-item { font-size: 13px; font-weight: 500; padding: 4px 0; opacity: 0.8; }
+  .font-demo .meta { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.45; margin-bottom: 6px; }
+</style>
+
+<h2>Font Pairing — Which feels right?</h2>
+<p class="subtitle">Same UI structure, three different font personalities. All readable, all clean.</p>
+
+<div class="cards">
+  <div class="card" data-choice="inter" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div class="font-demo" style="font-family: 'Inter', sans-serif;">
+        <div class="meta">Inter — Current</div>
+        <div class="page-title">Good morning, Madhan</div>
+        <div class="body-text">Your second brain, organised. 12 pages · 3 reminders · Ledger balanced.</div>
+        <div class="ui-row">
+          <span class="tag">📝 Brain</span>
+          <span class="tag">💰 Ledger</span>
+          <span class="tag">⚡ Automation</span>
+          <button class="btn">New Page</button>
+        </div>
+        <div style="margin-top: 10px;">
+          <div class="sidebar-item">📋 Overview</div>
+          <div class="sidebar-item">📰 Feed</div>
+          <div class="sidebar-item">🧠 Brain</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Inter — Precise &amp; Technical</h3>
+      <p>Current font. Clean at all sizes. Feels like Notion + Linear. Slightly mechanical at large headings.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="geist" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div class="font-demo" style="font-family: 'Geist', 'Inter', sans-serif;">
+        <div class="meta">Geist — Vercel / Claude</div>
+        <div class="page-title">Good morning, Madhan</div>
+        <div class="body-text">Your second brain, organised. 12 pages · 3 reminders · Ledger balanced.</div>
+        <div class="ui-row">
+          <span class="tag">📝 Brain</span>
+          <span class="tag">💰 Ledger</span>
+          <span class="tag">⚡ Automation</span>
+          <button class="btn">New Page</button>
+        </div>
+        <div style="margin-top: 10px;">
+          <div class="sidebar-item">📋 Overview</div>
+          <div class="sidebar-item">📰 Feed</div>
+          <div class="sidebar-item">🧠 Brain</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Geist — Modern &amp; Claude-like</h3>
+      <p>Vercel's font. Used in Claude's UI. Slightly wider letterforms = more breathing room. Excellent legibility. Closest to the "Claude feel" you mentioned.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="plus-jakarta" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div class="font-demo" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+        <div class="meta">Plus Jakarta Sans — Warm &amp; Notion-like</div>
+        <div class="page-title">Good morning, Madhan</div>
+        <div class="body-text">Your second brain, organised. 12 pages · 3 reminders · Ledger balanced.</div>
+        <div class="ui-row">
+          <span class="tag">📝 Brain</span>
+          <span class="tag">💰 Ledger</span>
+          <span class="tag">⚡ Automation</span>
+          <button class="btn">New Page</button>
+        </div>
+        <div style="margin-top: 10px;">
+          <div class="sidebar-item">📋 Overview</div>
+          <div class="sidebar-item">📰 Feed</div>
+          <div class="sidebar-item">🧠 Brain</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Plus Jakarta Sans — Warm &amp; Approachable</h3>
+      <p>Slightly rounded, warm character. Used in many premium SaaS tools. Sits between Inter and Geist — more personality than Inter, softer than Geist.</p>
+    </div>
+  </div>
+</div>

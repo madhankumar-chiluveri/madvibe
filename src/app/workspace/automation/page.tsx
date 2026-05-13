@@ -127,10 +127,10 @@ function Stat({
 }) {
   const toneClass =
     tone === "ok"
-      ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400"
+      ? "border-notion-green-text/30 bg-notion-green-bg text-notion-green-text"
       : tone === "warn"
-        ? "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400"
-        : "border-border bg-background/60 text-muted-foreground";
+        ? "border-notion-yellow-text/30 bg-notion-yellow-bg text-notion-yellow-text"
+        : "border-border bg-card text-muted-foreground";
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 ${toneClass}`}>
       {value !== undefined && <span className="font-semibold text-foreground">{value}</span>}

@@ -54,3 +54,18 @@ export const THEMES: Record<string, ThemeTokens> = {
 
 export const DEFAULT_THEME = "notion";
 export const THEME_STORAGE_KEY = "madvibe-theme";
+
+export const THEME_OPTIONS = [
+  {
+    name: "notion",
+    label: "Notion Warm",
+    swatch: {
+      lightSidebar: "#F7F6F3",
+      lightBackground: "#FFFFFF",
+      darkSidebar: "#141413",
+      darkBackground: "#191918",
+    },
+  },
+] as const;
+
+export type ThemeName = keyof typeof THEMES;

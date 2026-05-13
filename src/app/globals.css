@@ -5,52 +5,132 @@
 /* ── CSS Custom Properties ───────────────────────────────────────────────── */
 @layer base {
   :root {
+    --font-geist: "Geist", system-ui, sans-serif;
     --font-roboto-serif: "Roboto Serif", serif;
-    --font-inter: "Inter";
-    --background: 0 0% 100%;
-    --foreground: 0 0% 5%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 5%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 5%;
-    --primary: 0 0% 0%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 5%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 5%;
-    --destructive: 0 0% 30%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 0%;
+    --background: #ffffff;
+    --foreground: #37352f;
+    --card: #ffffff;
+    --card-foreground: #37352f;
+    --popover: #ffffff;
+    --popover-foreground: #37352f;
+    --sidebar: #f7f6f3;
+    --primary: #37352f;
+    --primary-foreground: #ffffff;
+    --secondary: #f7f6f3;
+    --secondary-foreground: #37352f;
+    --muted: #f7f6f3;
+    --muted-foreground: #9b9a97;
+    --accent: #ebeced;
+    --accent-foreground: #37352f;
+    --destructive: #e03e3e;
+    --destructive-foreground: #ffffff;
+    --border: #e5e4e0;
+    --input: #e5e4e0;
+    --ring: #37352f;
     --radius: 0.5rem;
-    --sidebar: 0 0% 98%;
+
+    --background-rgb: 255 255 255;
+    --foreground-rgb: 55 53 47;
+    --card-rgb: 255 255 255;
+    --card-foreground-rgb: 55 53 47;
+    --popover-rgb: 255 255 255;
+    --popover-foreground-rgb: 55 53 47;
+    --sidebar-rgb: 247 246 243;
+    --primary-rgb: 55 53 47;
+    --primary-foreground-rgb: 255 255 255;
+    --secondary-rgb: 247 246 243;
+    --secondary-foreground-rgb: 55 53 47;
+    --muted-rgb: 247 246 243;
+    --muted-foreground-rgb: 155 154 151;
+    --accent-rgb: 235 236 237;
+    --accent-foreground-rgb: 55 53 47;
+    --destructive-rgb: 224 62 62;
+    --destructive-foreground-rgb: 255 255 255;
+    --border-rgb: 229 228 224;
+    --input-rgb: 229 228 224;
+    --ring-rgb: 55 53 47;
+
+    --notion-gray-text: #787774;
+    --notion-gray-bg: #ebeced;
+    --notion-brown-text: #64473a;
+    --notion-brown-bg: #e9e5e3;
+    --notion-orange-text: #d9730d;
+    --notion-orange-bg: #faebdd;
+    --notion-yellow-text: #dfab01;
+    --notion-yellow-bg: #fbf3db;
+    --notion-green-text: #0f7b6c;
+    --notion-green-bg: #ddedea;
+    --notion-blue-text: #0b6e99;
+    --notion-blue-bg: #ddebf1;
+    --notion-purple-text: #6940a5;
+    --notion-purple-bg: #eae4f2;
+    --notion-pink-text: #ad1a72;
+    --notion-pink-bg: #f4dfeb;
+    --notion-red-text: #e03e3e;
+    --notion-red-bg: #fbe4e4;
   }
 
   .dark {
-    --background: 0 0% 5%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 0% 40%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 0% 100%;
-    --sidebar: 0 0% 10%;
+    --background: #191918;
+    --foreground: #e5e4e1;
+    --card: #1e1e1c;
+    --card-foreground: #e5e4e1;
+    --popover: #1e1e1c;
+    --popover-foreground: #e5e4e1;
+    --sidebar: #141413;
+    --primary: #fffffe;
+    --primary-foreground: #191918;
+    --secondary: #2a2926;
+    --secondary-foreground: #e5e4e1;
+    --muted: #2a2926;
+    --muted-foreground: #6b6a68;
+    --accent: #2a2926;
+    --accent-foreground: #e5e4e1;
+    --destructive: #ff7369;
+    --destructive-foreground: #191918;
+    --border: #2a2926;
+    --input: #2a2926;
+    --ring: #e5e4e1;
+
+    --background-rgb: 25 25 24;
+    --foreground-rgb: 229 228 225;
+    --card-rgb: 30 30 28;
+    --card-foreground-rgb: 229 228 225;
+    --popover-rgb: 30 30 28;
+    --popover-foreground-rgb: 229 228 225;
+    --sidebar-rgb: 20 20 19;
+    --primary-rgb: 255 255 254;
+    --primary-foreground-rgb: 25 25 24;
+    --secondary-rgb: 42 41 38;
+    --secondary-foreground-rgb: 229 228 225;
+    --muted-rgb: 42 41 38;
+    --muted-foreground-rgb: 107 106 104;
+    --accent-rgb: 42 41 38;
+    --accent-foreground-rgb: 229 228 225;
+    --destructive-rgb: 255 115 105;
+    --destructive-foreground-rgb: 25 25 24;
+    --border-rgb: 42 41 38;
+    --input-rgb: 42 41 38;
+    --ring-rgb: 229 228 225;
+
+    --notion-gray-text: #9ea0a2;
+    --notion-gray-bg: #454b4e;
+    --notion-brown-text: #937264;
+    --notion-brown-bg: #434040;
+    --notion-orange-text: #ffa344;
+    --notion-orange-bg: #594a3a;
+    --notion-yellow-text: #ffdc49;
+    --notion-yellow-bg: #59563b;
+    --notion-green-text: #4dab9a;
+    --notion-green-bg: #354c4b;
+    --notion-blue-text: #529cca;
+    --notion-blue-bg: #364954;
+    --notion-purple-text: #9a6dd7;
+    --notion-purple-bg: #443f57;
+    --notion-pink-text: #e255a1;
+    --notion-pink-bg: #533b4c;
+    --notion-red-text: #ff7369;
+    --notion-red-bg: #594141;
   }
 }
 
@@ -58,7 +138,7 @@
   *,
   ::before,
   ::after {
-    border-color: hsl(var(--border));
+    border-color: var(--border);
   }
 
   body {
@@ -99,11 +179,11 @@
 }
 
 .maddy-gradient-bg {
-  background: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(0 0% 20%) 50%, hsl(0 0% 10%) 100%);
+  background: linear-gradient(135deg, var(--foreground) 0%, var(--notion-brown-text) 52%, var(--notion-gray-text) 100%);
 }
 
 .maddy-gradient-text {
-  background: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(0 0% 20%) 100%);
+  background: linear-gradient(135deg, var(--foreground) 0%, var(--notion-brown-text) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -111,7 +191,7 @@
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */
 .bg-sidebar {
-  background-color: hsl(var(--sidebar));
+  background-color: var(--sidebar);
 }
 
 /* ── BlockNote editor overrides ───────────────────────────────────────────── */
@@ -136,12 +216,12 @@
   outline: none;
   font-size: 16px;
   line-height: 1.75;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .blocknote-wrapper .ProseMirror p.is-empty::before {
   content: attr(data-placeholder);
-  color: hsl(var(--muted-foreground) / 0.4);
+  color: rgb(var(--muted-foreground-rgb) / 0.4);
   pointer-events: none;
   float: left;
   height: 0;
@@ -149,7 +229,7 @@
 
 /* Dark mode BlockNote */
 .dark .blocknote-wrapper {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 /* Hide vertical indentation lines for nested blocks */
@@ -165,7 +245,7 @@
   width: 28px;
   height: 28px;
   border-radius: 10px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   transition:
     background-color 0.15s linear,
     color 0.15s linear,
@@ -173,8 +253,8 @@
 }
 
 .blocknote-wrapper .bn-side-menu .mantine-UnstyledButton-root:not(.mantine-Menu-item):hover {
-  background: hsl(var(--accent));
-  color: hsl(var(--foreground));
+  background: var(--accent);
+  color: var(--foreground);
   transform: translateY(-1px);
 }
 
@@ -189,13 +269,13 @@
   min-width: 260px;
   max-width: 320px;
   padding: 6px;
-  border: 1px solid hsl(var(--border) / 0.85);
+  border: 1px solid rgb(var(--border-rgb) / 0.85);
   border-radius: 16px;
-  background: hsl(var(--card) / 0.96);
+  background: rgb(var(--card-rgb) / 0.96);
   backdrop-filter: blur(20px);
   box-shadow:
-    0 22px 50px -24px hsl(var(--foreground) / 0.45),
-    0 10px 24px -18px hsl(var(--foreground) / 0.35);
+    0 22px 50px -24px rgb(var(--foreground-rgb) / 0.45),
+    0 10px 24px -18px rgb(var(--foreground-rgb) / 0.35);
 }
 
 .blocknote-wrapper .bn-drag-handle-menu .mantine-Menu-label,
@@ -205,7 +285,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .blocknote-wrapper .bn-drag-handle-menu .mantine-Menu-item,
@@ -215,32 +295,32 @@
   border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .blocknote-wrapper .bn-drag-handle-menu .mantine-Menu-item:hover,
 .blocknote-wrapper .bn-drag-handle-menu .mantine-Menu-item[data-hovered],
 .blocknote-wrapper .notion-block-menu .mantine-Menu-item:hover,
 .blocknote-wrapper .notion-block-menu .mantine-Menu-item[data-hovered] {
-  background: hsl(var(--accent));
+  background: var(--accent);
 }
 
 .blocknote-wrapper .bn-drag-handle-menu .mantine-Menu-itemSection,
 .blocknote-wrapper .notion-block-menu .mantine-Menu-itemSection {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .blocknote-wrapper .notion-block-menu__item--danger {
-  color: hsl(var(--destructive));
+  color: var(--destructive);
 }
 
 .blocknote-wrapper .notion-block-menu__item--danger .mantine-Menu-itemSection {
-  color: hsl(var(--destructive));
+  color: var(--destructive);
 }
 
 .blocknote-wrapper .notion-block-menu__divider {
   margin: 6px 4px;
-  border-color: hsl(var(--border) / 0.75);
+  border-color: rgb(var(--border-rgb) / 0.75);
 }
 
 .blocknote-wrapper .notion-block-menu__label {
@@ -253,12 +333,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .blocknote-wrapper .blocknote-anchor-target {
   border-radius: 12px;
-  box-shadow: 0 0 0 1px hsl(var(--ring) / 0.35);
+  box-shadow: 0 0 0 1px rgb(var(--ring-rgb) / 0.35);
   animation: blocknote-anchor-flash 1.4s ease-out;
 }
 
@@ -269,8 +349,10 @@
 
 /* ── Accent colours (grayscale) ───────────────────────────────────────────── */
 [data-accent="grayscale"] {
-  --primary: 0 0% 0%;
-  --ring: 0 0% 0%;
+  --primary: #37352f;
+  --ring: #37352f;
+  --primary-rgb: 55 53 47;
+  --ring-rgb: 55 53 47;
 }
 
 /* ── Shimmer skeleton animation ───────────────────────────────────────────── */
@@ -284,7 +366,7 @@
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
-  background-color: hsl(var(--muted));
+  background-color: var(--muted);
 }
 
 .skeleton-shimmer::after {
@@ -295,7 +377,7 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    hsl(var(--muted-foreground) / 0.1) 50%,
+    rgb(var(--muted-foreground-rgb) / 0.1) 50%,
     transparent 100%
   );
   animation: shimmer 1.6s ease-in-out infinite;
@@ -320,8 +402,8 @@
 @keyframes blocknote-anchor-flash {
   0% {
     box-shadow:
-      0 0 0 1px hsl(var(--ring) / 0.35),
-      0 0 0 0 hsl(var(--ring) / 0.25);
+      0 0 0 1px rgb(var(--ring-rgb) / 0.35),
+      0 0 0 0 rgb(var(--ring-rgb) / 0.25);
   }
   100% {
     box-shadow:
@@ -351,11 +433,11 @@
 
 /* Database table styling */
 .notion-table-shell {
-  box-shadow: inset 0 1px 0 hsl(var(--border) / 0.4);
+  box-shadow: inset 0 1px 0 rgb(var(--border-rgb) / 0.4);
 }
 
 .notion-table-scroll {
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
 }
 
 .database-page .notion-table-scroll::-webkit-scrollbar {
@@ -364,13 +446,13 @@
 }
 
 .database-page .notion-table-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgb(var(--muted-foreground-rgb) / 0.2);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .database-page .notion-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(var(--muted-foreground-rgb) / 0.3);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -394,6 +476,6 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 12%);
+    radial-gradient(circle at top left, rgb(var(--card-rgb) / 0.7), transparent 24%),
+    linear-gradient(180deg, rgb(var(--foreground-rgb) / 0.04), transparent 12%);
 }

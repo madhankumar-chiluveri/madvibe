@@ -18,22 +18,40 @@ import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 
 // ── Greeting Widget ────────────────────────────────────────────────────────────
 const GreetingWidget = memo(function GreetingWidget() {
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const Icon = hour < 12 ? Sun : hour < 17 ? Sunset : Moon;
-  const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+  const [greeting, setGreeting] = useState("Welcome back");
+  const [today, setToday] = useState("");
+  const [iconName, setIconName] = useState<"sun" | "sunset" | "moon">("sun");
+
+  useEffect(() => {
+    const now = new Date();
+    const hour = now.getHours();
+
+    setGreeting(
+      hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
+    );
+    setIconName(hour < 12 ? "sun" : hour < 17 ? "sunset" : "moon");
+    setToday(
+      new Intl.DateTimeFormat("en-IN", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "Asia/Kolkata",
+      }).format(now)
+    );
+  }, []);
+
+  const Icon = iconName === "sun" ? Sun : iconName === "sunset" ? Sunset : Moon;
 
   return (
     <div className="col-span-full flex items-center justify-between px-1 pb-1">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-[28px] font-bold tracking-tight text-foreground">
           <Icon className="w-6 h-6 text-amber-500" />
           {greeting}
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {today || "\u00A0"}
+        </p>
       </div>
     </div>
   );
@@ -115,7 +133,7 @@ const QuickCaptureBar = memo(function QuickCaptureBar() {
 
   return (
     <div className="col-span-full">
-      <div className="relative flex items-center gap-2 bg-muted/50 border rounded-xl px-4 min-h-[48px] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/50 transition-all">
+      <div className="relative flex min-h-[48px] items-center gap-2 rounded-[10px] border border-border bg-card px-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-all focus-within:border-ring/40 focus-within:ring-2 focus-within:ring-ring/20">
         {submitting
           ? <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
           : <Zap className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -134,7 +152,7 @@ const QuickCaptureBar = memo(function QuickCaptureBar() {
           }}
         />
         {hint && (
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
+          <span className="shrink-0 rounded-full bg-notion-gray-bg px-2 py-0.5 text-xs text-notion-gray-text">
             {hint}
           </span>
         )}
@@ -164,7 +182,7 @@ const PomodoroWidget = memo(function PomodoroWidget() {
   const circumference = 2 * Math.PI * 36;
 
   return (
-    <div className="bg-card border rounded-2xl p-4 flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-3 rounded-[10px] border border-border bg-card p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
       <div className="flex items-center gap-2 w-full">
         <Timer className="w-4 h-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Focus Timer</span>
@@ -205,10 +223,10 @@ const PomodoroWidget = memo(function PomodoroWidget() {
               key={m}
               onClick={() => useAppStore.getState().setFocusMinutes(m)}
               className={cn(
-                "flex-1 text-xs py-1 rounded-lg border transition-colors min-h-[40px]",
+                "min-h-[40px] flex-1 rounded-lg border py-1 text-xs transition-colors",
                 focusMinutes === m
                   ? "bg-primary/10 border-primary text-primary"
-                  : "text-muted-foreground hover:bg-muted"
+                  : "text-muted-foreground hover:bg-notion-gray-bg"
               )}
             >
               {m}m
@@ -233,7 +251,7 @@ const HabitStrip = memo(function HabitStrip() {
   if (!habits || habits.length === 0) return null;
 
   return (
-    <div className="col-span-full bg-card border rounded-2xl p-4">
+    <div className="col-span-full rounded-[10px] border border-border bg-card p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-muted-foreground" />
@@ -250,10 +268,10 @@ const HabitStrip = memo(function HabitStrip() {
             <button
               key={habit._id}
               className={cn(
-                "flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-xl border shrink-0 transition-all min-h-[44px] min-w-[64px]",
+                "flex min-h-[44px] min-w-[64px] shrink-0 flex-col items-center gap-1.5 rounded-xl border px-3 py-2.5 transition-all",
                 done
-                  ? "bg-primary/10 border-primary/30 text-primary"
-                  : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60"
+                  ? "border-notion-blue-text bg-notion-blue-bg text-notion-blue-text"
+                  : "border-border bg-card text-muted-foreground hover:bg-notion-gray-bg"
               )}
               onClick={() =>
                 logHabit({ habitId: habit._id, date: today, completed: !done })
@@ -285,24 +303,24 @@ const LedgerSnapshot = memo(function LedgerSnapshot() {
 
   return (
     <div
-      className="bg-card border rounded-2xl p-4 cursor-pointer hover:border-primary/30 transition-colors"
+      className="cursor-pointer rounded-[10px] border border-border bg-card p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-foreground/20"
       onClick={() => router.push("/workspace/ledger")}
     >
       <div className="flex items-center gap-2 mb-3">
         <BarChart2 className="w-4 h-4 text-muted-foreground" />
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">LEDGER</span>
+        <span className="rounded-full bg-notion-blue-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-notion-blue-text">Ledger</span>
         <ChevronRight className="w-3 h-3 text-muted-foreground ml-auto" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <p className="text-xs text-muted-foreground">Income</p>
-          <p className="text-lg font-semibold text-green-600 dark:text-green-400 leading-tight">
+          <p className="text-lg font-semibold text-notion-green-text leading-tight">
             {data ? fmt(data.income) : "—"}
           </p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Expenses</p>
-          <p className="text-lg font-semibold text-red-600 dark:text-red-400 leading-tight">
+          <p className="text-lg font-semibold text-notion-red-text leading-tight">
             {data ? fmt(data.expenses) : "—"}
           </p>
         </div>
@@ -311,8 +329,8 @@ const LedgerSnapshot = memo(function LedgerSnapshot() {
             <p className="text-xs text-muted-foreground">Net Worth</p>
             <div className="flex items-center gap-1">
               {(data?.netWorth ?? 0) >= 0
-                ? <TrendingUp className="w-3 h-3 text-green-500" />
-                : <TrendingDown className="w-3 h-3 text-red-500" />
+                ? <TrendingUp className="w-3 h-3 text-notion-green-text" />
+                : <TrendingDown className="w-3 h-3 text-notion-red-text" />
               }
               <p className="text-sm font-bold">{data ? fmt(data.netWorth) : "—"}</p>
             </div>
@@ -330,12 +348,12 @@ const FeedDigest = memo(function FeedDigest() {
 
   return (
     <div
-      className="bg-card border rounded-2xl p-4 cursor-pointer hover:border-primary/30 transition-colors"
+      className="cursor-pointer rounded-[10px] border border-border bg-card p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-colors hover:border-foreground/20"
       onClick={() => router.push("/workspace/feed")}
     >
       <div className="flex items-center gap-2 mb-3">
         <Newspaper className="w-4 h-4 text-muted-foreground" />
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">FEED</span>
+        <span className="rounded-full bg-notion-purple-bg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-notion-purple-text">Feed</span>
         <ChevronRight className="w-3 h-3 text-muted-foreground ml-auto" />
       </div>
       <div className="space-y-2.5">
@@ -380,20 +398,20 @@ const TodayProgressWidget = memo(function TodayProgressWidget() {
       : `${completedCount}/${total} habits done — you're making progress 🌱`;
 
   return (
-    <div className="bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-pink-500/10 border border-violet-500/20 rounded-2xl p-4">
+    <div className="rounded-[10px] border border-border bg-card p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-4 h-4 text-violet-500" />
-        <span className="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wide">
+        <Sparkles className="w-4 h-4 text-notion-purple-text" />
+        <span className="text-xs font-medium text-notion-purple-text uppercase tracking-wide">
           Today's Progress
         </span>
-        <span className="ml-auto text-xs font-semibold text-violet-600 dark:text-violet-400">
+        <span className="ml-auto text-xs font-semibold text-notion-purple-text">
           {pct}%
         </span>
       </div>
       <p className="text-sm text-foreground/80 leading-relaxed">{message}</p>
-      <div className="mt-2.5 bg-muted/50 rounded-full h-1.5 overflow-hidden">
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full bg-violet-500 rounded-full transition-all duration-700"
+          className="h-full rounded-full bg-notion-purple-text transition-all duration-700"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -429,3 +447,4 @@ export default memo(function OverviewPage() {
     </div>
   );
 });
+

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Roboto_Serif, JetBrains_Mono } from "next/font/google";
+import { Geist, Roboto_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
+import { MadThemeProvider } from "@/components/providers/mad-theme-provider";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "@/components/providers/convex-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,10 +9,10 @@ import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import Script from "next/script";
 
-const inter = Inter({
+const geist = Geist({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-geist",
   preload: false,
 });
 
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f0f0f" },
+    { media: "(prefers-color-scheme: dark)", color: "#191918" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -67,7 +67,7 @@ export default function RootLayout({
 }) {
   return (
     <ConvexAuthNextjsServerProvider>
-      <html lang="en" suppressHydrationWarning className={`${inter.variable} ${robotoSerif.variable} ${jetbrainsMono.variable}`}>
+      <html lang="en" suppressHydrationWarning className={`${geist.variable} ${robotoSerif.variable} ${jetbrainsMono.variable}`}>
         <head>
           <script
             dangerouslySetInnerHTML={{
@@ -108,8 +108,8 @@ export default function RootLayout({
             }}
           />
         </head>
-        <body className="font-serif antialiased">
-          <ThemeProvider
+        <body className="font-sans antialiased">
+          <MadThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
@@ -121,7 +121,7 @@ export default function RootLayout({
               <InstallPrompt />
               <Toaster richColors position="bottom-right" />
             </ConvexClientProvider>
-          </ThemeProvider>
+          </MadThemeProvider>
           {/* Service Worker Registration */}
           <Script
             id="sw-register"

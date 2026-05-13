@@ -9,39 +9,78 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        background: "rgb(var(--background-rgb) / <alpha-value>)",
+        foreground: "rgb(var(--foreground-rgb) / <alpha-value>)",
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "rgb(var(--card-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--card-foreground-rgb) / <alpha-value>)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "rgb(var(--popover-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--popover-foreground-rgb) / <alpha-value>)",
+        },
+        sidebar: {
+          DEFAULT: "rgb(var(--sidebar-rgb) / <alpha-value>)",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "rgb(var(--primary-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--primary-foreground-rgb) / <alpha-value>)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "rgb(var(--secondary-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--secondary-foreground-rgb) / <alpha-value>)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "rgb(var(--muted-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--muted-foreground-rgb) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "rgb(var(--accent-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--accent-foreground-rgb) / <alpha-value>)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "rgb(var(--destructive-rgb) / <alpha-value>)",
+          foreground: "rgb(var(--destructive-foreground-rgb) / <alpha-value>)",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
+        border: "rgb(var(--border-rgb) / <alpha-value>)",
+        input: "rgb(var(--input-rgb) / <alpha-value>)",
+        ring: "rgb(var(--ring-rgb) / <alpha-value>)",
+        "notion-gray": {
+          text: "var(--notion-gray-text)",
+          bg: "var(--notion-gray-bg)",
+        },
+        "notion-brown": {
+          text: "var(--notion-brown-text)",
+          bg: "var(--notion-brown-bg)",
+        },
+        "notion-orange": {
+          text: "var(--notion-orange-text)",
+          bg: "var(--notion-orange-bg)",
+        },
+        "notion-yellow": {
+          text: "var(--notion-yellow-text)",
+          bg: "var(--notion-yellow-bg)",
+        },
+        "notion-green": {
+          text: "var(--notion-green-text)",
+          bg: "var(--notion-green-bg)",
+        },
+        "notion-blue": {
+          text: "var(--notion-blue-text)",
+          bg: "var(--notion-blue-bg)",
+        },
+        "notion-purple": {
+          text: "var(--notion-purple-text)",
+          bg: "var(--notion-purple-bg)",
+        },
+        "notion-pink": {
+          text: "var(--notion-pink-text)",
+          bg: "var(--notion-pink-bg)",
+        },
+        "notion-red": {
+          text: "var(--notion-red-text)",
+          bg: "var(--notion-red-bg)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -49,7 +88,7 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist)", "system-ui", "sans-serif"],
         serif: ["var(--font-roboto-serif)", "Georgia", "Cambria", "serif"],
         mono: ["var(--font-jetbrains-mono)", "JetBrains Mono", "Consolas", "monospace"],
       },

@@ -47,7 +47,7 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t bg-background/95 backdrop-blur-sm"
+      className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-border/60 bg-sidebar md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       role="navigation"
       aria-label="Module navigation"
@@ -63,7 +63,7 @@ export function MobileNav() {
             className={cn(
               "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 min-h-[56px] transition-colors",
               "active:scale-95 transition-transform",
-              isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             )}
             onClick={() => {
               setActiveModule(tab.id);
@@ -72,17 +72,17 @@ export function MobileNav() {
             aria-label={tab.label}
             aria-current={isActive ? "page" : undefined}
           >
-            <Icon className={cn("w-5 h-5", isActive && "fill-primary/20")} strokeWidth={isActive ? 2.5 : 1.8} />
+            <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 1.8} />
             <span
               className={cn(
                 "text-[10px] font-medium leading-none",
-                isActive ? "text-primary" : "text-muted-foreground"
+                isActive ? "text-foreground" : "text-muted-foreground"
               )}
             >
               {tab.label}
             </span>
             {isActive && (
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+              <span className="absolute left-1/2 top-0 h-0.5 w-8 -translate-x-1/2 rounded-full bg-foreground" />
             )}
           </Link>
         );
