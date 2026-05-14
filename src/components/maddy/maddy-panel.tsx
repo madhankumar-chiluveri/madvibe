@@ -30,6 +30,15 @@ const PANEL_EASE = [0.22, 1, 0.36, 1] as const;
 // ── Model registry — NVIDIA NIM free endpoints ───────────────────────────────
 export const MADDY_MODELS = [
   {
+    id: "minimaxai/minimax-m2.7",
+    label: "MiniMax M2.7",
+    maker: "NVIDIA NIM",
+    badge: "FREE",
+    speed: "fast",
+    ctx: "1M",
+    best: "Autonomous productivity agents",
+  },
+  {
     id: "stepfun-ai/step-3.5-flash",
     label: "Step 3.5 Flash",
     maker: "NVIDIA NIM",
@@ -69,7 +78,7 @@ export const MADDY_MODELS = [
 
 export type MaddyModel = (typeof MADDY_MODELS)[number];
 
-const DEFAULT_MODEL_ID = "stepfun-ai/step-3.5-flash";
+const DEFAULT_MODEL_ID = "minimaxai/minimax-m2.7";
 
 const QUICK_PROMPTS = [
   "What should I focus on today?",
