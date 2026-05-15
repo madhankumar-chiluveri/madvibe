@@ -142,6 +142,7 @@ async function callAgent(payload: {
   user_id: string;
   model: string;
   conversation_id?: string;
+  page_id?: string | null;
 }): Promise<{
   response: string;
   conversation_id: string;
@@ -566,6 +567,7 @@ function MaddyPanelSurface({
         user_id: "",
         model: modelId,
         conversation_id: agentConvId ?? undefined,
+        page_id: pageId ? String(pageId) : null,
       });
 
       setAgentConvId(result.conversation_id);
