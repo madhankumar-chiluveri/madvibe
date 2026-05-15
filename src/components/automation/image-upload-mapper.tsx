@@ -79,21 +79,35 @@ export function ImageUploadMapper({
   const addFiles = useCallback(
     (files: File[]) => {
       if (files.length === 0) return;
-      const next = files.map((file) => {
-        const previewUrl = URL.createObjectURL(file);
-        const filename = file.name;
-        return {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${filename}`,
-          file,
-          previewUrl,
-          filename,
-          selectedPinId: detectRow(filename),
-          status: "pending" as const,
-        };
+      setItems((prev) => {
+        const usedPinIds = new Set(prev.map((it) => it.selectedPinId).filter((id) => id !== NONE_PIN));
+        const emptyPins = pins.filter((p) => !p.mediaUrl && !usedPinIds.has(p._id));
+        let emptyIndex = 0;
+
+        const next = files.map((file) => {
+          const previewUrl = URL.createObjectURL(file);
+          const filename = file.name;
+          
+          let pinId = detectRow(filename);
+          
+          if (pinId === NONE_PIN && emptyIndex < emptyPins.length) {
+            pinId = emptyPins[emptyIndex]._id;
+            emptyIndex++;
+          }
+
+          return {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${filename}`,
+            file,
+            previewUrl,
+            filename,
+            selectedPinId: pinId,
+            status: "pending" as const,
+          };
+        });
+        return [...prev, ...next];
       });
-      setItems((prev) => [...prev, ...next]);
     },
-    [detectRow],
+    [detectRow, pins],
   );
 
   const removeItem = (id: string) => {

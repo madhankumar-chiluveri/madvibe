@@ -33,7 +33,7 @@ export function CsvPasteImport({ workspaceId }: { workspaceId: Id<"workspaces"> 
       toast.success(
         `${mode === "append" ? "Appended" : "Replaced with"} ${count} row${count === 1 ? "" : "s"}.`,
       );
-      if (mode === "replace") setText("");
+      setText("");
     } catch (err: any) {
       toast.error(err?.message ?? "CSV import failed");
     } finally {
