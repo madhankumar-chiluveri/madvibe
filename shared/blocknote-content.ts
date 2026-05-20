@@ -217,7 +217,6 @@ function sanitizeProps(type: string, props: JsonRecord) {
     const rawLevel = asFiniteNumber(props.level);
     const level = rawLevel && rawLevel >= 1 && rawLevel <= 6 ? Math.floor(rawLevel) : 1;
     result.level = level;
-    if (props.isToggleable === true) result.isToggleable = true;
   }
 
   if (type === "checkListItem") {
@@ -252,7 +251,9 @@ function sanitizeProps(type: string, props: JsonRecord) {
     if (url) result.url = url;
     if (caption) result.caption = caption;
     if (showPreview !== undefined) result.showPreview = showPreview;
-    if (previewWidth !== undefined) result.previewWidth = previewWidth;
+    if (previewWidth !== undefined && previewWidth > 0) {
+      result.previewWidth = Math.floor(previewWidth);
+    }
     if (backgroundColor) result.backgroundColor = backgroundColor;
     if (textAlignment && TEXT_ALIGNMENTS.has(textAlignment)) {
       result.textAlignment = textAlignment;
@@ -260,6 +261,14 @@ function sanitizeProps(type: string, props: JsonRecord) {
   }
 
   return result;
+}
+
+const ID_FORMAT = /^[A-Za-z0-9_-]+$/;
+
+function asValidId(value: unknown) {
+  const id = asString(value);
+  if (!id || id.length > 128 || !ID_FORMAT.test(id)) return undefined;
+  return id;
 }
 
 function sanitizeTableCellProps(props: unknown) {
@@ -332,13 +341,34 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
 
   const normalized = normalizeBlockType(block);
   let type = normalized.type;
-  const props = sanitizeProps(type, normalized.props);
+  let props = sanitizeProps(type, normalized.props);
   const next: SanitizedBlockNoteBlock = { type, children: [] };
 
-  const id = asString(block.id);
+  const id = asValidId(block.id);
   if (id && !seenIds.has(id)) {
     next.id = id;
     seenIds.add(id);
+  }
+
+  if (Array.isArray(block.children)) {
+    next.children = sanitizeBlockNoteDocument(block.children, seenIds);
+  }
+
+  if (
+    type === "heading" &&
+    normalized.props.isToggleable === true &&
+    next.children.length > 0
+  ) {
+    props = { ...props, isToggleable: true };
+  }
+
+  if (MEDIA_BLOCK_TYPES.has(type)) {
+    const hasUrl = typeof props.url === "string" && (props.url as string).length > 0;
+    if (!hasUrl) {
+      type = "paragraph";
+      next.type = type;
+      props = {};
+    }
   }
 
   if (Object.keys(props).length > 0) {
@@ -357,10 +387,6 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
     }
   } else if (INLINE_BLOCK_TYPES.has(type)) {
     next.content = sanitizeInlineContent(block.content);
-  }
-
-  if (Array.isArray(block.children)) {
-    next.children = sanitizeBlockNoteDocument(block.children, seenIds);
   }
 
   return next;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
+import { Component, useEffect, useRef, useCallback, useState, type ErrorInfo, type ReactNode } from "react";
 import { SideMenuController, useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
@@ -13,6 +13,84 @@ import { useEditorStore } from "@/store/editor.store";
 import { toast } from "sonner";
 import { NotionSideMenu } from "./notion-block-side-menu";
 import { sanitizeBlockNoteDocument } from "../../../shared/blocknote-content";
+
+interface EditorBoundaryProps {
+  pageId: Id<"pages">;
+  getDoc: () => unknown;
+  onRecover: () => void;
+  children: ReactNode;
+}
+
+interface EditorBoundaryState {
+  error: Error | null;
+}
+
+class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBoundaryState> {
+  state: EditorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    const doc = (() => {
+      try {
+        return this.props.getDoc();
+      } catch {
+        return null;
+      }
+    })();
+
+    if (typeof window !== "undefined") {
+      (window as any).__bn_failed_doc__ = doc;
+      (window as any).__bn_failed_pageId__ = this.props.pageId;
+    }
+    console.error("[BlockNote] renderSpec crash for page", this.props.pageId, {
+      error,
+      componentStack: info.componentStack,
+      doc,
+    });
+  }
+
+  componentDidUpdate(prevProps: EditorBoundaryProps) {
+    if (this.state.error && prevProps.pageId !== this.props.pageId) {
+      this.setState({ error: null });
+    }
+  }
+
+  render() {
+    if (this.state.error) {
+      const message =
+        this.state.error instanceof Error ? this.state.error.message : String(this.state.error);
+      return (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/[0.06] p-6 text-foreground">
+          <div className="text-base font-semibold text-foreground">Document failed to render</div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            BlockNote crashed while loading this page. Failing document logged to console as{" "}
+            <code className="rounded bg-foreground/[0.06] px-1.5 py-0.5 text-xs">
+              window.__bn_failed_doc__
+            </code>
+            .
+          </div>
+          <pre className="mt-3 max-h-[160px] overflow-auto rounded-lg border border-red-500/20 bg-background/40 p-3 text-xs text-red-300">
+            {message}
+          </pre>
+          <button
+            type="button"
+            onClick={() => {
+              this.setState({ error: null });
+              this.props.onRecover();
+            }}
+            className="mt-4 inline-flex h-9 items-center rounded-xl bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Reload editor
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface BlockNoteEditorProps {
   pageId: Id<"pages">;
@@ -251,16 +329,34 @@ export function BlockNoteEditor({
         "transition-opacity duration-150",
         isLoadingContent ? "opacity-0 h-0 overflow-hidden" : "opacity-100"
       )}>
-        <BlockNoteView
-          editor={editor}
-          theme={resolvedTheme === "dark" ? "dark" : "light"}
-          editable={editable}
-          onChange={handleChange}
-          className="prose-editor"
-          sideMenu={false}
+        <BlockNoteRenderBoundary
+          pageId={pageId}
+          getDoc={() => {
+            try {
+              return editor?.document ?? null;
+            } catch {
+              return null;
+            }
+          }}
+          onRecover={() => {
+            try {
+              editor.replaceBlocks(editor.document, [] as any);
+            } catch (recoverError) {
+              console.error("[BlockNote] recovery failed", recoverError);
+            }
+          }}
         >
-          <SideMenuController sideMenu={NotionSideMenu} />
-        </BlockNoteView>
+          <BlockNoteView
+            editor={editor}
+            theme={resolvedTheme === "dark" ? "dark" : "light"}
+            editable={editable}
+            onChange={handleChange}
+            className="prose-editor"
+            sideMenu={false}
+          >
+            <SideMenuController sideMenu={NotionSideMenu} />
+          </BlockNoteView>
+        </BlockNoteRenderBoundary>
       </div>
     </div>
   );
