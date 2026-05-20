@@ -1405,9 +1405,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   const renderToolbarPanel = () => {
     if (activePanel === "group") {
       return (
-        <div className="w-full max-w-[620px] rounded-[18px] border border-foreground/8 bg-card/95 p-3 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+        <div className="w-full max-w-[620px] rounded-[14px] border border-foreground/10 bg-background p-3">
           {selectProperties.length === 0 ? (
-            <div className="rounded-[16px] border border-dashed border-foreground/10 px-4 py-8 text-center text-sm text-muted-foreground">
+            <div className="rounded-[12px] border border-dashed border-foreground/10 px-4 py-8 text-center text-sm text-muted-foreground">
               Add a Select property to enable board grouping.
             </div>
           ) : (
@@ -1423,7 +1423,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                       void handleBoardGroupByChange(property.id);
                     }}
                     className={cn(
-                      "rounded-[18px] border px-4 py-3 text-left transition-colors",
+                      "rounded-[14px] border px-4 py-3 text-left transition-colors",
                       isActive
                         ? "border-sky-500/30 bg-sky-500/12 text-sky-100"
                         : "border-foreground/10 bg-foreground/[0.03] text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
@@ -1445,6 +1445,167 @@ export function DatabaseView({ page }: DatabaseViewProps) {
 
     return null;
   };
+
+  const renderDatabaseToolbar = () => (
+    <div className="border-b border-foreground/8 bg-card px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1 rounded-xl border border-foreground/8 bg-background p-1">
+          {viewTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                void handleViewTypeChange(tab.id);
+              }}
+              className={cn(
+                "flex h-8 items-center gap-2 rounded-lg px-3 text-[13px] leading-none transition-colors",
+                viewType === tab.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+              )}
+              title={`${tab.label} view`}
+              aria-label={`${tab.label} view`}
+            >
+              <span className="flex h-4 w-4 items-center justify-center">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          {!canEditWorkspace ? (
+            <span className="mr-1 inline-flex h-9 items-center rounded-xl border border-foreground/10 bg-foreground/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              View only
+            </span>
+          ) : null}
+          <ToolbarIconButton
+            active={filtersOpen || activeFilters.length > 0 || hasPendingFilterChanges}
+            count={activeFilters.length}
+            label="Filter rows"
+            onClick={toggleFiltersPanel}
+            disabled={!database}
+          >
+            <Filter className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            active={sortsOpen || activeSorts.length > 0 || hasPendingSortChanges}
+            count={activeSorts.length}
+            label="Sort rows"
+            onClick={toggleSortsPanel}
+            disabled={!database}
+          >
+            <ArrowUpDown className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            active={showSearchInput}
+            label="Search rows"
+            onClick={toggleSearchPanel}
+            disabled={!database}
+          >
+            <Search className="h-4 w-4" />
+          </ToolbarIconButton>
+          {showSearchInput && (
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Type to search..."
+              autoFocus={searchOpen && !searchQuery.trim()}
+              className="h-9 w-[180px] rounded-xl border-foreground/8 bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15 md:w-[240px]"
+            />
+          )}
+          {viewType === "board" && (
+            <ToolbarIconButton
+              active={groupByOpen || Boolean(activeBoardGroupProperty)}
+              label="Group board columns"
+              onClick={toggleGroupByPanel}
+              disabled={!database || selectProperties.length === 0}
+            >
+              <Rows3 className="h-4 w-4" />
+            </ToolbarIconButton>
+          )}
+          {hasActiveControls && (
+            <ToolbarIconButton
+              label="Clear search, filters, and sorts"
+              onClick={clearControls}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </ToolbarIconButton>
+          )}
+
+          <div className="mx-1 h-8 w-px bg-foreground/8" />
+
+          <ReminderTriggerButton
+            workspaceId={page.workspaceId}
+            iconOnly
+            label="Create reminder for this database"
+            title="Create reminder for this database"
+            className="h-9 w-9 rounded-xl border border-foreground/8 bg-background text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+            initialValues={{
+              title: page.title ? `Review ${page.title}` : "Review database",
+              pageId: page._id,
+              databaseId: database?._id ?? null,
+              sourceLabel: page.title || "Database",
+              sourceUrl: `/workspace/${page._id}`,
+            }}
+          />
+
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => void handleQuickAddRow()}
+            disabled={!database || quickAddLoading || !canEditWorkspace}
+            className="h-9 gap-1.5 rounded-xl bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {quickAddLoading ? "Adding..." : "New row"}
+          </Button>
+        </div>
+      </div>
+
+      <DatabaseQuickFilterBar
+        className="mt-2"
+        properties={properties}
+        filterGroup={filterGroup}
+        open={filtersOpen}
+        hasPendingChanges={canEditWorkspace ? hasPendingFilterChanges : false}
+        onOpenChange={setFiltersOpen}
+        onChange={updateQuickFilterGroup}
+        onReset={handleResetFilters}
+        onSave={() => {
+          void handleSaveFilters();
+        }}
+      />
+
+      <DatabaseQuickSortBar
+        className="mt-2"
+        properties={properties}
+        sortRules={sortRules}
+        open={sortsOpen}
+        hasPendingChanges={canEditWorkspace ? hasPendingSortChanges : false}
+        onOpenChange={setSortsOpen}
+        onChange={updateQuickSortRules}
+        onReset={handleResetSorts}
+        onSave={() => {
+          void handleSaveSorts();
+        }}
+      />
+
+      {activeBoardGroupProperty && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-foreground/8 pt-2">
+          <ActiveControlChip
+            tone="muted"
+            label={`Group: ${activeBoardGroupProperty.name}`}
+            onClick={openGroupByPanel}
+            removable={false}
+            icon={<Rows3 className="h-3 w-3 text-muted-foreground" />}
+          />
+        </div>
+      )}
+
+      {activePanel && <div className="mt-2 border-t border-foreground/8 pt-2">{renderToolbarPanel()}</div>}
+    </div>
+  );
 
   return (
     <div className="database-page min-h-screen bg-background text-foreground">
@@ -1503,169 +1664,6 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               ))}
             </div>
           )}
-
-          <div className="rounded-[26px] border border-foreground/8 bg-foreground/20 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-            <div className="flex flex-wrap items-center gap-2 rounded-[20px] border border-foreground/6 bg-foreground/[0.03] px-2 py-2">
-              <div className="flex items-center gap-1 rounded-xl border border-foreground/8 bg-foreground/[0.02] p-1">
-                {viewTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      void handleViewTypeChange(tab.id);
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 rounded-xl px-3.5 py-2 text-[13px] leading-none transition-colors",
-                      viewType === tab.id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
-                    )}
-                    title={`${tab.label} view`}
-                    aria-label={`${tab.label} view`}
-                  >
-                    <span className="flex h-4 w-4 items-center justify-center">{tab.icon}</span>
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="ml-auto flex flex-wrap items-center gap-1.5">
-                {!canEditWorkspace ? (
-                  <span className="mr-1 inline-flex h-9 items-center rounded-xl border border-foreground/10 bg-foreground/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    View only
-                  </span>
-                ) : null}
-                <ToolbarIconButton
-                  active={filtersOpen || activeFilters.length > 0 || hasPendingFilterChanges}
-                  count={activeFilters.length}
-                  label="Filter rows"
-                  onClick={toggleFiltersPanel}
-                  disabled={!database}
-                >
-                  <Filter className="h-4 w-4" />
-                </ToolbarIconButton>
-                <ToolbarIconButton
-                  active={sortsOpen || activeSorts.length > 0 || hasPendingSortChanges}
-                  count={activeSorts.length}
-                  label="Sort rows"
-                  onClick={toggleSortsPanel}
-                  disabled={!database}
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </ToolbarIconButton>
-                <ToolbarIconButton
-                  active={showSearchInput}
-                  label="Search rows"
-                  onClick={toggleSearchPanel}
-                  disabled={!database}
-                >
-                  <Search className="h-4 w-4" />
-                </ToolbarIconButton>
-                {showSearchInput && (
-                  <Input
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="Type to search..."
-                    autoFocus={searchOpen && !searchQuery.trim()}
-                    className="h-9 w-[180px] rounded-xl border-foreground/8 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15 md:w-[240px]"
-                  />
-                )}
-                {viewType === "board" && (
-                  <ToolbarIconButton
-                    active={groupByOpen || Boolean(activeBoardGroupProperty)}
-                    label="Group board columns"
-                    onClick={toggleGroupByPanel}
-                    disabled={!database || selectProperties.length === 0}
-                  >
-                    <Rows3 className="h-4 w-4" />
-                  </ToolbarIconButton>
-                )}
-                {hasActiveControls && (
-                  <ToolbarIconButton
-                    label="Clear search, filters, and sorts"
-                    onClick={clearControls}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </ToolbarIconButton>
-                )}
-
-                <div className="mx-1 h-8 w-px bg-foreground/8" />
-
-                <ReminderTriggerButton
-                  workspaceId={page.workspaceId}
-                  iconOnly
-                  label="Create reminder for this database"
-                  title="Create reminder for this database"
-                  className="h-9 w-9 rounded-xl border border-foreground/8 bg-foreground/[0.03] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
-                  initialValues={{
-                    title: page.title ? `Review ${page.title}` : "Review database",
-                    pageId: page._id,
-                    databaseId: database?._id ?? null,
-                    sourceLabel: page.title || "Database",
-                    sourceUrl: `/workspace/${page._id}`,
-                  }}
-                />
-
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => void handleQuickAddRow()}
-                  disabled={!database || quickAddLoading || !canEditWorkspace}
-                  className="h-9 gap-1.5 rounded-xl bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {quickAddLoading ? "Adding..." : "New row"}
-                </Button>
-              </div>
-            </div>
-
-            <DatabaseQuickFilterBar
-              className="mt-2"
-              properties={properties}
-              filterGroup={filterGroup}
-              open={filtersOpen}
-              hasPendingChanges={canEditWorkspace ? hasPendingFilterChanges : false}
-              onOpenChange={setFiltersOpen}
-              onChange={updateQuickFilterGroup}
-              onReset={handleResetFilters}
-              onSave={() => {
-                void handleSaveFilters();
-              }}
-            />
-
-            <DatabaseQuickSortBar
-              className="mt-2"
-              properties={properties}
-              sortRules={sortRules}
-              open={sortsOpen}
-              hasPendingChanges={canEditWorkspace ? hasPendingSortChanges : false}
-              onOpenChange={setSortsOpen}
-              onChange={updateQuickSortRules}
-              onReset={handleResetSorts}
-              onSave={() => {
-                void handleSaveSorts();
-              }}
-            />
-
-            {activeBoardGroupProperty && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
-                <ActiveControlChip
-                  tone="muted"
-                  label={`Group: ${activeBoardGroupProperty.name}`}
-                  onClick={openGroupByPanel}
-                  removable={false}
-                  icon={<Rows3 className="h-3 w-3 text-muted-foreground" />}
-                />
-              </div>
-            )}
-
-            {activePanel && (
-              <div className="mt-2 px-1">
-                {renderToolbarPanel()}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -1676,69 +1674,61 @@ export function DatabaseView({ page }: DatabaseViewProps) {
           ) : database === null ? (
             <CreateDatabase pageId={page._id} editable={canEditWorkspace} />
           ) : (
-            <>
-              <div className="mb-3 flex items-center justify-between px-1 text-sm text-muted-foreground">
-                <span>
-                  {visibleRows?.length ?? 0}
-                  {rows && visibleRows && rows.length !== visibleRows.length ? ` of ${rows.length}` : ""}
-                  {" "}rows visible
-                </span>
-                {database && selectProperties.length > 1 && viewType === "board" && (
-                  <span>Board grouping is configurable from the toolbar.</span>
+            <div className="overflow-hidden rounded-[22px] border border-foreground/10 bg-card shadow-[0_18px_52px_rgba(0,0,0,0.18)]">
+              {renderDatabaseToolbar()}
+
+              <div className={cn("bg-card", viewType !== "table" && "p-3")}>
+                {viewType === "table" && (
+                  <TableView
+                    workspaceId={page.workspaceId}
+                    pageId={page._id}
+                    databaseId={database._id}
+                    databaseName={page.title || database.name}
+                    properties={orderedProperties}
+                    rows={visibleRows}
+                    now={formulaNow}
+                    editable={canEditWorkspace}
+                    onAddRow={() => handleAddRow()}
+                    onUpdateRow={handleUpdateRow}
+                    onBatchUpdateRows={handleBatchUpdateRows}
+                    onDeleteRow={handleDeleteRow}
+                    onBatchDeleteRows={handleBatchDeleteRows}
+                    onUpdateProperties={handleUpdateProperties}
+                    onMoveProperty={handleMoveProperty}
+                  />
+                )}
+                {viewType === "board" && (
+                  <BoardView
+                    workspaceId={page.workspaceId}
+                    pageId={page._id}
+                    databaseId={database._id}
+                    databaseName={page.title || database.name}
+                    properties={orderedProperties}
+                    rows={visibleRows}
+                    groupByPropertyId={boardGroupByPropertyId}
+                    now={formulaNow}
+                    editable={canEditWorkspace}
+                    onAddRow={handleAddRow}
+                    onUpdateRow={handleUpdateRow}
+                  />
+                )}
+                {viewType === "list" && (
+                  <ListView
+                    workspaceId={page.workspaceId}
+                    pageId={page._id}
+                    databaseId={database._id}
+                    databaseName={page.title || database.name}
+                    properties={orderedProperties}
+                    rows={visibleRows}
+                    now={formulaNow}
+                    editable={canEditWorkspace}
+                    onAddRow={() => handleAddRow()}
+                    onUpdateRow={handleUpdateRow}
+                    onDeleteRow={handleDeleteRow}
+                  />
                 )}
               </div>
-
-              {viewType === "table" && (
-                <TableView
-                  workspaceId={page.workspaceId}
-                  pageId={page._id}
-                  databaseId={database._id}
-                  databaseName={page.title || database.name}
-                  properties={orderedProperties}
-                  rows={visibleRows}
-                  totalRowCount={rows?.length}
-                  now={formulaNow}
-                  editable={canEditWorkspace}
-                  onAddRow={() => handleAddRow()}
-                  onUpdateRow={handleUpdateRow}
-                  onBatchUpdateRows={handleBatchUpdateRows}
-                  onDeleteRow={handleDeleteRow}
-                  onBatchDeleteRows={handleBatchDeleteRows}
-                  onUpdateProperties={handleUpdateProperties}
-                  onMoveProperty={handleMoveProperty}
-                />
-              )}
-              {viewType === "board" && (
-                <BoardView
-                  workspaceId={page.workspaceId}
-                  pageId={page._id}
-                  databaseId={database._id}
-                  databaseName={page.title || database.name}
-                  properties={orderedProperties}
-                  rows={visibleRows}
-                  groupByPropertyId={boardGroupByPropertyId}
-                  now={formulaNow}
-                  editable={canEditWorkspace}
-                  onAddRow={handleAddRow}
-                  onUpdateRow={handleUpdateRow}
-                />
-              )}
-              {viewType === "list" && (
-                <ListView
-                  workspaceId={page.workspaceId}
-                  pageId={page._id}
-                  databaseId={database._id}
-                  databaseName={page.title || database.name}
-                  properties={orderedProperties}
-                  rows={visibleRows}
-                  now={formulaNow}
-                  editable={canEditWorkspace}
-                  onAddRow={() => handleAddRow()}
-                  onUpdateRow={handleUpdateRow}
-                  onDeleteRow={handleDeleteRow}
-                />
-              )}
-            </>
+            </div>
           )}
         </div>
       </div>

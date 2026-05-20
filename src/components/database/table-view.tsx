@@ -8,10 +8,9 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { Plus, Rows3, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
 import { ReminderTriggerButton } from "@/components/reminders/reminder-trigger-button";
 import { cn } from "@/lib/utils";
 import type { FormulaConfig, PropertySchema, PropertyType, SelectOption } from "@/types/database";
@@ -42,7 +41,6 @@ interface TableViewProps {
   databaseName: string;
   properties: PropertySchema[];
   rows: any[] | undefined;
-  totalRowCount?: number;
   now?: number;
   editable?: boolean;
   onAddRow: () => Promise<void>;
@@ -61,7 +59,6 @@ export function TableView({
   databaseName,
   properties,
   rows,
-  totalRowCount,
   now,
   editable = true,
   onAddRow,
@@ -375,16 +372,10 @@ export function TableView({
     setSelectedRowIds(new Set());
   };
 
-  const rowCount = rows?.length ?? 0;
-  const rowCountLabel =
-    totalRowCount !== undefined && totalRowCount !== rowCount
-      ? `${rowCount} of ${totalRowCount} rows`
-      : `${rowCount} rows`;
-
   return (
-    <div className="database-shell overflow-hidden rounded-[24px] border border-foreground/8 bg-card shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
-      <div className="border-b border-foreground/8 bg-foreground/[0.03] px-4 py-3">
-        {editable && selectedCount > 0 ? (
+    <div className="database-shell overflow-hidden bg-card">
+      {editable && selectedCount > 0 ? (
+        <div className="border-b border-foreground/8 bg-foreground/[0.03] px-4 py-3">
           <DatabaseRowSelectionBar
             properties={properties}
             selectedCount={selectedCount}
@@ -392,33 +383,8 @@ export function TableView({
             onDeleteSelected={handleDeleteSelectedRows}
             onClearSelection={() => setSelectedRowIds(new Set())}
           />
-        ) : (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-foreground/80">
-              <Rows3 className="h-4 w-4 text-muted-foreground" />
-              <span>{rowCountLabel}</span>
-            </div>
-
-            {editable ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={newPropertyLoading}
-                className="rounded-xl border border-foreground/8 bg-foreground/[0.03] text-foreground hover:bg-foreground/[0.08] hover:text-foreground"
-                onClick={() => void insertPropertyAt(properties.length)}
-              >
-                <Plus className="mr-1.5 h-4 w-4" />
-                {newPropertyLoading ? "Adding..." : "New property"}
-              </Button>
-            ) : (
-              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                View only
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       <div className="notion-table-scroll min-h-[420px] w-full overflow-x-auto">
         <table
@@ -580,7 +546,20 @@ export function TableView({
                 );
               })}
 
-              <th className="sticky right-0 z-40 border-l border-foreground/6 bg-secondary px-0 py-0 shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]" />
+              <th className="sticky right-0 z-40 border-l border-foreground/6 bg-secondary px-0 py-0 shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]">
+                {editable ? (
+                  <button
+                    type="button"
+                    aria-label="New property"
+                    title={newPropertyLoading ? "Adding property..." : "New property"}
+                    disabled={newPropertyLoading}
+                    onClick={() => void insertPropertyAt(properties.length)}
+                    className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </th>
             </tr>
           </thead>
 

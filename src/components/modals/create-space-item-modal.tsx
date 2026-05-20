@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { sanitizeBlockNoteDocument } from "../../../shared/blocknote-content";
 import { createProperty, updateProperty } from "@/components/database/database-utils";
 
 interface CreateSpaceItemModalProps {
@@ -190,7 +191,7 @@ export function CreateSpaceItemModal({
         blocks: [
           {
             type: "document",
-            content: blocks,
+            content: sanitizeBlockNoteDocument(blocks),
             sortOrder: 1000,
             properties: {},
           },

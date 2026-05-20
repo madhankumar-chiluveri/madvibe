@@ -4,6 +4,21 @@ import {
   requireBlockAccess,
   requirePageAccess,
 } from "./workspaceAccess";
+import { sanitizeBlockNoteDocument } from "../shared/blocknote-content";
+
+function sanitizeStoredBlockContent(content: unknown) {
+  let value = content;
+
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      value = [];
+    }
+  }
+
+  return sanitizeBlockNoteDocument(value);
+}
 
 function normalizeSharedUrl(rawUrl?: string) {
   if (!rawUrl) return "";
@@ -82,7 +97,7 @@ export const upsert = mutation({
       await requireBlockAccess(ctx, args.id, "editor");
       await ctx.db.patch(args.id, {
         type: args.type,
-        content: args.content,
+        content: sanitizeStoredBlockContent(args.content),
         properties: args.properties ?? {},
         updatedAt: Date.now(),
       });
@@ -98,7 +113,7 @@ export const upsert = mutation({
       return await ctx.db.insert("blocks", {
         pageId: args.pageId,
         type: args.type,
-        content: args.content,
+        content: sanitizeStoredBlockContent(args.content),
         parentBlockId: args.parentBlockId ?? null,
         sortOrder: args.sortOrder ?? maxOrder + 1000,
         properties: args.properties ?? {},
@@ -134,7 +149,7 @@ export const bulkUpsert = mutation({
         if (existing) {
           await ctx.db.patch(block.id, {
             type: block.type,
-            content: block.content,
+            content: sanitizeStoredBlockContent(block.content),
             sortOrder: block.sortOrder,
             properties: block.properties ?? {},
             updatedAt: now,
@@ -144,7 +159,7 @@ export const bulkUpsert = mutation({
         await ctx.db.insert("blocks", {
           pageId: args.pageId,
           type: block.type,
-          content: block.content,
+          content: sanitizeStoredBlockContent(block.content),
           parentBlockId: block.parentBlockId ?? null,
           sortOrder: block.sortOrder,
           properties: block.properties ?? {},
@@ -200,11 +215,16 @@ export const listByPage = query({
   handler: async (ctx, args) => {
     await requirePageAccess(ctx, args.pageId, "viewer");
 
-    return await ctx.db
+    const blocks = await ctx.db
       .query("blocks")
       .withIndex("by_pageId", (q) => q.eq("pageId", args.pageId))
       .order("asc")
       .collect();
+
+    return blocks.map((block) => ({
+      ...block,
+      content: sanitizeStoredBlockContent(block.content),
+    }));
   },
 });
 
@@ -239,7 +259,7 @@ export const replaceAll = mutation({
       await ctx.db.insert("blocks", {
         pageId: args.pageId,
         type: block.type,
-        content: block.content,
+        content: sanitizeStoredBlockContent(block.content),
         parentBlockId: null,
         sortOrder: block.sortOrder,
         properties: block.properties ?? {},
@@ -289,23 +309,10 @@ export const appendSharedLinkTodo = mutation({
         updatedAt: now,
       });
     } else {
-      let currentContent = Array.isArray(primaryBlock.content)
-        ? primaryBlock.content
-        : [];
-
-      if (!Array.isArray(primaryBlock.content) && typeof primaryBlock.content === "string") {
-        try {
-          const parsedContent = JSON.parse(primaryBlock.content);
-          if (Array.isArray(parsedContent)) {
-            currentContent = parsedContent;
-          }
-        } catch {
-          currentContent = [];
-        }
-      }
+      const currentContent = sanitizeStoredBlockContent(primaryBlock.content);
 
       await ctx.db.patch(primaryBlock._id, {
-        content: [...currentContent, checklistItem],
+        content: sanitizeStoredBlockContent([...currentContent, checklistItem]),
         updatedAt: now,
       });
     }

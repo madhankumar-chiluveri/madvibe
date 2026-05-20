@@ -350,7 +350,7 @@ function PropertyOptionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Property options"
-        className="max-w-2xl border-foreground/10 bg-card text-foreground sm:rounded-2xl"
+        className="max-w-2xl border-foreground/10 bg-card text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:rounded-2xl"
       >
         <DialogHeader>
           <DialogTitle className="text-foreground">Manage options</DialogTitle>
@@ -368,7 +368,7 @@ function PropertyOptionsDialog({
             draftOptions.map((option) => (
               <div
                 key={option.id}
-                className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3"
+                className="rounded-[18px] border border-foreground/12 bg-background p-3 shadow-[0_1px_0_rgba(255,255,255,0.04)]"
               >
                 <div className="flex items-center gap-3">
                   <Input
@@ -382,7 +382,7 @@ function PropertyOptionsDialog({
 
                   <button
                     type="button"
-                    className="inline-flex h-9 items-center justify-center rounded-xl border border-red-500/15 bg-red-500/8 px-3 text-sm text-red-200 transition hover:bg-red-500/14"
+                    className="inline-flex h-9 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-3 text-sm font-medium text-red-600 transition hover:border-red-500/35 hover:bg-red-500/15 dark:text-red-300"
                     onClick={() =>
                       setDraftOptions((current) =>
                         current.filter((candidate) => candidate.id !== option.id)
@@ -400,14 +400,19 @@ function PropertyOptionsDialog({
                       type="button"
                       onClick={() => handleOptionChange(option.id, { color })}
                       className={cn(
-                        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                        "inline-flex h-9 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition hover:-translate-y-px",
                         getSelectColorClasses(color),
                         option.color === color
-                          ? "ring-1 ring-foreground/35"
-                          : "opacity-70 hover:opacity-100"
+                          ? "ring-2 ring-foreground/30 ring-offset-2 ring-offset-card"
+                          : "opacity-100"
                       )}
                     >
-                      <span className={cn("h-2 w-2 rounded-full", getSelectColorDotClass(color))} />
+                      <span
+                        className={cn(
+                          "h-2.5 w-2.5 rounded-full shadow-[0_0_0_2px_rgba(255,255,255,0.2)]",
+                          getSelectColorDotClass(color)
+                        )}
+                      />
                       {color}
                     </button>
                   ))}

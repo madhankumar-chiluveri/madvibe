@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app.store";
 import { BlockNoteEditor } from "@blocknote/core";
 import { sanitizeForConvex } from "@/lib/utils";
+import { sanitizeBlockNoteDocument } from "../../../shared/blocknote-content";
 
 // Simple CSV to Database schema parser
 function parseCsvToDatabase(csvText: string) {
@@ -166,7 +167,7 @@ export function ImportModal({ open, onClose, workspaceId }: ImportModalProps) {
         blocks: [
           {
             type: "document",
-            content: sanitizeForConvex(blocks),
+            content: sanitizeForConvex(sanitizeBlockNoteDocument(blocks)),
             sortOrder: 1000,
             properties: {},
           }

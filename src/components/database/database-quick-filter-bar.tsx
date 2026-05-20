@@ -246,7 +246,7 @@ export function DatabaseQuickFilterBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-[18px] border border-foreground/8 bg-card/80 px-2.5 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-sm",
+        "flex flex-wrap items-center gap-2 border-t border-foreground/8 px-0 py-2",
         className
       )}
     >

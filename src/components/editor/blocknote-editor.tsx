@@ -12,40 +12,12 @@ import { cn, sanitizeForConvex } from "@/lib/utils";
 import { useEditorStore } from "@/store/editor.store";
 import { toast } from "sonner";
 import { NotionSideMenu } from "./notion-block-side-menu";
+import { sanitizeBlockNoteDocument } from "../../../shared/blocknote-content";
 
 interface BlockNoteEditorProps {
   pageId: Id<"pages">;
   editable?: boolean;
   isFullWidth?: boolean;
-}
-
-// Recursively strip null/undefined/malformed entries so BlockNote receives a
-// shape ProseMirror can render. A single bad node (e.g. null child from an old
-// duplicate, missing string `type`) makes the entire editor view throw.
-function sanitizeBlockNoteDocument(blocks: unknown): any[] {
-  if (!Array.isArray(blocks)) return [];
-  const cleaned: any[] = [];
-  for (const block of blocks) {
-    if (!block || typeof block !== "object") continue;
-    const b = block as Record<string, any>;
-    if (typeof b.type !== "string" || b.type.length === 0) continue;
-
-    const next: Record<string, any> = { ...b };
-
-    if (Array.isArray(b.content)) {
-      next.content = b.content.filter(
-        (item: any) =>
-          item != null && typeof item === "object" && typeof item.type === "string"
-      );
-    }
-
-    if (Array.isArray(b.children)) {
-      next.children = sanitizeBlockNoteDocument(b.children);
-    }
-
-    cleaned.push(next);
-  }
-  return cleaned;
 }
 
 // Shimmer lines shown while blocks are loading
@@ -238,7 +210,9 @@ export function BlockNoteEditor({
       setSaving(true);
       try {
         const editorBlocks = editor.document;
-        const sanitizedBlocks = sanitizeForConvex(editorBlocks);
+        const sanitizedBlocks = sanitizeForConvex(
+          sanitizeBlockNoteDocument(editorBlocks),
+        );
         lastSavedSnapshot.current = JSON.stringify(sanitizedBlocks);
 
         await upsert({

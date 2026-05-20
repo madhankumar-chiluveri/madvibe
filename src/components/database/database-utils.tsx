@@ -1220,15 +1220,24 @@ export function filterAndSortRows(
 
 export function getSelectColorClasses(color: string): string {
   const palette: Record<string, string> = {
-    gray: "border-transparent bg-zinc-200 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100",
-    brown: "border-transparent bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-100",
-    orange: "border-transparent bg-orange-200 text-orange-900 dark:bg-orange-800 dark:text-orange-100",
-    yellow: "border-transparent bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100",
-    green: "border-transparent bg-emerald-200 text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100",
-    blue: "border-transparent bg-sky-200 text-sky-900 dark:bg-sky-800 dark:text-sky-100",
-    purple: "border-transparent bg-violet-200 text-violet-900 dark:bg-violet-800 dark:text-violet-100",
-    pink: "border-transparent bg-pink-200 text-pink-900 dark:bg-pink-800 dark:text-pink-100",
-    red: "border-transparent bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
+    gray:
+      "border-zinc-300 bg-zinc-200/95 text-zinc-800 shadow-[inset_0_0_0_1px_rgba(113,113,122,0.16)] dark:border-zinc-500/40 dark:bg-zinc-500/30 dark:text-zinc-100",
+    brown:
+      "border-amber-500/40 bg-amber-200/95 text-amber-950 shadow-[inset_0_0_0_1px_rgba(180,83,9,0.18)] dark:border-amber-500/40 dark:bg-amber-600/30 dark:text-amber-100",
+    orange:
+      "border-orange-400/50 bg-orange-200/95 text-orange-950 shadow-[inset_0_0_0_1px_rgba(234,88,12,0.18)] dark:border-orange-500/50 dark:bg-orange-500/30 dark:text-orange-100",
+    yellow:
+      "border-yellow-400/50 bg-yellow-200/95 text-yellow-950 shadow-[inset_0_0_0_1px_rgba(202,138,4,0.2)] dark:border-yellow-400/40 dark:bg-yellow-400/25 dark:text-yellow-50",
+    green:
+      "border-emerald-400/50 bg-emerald-200/95 text-emerald-950 shadow-[inset_0_0_0_1px_rgba(5,150,105,0.18)] dark:border-emerald-400/50 dark:bg-emerald-500/25 dark:text-emerald-50",
+    blue:
+      "border-sky-400/50 bg-sky-200/95 text-sky-950 shadow-[inset_0_0_0_1px_rgba(2,132,199,0.2)] dark:border-sky-400/50 dark:bg-sky-500/30 dark:text-sky-50",
+    purple:
+      "border-violet-400/50 bg-violet-200/95 text-violet-950 shadow-[inset_0_0_0_1px_rgba(124,58,237,0.18)] dark:border-violet-400/50 dark:bg-violet-500/25 dark:text-violet-50",
+    pink:
+      "border-pink-400/50 bg-pink-200/95 text-pink-950 shadow-[inset_0_0_0_1px_rgba(219,39,119,0.18)] dark:border-pink-400/50 dark:bg-pink-500/25 dark:text-pink-50",
+    red:
+      "border-red-400/50 bg-red-200/95 text-red-950 shadow-[inset_0_0_0_1px_rgba(220,38,38,0.18)] dark:border-red-400/50 dark:bg-red-500/25 dark:text-red-50",
   };
 
   return palette[color] ?? palette.gray;
@@ -1236,15 +1245,15 @@ export function getSelectColorClasses(color: string): string {
 
 export function getSelectColorDotClass(color: string): string {
   const palette: Record<string, string> = {
-    gray: "bg-muted-foreground/50",
-    brown: "bg-amber-200",
-    orange: "bg-orange-300",
-    yellow: "bg-amber-300",
-    green: "bg-emerald-300",
-    blue: "bg-sky-300",
-    purple: "bg-violet-300",
-    pink: "bg-pink-300",
-    red: "bg-red-300",
+    gray: "bg-zinc-500",
+    brown: "bg-amber-700 dark:bg-amber-300",
+    orange: "bg-orange-500 dark:bg-orange-300",
+    yellow: "bg-yellow-500 dark:bg-yellow-300",
+    green: "bg-emerald-500 dark:bg-emerald-300",
+    blue: "bg-sky-500 dark:bg-sky-300",
+    purple: "bg-violet-500 dark:bg-violet-300",
+    pink: "bg-pink-500 dark:bg-pink-300",
+    red: "bg-red-500 dark:bg-red-300",
   };
 
   return palette[color] ?? palette.gray;
