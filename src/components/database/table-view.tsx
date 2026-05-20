@@ -745,7 +745,7 @@ export function TableView({
             )}
           </tbody>
 
-          <tfoot className="sticky bottom-0 z-30 bg-background">
+          <tfoot>
             <tr className="h-11 border-t border-foreground/8 bg-background">
               <td colSpan={properties.length + 2} className="px-2 py-0">
                 {editable ? (
