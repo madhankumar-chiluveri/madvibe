@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -68,10 +68,10 @@ function ActionRow({
       disabled={disabled}
       className={cn(
         "group relative flex w-full items-center gap-3 overflow-hidden rounded-[16px] border px-3 py-3 text-left transition-all",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20",
         disabled
-          ? "cursor-not-allowed border-white/6 bg-white/[0.02] text-zinc-600 shadow-none"
-          : "border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:border-white/12 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))]",
+          ? "cursor-not-allowed border-foreground/6 bg-foreground/[0.02] text-muted-foreground/70 shadow-none"
+          : "border-foreground/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:border-foreground/12 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))]",
         tone === "amber" &&
           !disabled &&
           "hover:border-amber-400/22 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_24px_rgba(120,85,18,0.12)]",
@@ -86,10 +86,10 @@ function ActionRow({
       <span
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] border transition-colors",
-          disabled && "border-white/6 bg-white/[0.02] text-zinc-600",
+          disabled && "border-foreground/6 bg-foreground/[0.02] text-muted-foreground/70",
           !disabled &&
             tone === "neutral" &&
-            "border-white/10 bg-black/24 text-zinc-100 group-hover:border-white/14",
+            "border-foreground/10 bg-foreground/24 text-foreground group-hover:border-foreground/14",
           !disabled &&
             tone === "amber" &&
             "border-amber-400/16 bg-amber-400/[0.08] text-amber-100 group-hover:border-amber-300/26",
@@ -105,10 +105,10 @@ function ActionRow({
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="truncate text-sm font-semibold tracking-[-0.01em] text-white">
+        <span className="truncate text-sm font-semibold tracking-[-0.01em] text-foreground">
           {label}
         </span>
-        <span className="mt-0.5 block text-[11px] leading-4 text-zinc-500">{meta}</span>
+        <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{meta}</span>
       </span>
 
       {badge ? (
@@ -117,7 +117,7 @@ function ActionRow({
         </span>
       ) : null}
 
-      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500 transition-colors group-hover:text-zinc-300" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground/80" />
     </button>
   );
 }
@@ -268,7 +268,7 @@ export function WorkspaceActionMenu() {
           "mt-2 flex w-full items-center gap-3 rounded-[16px] border px-3 py-3 text-left transition-colors",
           pathname === "/workspace/trash"
             ? "border-red-400/16 bg-red-400/[0.08] text-red-100"
-            : "border-white/8 bg-white/[0.03] text-zinc-200 hover:border-red-400/16 hover:bg-red-400/[0.08] hover:text-red-100"
+            : "border-foreground/8 bg-foreground/[0.03] text-foreground hover:border-red-400/16 hover:bg-red-400/[0.08] hover:text-red-100"
         )}
       >
         <span
@@ -276,7 +276,7 @@ export function WorkspaceActionMenu() {
             "flex h-8 w-8 items-center justify-center rounded-[11px] border",
             pathname === "/workspace/trash"
               ? "border-red-400/16 bg-red-400/[0.08]"
-              : "border-white/8 bg-black/20"
+              : "border-foreground/8 bg-foreground/20"
           )}
         >
           <Trash2 className="h-4 w-4" />
@@ -286,12 +286,12 @@ export function WorkspaceActionMenu() {
           <span className="block text-sm font-semibold tracking-[-0.01em]">
             {pathname === "/workspace/trash" ? "Trash open" : "Trash"}
           </span>
-          <span className="mt-0.5 block text-[11px] text-zinc-500">
+          <span className="mt-0.5 block text-[11px] text-muted-foreground">
             Deleted pages and spaces
           </span>
         </span>
 
-        <ChevronRight className="h-4 w-4 text-zinc-500" />
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </button>
     </>
   );
@@ -307,7 +307,7 @@ export function WorkspaceActionMenu() {
           >
             <MoreHorizontal className="h-4 w-4" />
             {overdueCount > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-400 px-0.5 text-[9px] font-semibold leading-none text-black">
+              <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-400 px-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
                 {overdueCount > 9 ? "9+" : overdueCount}
               </span>
             ) : null}
@@ -317,7 +317,7 @@ export function WorkspaceActionMenu() {
         <DropdownMenuContent
           align="end"
           sideOffset={12}
-          className="w-[312px] max-w-[calc(100vw-1rem)] rounded-[22px] border-white/10 bg-[#141311]/96 p-2 text-zinc-100 shadow-[0_28px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl"
+          className="w-[312px] max-w-[calc(100vw-1rem)] rounded-[22px] border-foreground/10 bg-card/95 p-2 text-foreground shadow-[0_28px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl"
         >
           {actionMenuContent}
         </DropdownMenuContent>
@@ -331,7 +331,7 @@ export function WorkspaceActionMenu() {
       >
         <MoreHorizontal className="h-4 w-4" />
         {overdueCount > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-400 px-0.5 text-[9px] font-semibold leading-none text-black">
+          <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-400 px-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
             {overdueCount > 9 ? "9+" : overdueCount}
           </span>
         ) : null}
@@ -341,7 +341,7 @@ export function WorkspaceActionMenu() {
         <DialogContent
           title="Workspace actions"
           hideTitleVisually={true}
-          className="max-h-[min(88vh,calc(100dvh-1.5rem))] w-[min(360px,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] overflow-hidden border-white/10 bg-[#141311]/98 p-2 pt-12 text-zinc-100"
+          className="max-h-[min(88vh,calc(100dvh-1.5rem))] w-[min(360px,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] overflow-hidden border-foreground/10 bg-card/95 p-2 pt-12 text-foreground"
         >
           {actionMenuContent}
         </DialogContent>
@@ -350,11 +350,11 @@ export function WorkspaceActionMenu() {
       <Dialog open={createSpaceOpen} onOpenChange={setCreateSpaceOpen}>
         <DialogContent
           title="Create space"
-          className="max-h-[min(88vh,calc(100dvh-1.5rem))] w-[min(28rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] border-white/10 bg-[#161513] text-zinc-100"
+          className="max-h-[min(88vh,calc(100dvh-1.5rem))] w-[min(28rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] border-foreground/10 bg-card text-foreground"
         >
           <DialogHeader>
             <DialogTitle>Create a new project space</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               Each space gets its own home page and isolated pages, notes, and
               databases.
             </DialogDescription>
@@ -365,7 +365,7 @@ export function WorkspaceActionMenu() {
               value={newSpaceName}
               onChange={(event) => setNewSpaceName(event.target.value)}
               placeholder="Space name"
-              className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+              className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
             />
           </div>
 
@@ -373,14 +373,14 @@ export function WorkspaceActionMenu() {
             <Button
               type="button"
               variant="ghost"
-              className="rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+              className="rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
               onClick={() => setCreateSpaceOpen(false)}
             >
               Cancel
             </Button>
             <Button
               type="button"
-              className="rounded-xl bg-white text-black hover:bg-zinc-200"
+              className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={handleCreateSpace}
               disabled={newSpaceLoading}
             >
@@ -394,7 +394,7 @@ export function WorkspaceActionMenu() {
         <DialogContent
           title="Workspaces"
           hideTitleVisually={true}
-          className="flex max-h-[min(88vh,calc(100dvh-1.5rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-white/10 bg-[#161513] p-0 text-zinc-100 sm:w-[360px] sm:max-w-[360px]"
+          className="flex max-h-[min(88vh,calc(100dvh-1.5rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-foreground/10 bg-card p-0 text-foreground sm:w-[360px] sm:max-w-[360px]"
         >
           <WorkspaceSwitcherContent
             className="rounded-[24px] pt-12"

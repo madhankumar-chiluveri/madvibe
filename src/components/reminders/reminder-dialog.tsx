@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
@@ -144,32 +144,32 @@ export function ReminderDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title={reminder ? "Edit reminder" : "New reminder"}
-        className="max-w-xl border-white/10 bg-[#141311] text-zinc-100 sm:rounded-2xl"
+        className="max-w-xl border-foreground/10 bg-card text-foreground sm:rounded-2xl"
       >
         <DialogHeader>
-          <DialogTitle className="text-zinc-100">
+          <DialogTitle className="text-foreground">
             {reminder ? "Edit reminder" : "Create reminder"}
           </DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-muted-foreground">
             Capture a follow-up for a task, page, or anything you want surfaced later.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Title
             </div>
             <Input
               value={form.title}
               onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
               placeholder="Review renewal status"
-              className="h-10 rounded-xl border-white/10 bg-[#181715] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+              className="h-10 rounded-xl border-foreground/10 bg-input text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
             />
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Reminder time
             </div>
             <PremiumDateTimePicker
@@ -178,29 +178,29 @@ export function ReminderDialog({
               mode="datetime"
               variant="input"
               placeholder="Pick a date and time"
-              className="h-11 rounded-2xl border-white/10 bg-[#181715] hover:bg-[#1d1c1a]"
+              className="h-11 rounded-2xl border-foreground/10 bg-input hover:bg-accent"
             />
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Note
             </div>
             <Textarea
               value={form.note}
               onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
               placeholder="Optional details, context, or next action."
-              className="min-h-[104px] rounded-2xl border-white/10 bg-[#181715] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+              className="min-h-[104px] rounded-2xl border-foreground/10 bg-input text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
             />
           </div>
 
           {sourceLabel && (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-300">
-              <div className="mb-1 text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3 text-sm text-foreground/80">
+              <div className="mb-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Linked source
               </div>
               <div className="flex items-center gap-2">
-                <Link2 className="h-4 w-4 text-zinc-500" />
+                <Link2 className="h-4 w-4 text-muted-foreground" />
                 <span>{sourceLabel}</span>
               </div>
             </div>
@@ -211,7 +211,7 @@ export function ReminderDialog({
           <Button
             type="button"
             variant="ghost"
-            className="rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+            className="rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
             onClick={() => onOpenChange(false)}
           >
             Cancel
@@ -219,7 +219,7 @@ export function ReminderDialog({
 
           <Button
             type="button"
-            className="rounded-xl bg-white text-black hover:bg-zinc-200"
+            className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={handleSave}
             disabled={saving}
           >

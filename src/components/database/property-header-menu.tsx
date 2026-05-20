@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -117,7 +117,7 @@ export function PropertyHeaderMenu({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="group/header flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-white/[0.06]"
+            className="group/header flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-foreground/[0.06]"
           >
             <span className="text-[hsl(var(--muted-foreground))]">{getPropertyIcon(property.type)}</span>
             <span className="truncate">{property.name || "Untitled"}</span>
@@ -127,11 +127,11 @@ export function PropertyHeaderMenu({
 
         <DropdownMenuContent
           align="start"
-          className="w-[300px] border-white/10 bg-[#191816] text-zinc-100 shadow-2xl"
+          className="w-[300px] border-foreground/10 bg-popover text-foreground shadow-2xl"
         >
           <DropdownMenuLabel className="pb-2">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 {getPropertyIcon(property.type)}
                 Property
               </div>
@@ -150,19 +150,19 @@ export function PropertyHeaderMenu({
                     setOpen(false);
                   }
                 }}
-                className="h-9 border-white/10 bg-white/[0.03] text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-1 focus-visible:ring-white/15"
+                className="h-9 border-foreground/10 bg-foreground/[0.03] text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-foreground/15"
               />
             </div>
           </DropdownMenuLabel>
 
-          <DropdownMenuSeparator className="bg-white/8" />
+          <DropdownMenuSeparator className="bg-foreground/8" />
 
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="focus:bg-white/[0.06] data-[state=open]:bg-white/[0.06]">
-              <Settings2 className="h-4 w-4 text-zinc-400" />
+            <DropdownMenuSubTrigger className="focus:bg-foreground/[0.06] data-[state=open]:bg-foreground/[0.06]">
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
               Type
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-[340px] w-[240px] overflow-y-auto border-white/10 bg-[#1b1a18] text-zinc-100">
+            <DropdownMenuSubContent className="max-h-[340px] w-[240px] overflow-y-auto border-foreground/10 bg-popover text-foreground">
               {PROPERTY_TYPE_META.map((typeMeta) => {
                 const disabled =
                   !typeMeta.supported ||
@@ -173,15 +173,15 @@ export function PropertyHeaderMenu({
                   <DropdownMenuItem
                     key={typeMeta.value}
                     disabled={disabled}
-                    className="focus:bg-white/[0.06] data-[disabled]:opacity-40"
+                    className="focus:bg-foreground/[0.06] data-[disabled]:opacity-40"
                     onSelect={() => {
                       if (disabled || typeMeta.value === property.type) return;
                       onTypeChange(typeMeta.value);
                     }}
                   >
-                    <span className="text-zinc-400">{getPropertyIcon(typeMeta.value)}</span>
+                    <span className="text-muted-foreground">{getPropertyIcon(typeMeta.value)}</span>
                     <span>{typeMeta.label}</span>
-                    {property.type === typeMeta.value && <Check className="ml-auto h-4 w-4 text-zinc-300" />}
+                    {property.type === typeMeta.value && <Check className="ml-auto h-4 w-4 text-foreground/80" />}
                   </DropdownMenuItem>
                 );
               })}
@@ -190,7 +190,7 @@ export function PropertyHeaderMenu({
 
           {supportsOptions(property.type) && (
             <DropdownMenuItem
-              className="focus:bg-white/[0.06]"
+              className="focus:bg-foreground/[0.06]"
               onSelect={() => {
                 setOptionsOpen(true);
                 setOpen(false);
@@ -203,13 +203,13 @@ export function PropertyHeaderMenu({
 
           {property.type === "formula" && (
             <DropdownMenuItem
-              className="focus:bg-white/[0.06]"
+              className="focus:bg-foreground/[0.06]"
               onSelect={() => {
                 setFormulaOpen(true);
                 setOpen(false);
               }}
             >
-              <Sigma className="h-4 w-4 text-zinc-400" />
+              <Sigma className="h-4 w-4 text-muted-foreground" />
               Edit formula
             </DropdownMenuItem>
           )}
@@ -217,7 +217,7 @@ export function PropertyHeaderMenu({
           {property.type === "title" && (
             <DropdownMenuCheckboxItem
               checked={Boolean(property.config?.showPageIcon)}
-              className="focus:bg-white/[0.06]"
+              className="focus:bg-foreground/[0.06]"
               onCheckedChange={(checked: boolean) => onToggleShowPageIcon(Boolean(checked))}
             >
               Show page icon
@@ -226,52 +226,52 @@ export function PropertyHeaderMenu({
 
           <DropdownMenuCheckboxItem
             checked={Boolean(property.config?.wrap)}
-            className="focus:bg-white/[0.06]"
+            className="focus:bg-foreground/[0.06]"
             onCheckedChange={(checked: boolean) => onToggleWrap(Boolean(checked))}
           >
-            <WrapText className="mr-2 h-4 w-4 text-zinc-400" />
+            <WrapText className="mr-2 h-4 w-4 text-muted-foreground" />
             Wrap content
           </DropdownMenuCheckboxItem>
 
           <DropdownMenuCheckboxItem
             checked={Boolean(property.config?.frozen)}
-            className="focus:bg-white/[0.06]"
+            className="focus:bg-foreground/[0.06]"
             onCheckedChange={(checked: boolean) => onToggleFreeze(Boolean(checked))}
           >
             Freeze column
           </DropdownMenuCheckboxItem>
 
-          <DropdownMenuSeparator className="bg-white/8" />
+          <DropdownMenuSeparator className="bg-foreground/8" />
 
-          <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={onInsertLeft}>
-            <Plus className="h-4 w-4 text-zinc-400" />
+          <DropdownMenuItem className="focus:bg-foreground/[0.06]" onSelect={onInsertLeft}>
+            <Plus className="h-4 w-4 text-muted-foreground" />
             Insert left
           </DropdownMenuItem>
 
-          <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={onInsertRight}>
-            <Plus className="h-4 w-4 text-zinc-400" />
+          <DropdownMenuItem className="focus:bg-foreground/[0.06]" onSelect={onInsertRight}>
+            <Plus className="h-4 w-4 text-muted-foreground" />
             Insert right
           </DropdownMenuItem>
 
           <DropdownMenuItem
             disabled={!canMoveLeft}
-            className="focus:bg-white/[0.06] data-[disabled]:opacity-40"
+            className="focus:bg-foreground/[0.06] data-[disabled]:opacity-40"
             onSelect={onMoveLeft}
           >
-            <ChevronLeft className="h-4 w-4 text-zinc-400" />
+            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
             Move left
           </DropdownMenuItem>
 
           <DropdownMenuItem
             disabled={!canMoveRight}
-            className="focus:bg-white/[0.06] data-[disabled]:opacity-40"
+            className="focus:bg-foreground/[0.06] data-[disabled]:opacity-40"
             onSelect={onMoveRight}
           >
-            <ChevronRight className="h-4 w-4 text-zinc-400" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
             Move right
           </DropdownMenuItem>
 
-          <DropdownMenuSeparator className="bg-white/8" />
+          <DropdownMenuSeparator className="bg-foreground/8" />
 
           <DropdownMenuItem
             disabled={property.type === "title"}
@@ -304,7 +304,7 @@ export function PropertyHeaderMenu({
 }
 
 function ListIcon() {
-  return <div className="h-4 w-4 rounded-sm border border-zinc-600 bg-white/[0.03]" />;
+  return <div className="h-4 w-4 rounded-sm border border-foreground/20 bg-foreground/[0.03]" />;
 }
 
 interface PropertyOptionsDialogProps {
@@ -350,25 +350,25 @@ function PropertyOptionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Property options"
-        className="max-w-2xl border-white/10 bg-[#141311] text-zinc-100 sm:rounded-2xl"
+        className="max-w-2xl border-foreground/10 bg-card text-foreground sm:rounded-2xl"
       >
         <DialogHeader>
-          <DialogTitle className="text-zinc-100">Manage options</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogTitle className="text-foreground">Manage options</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Update the selectable values for {propertyName || "this property"}.
           </DialogDescription>
         </DialogHeader>
 
         <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
           {draftOptions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-8 text-center text-sm text-zinc-500">
+            <div className="rounded-2xl border border-dashed border-foreground/10 bg-foreground/[0.02] px-4 py-8 text-center text-sm text-muted-foreground">
               No options yet.
             </div>
           ) : (
             draftOptions.map((option) => (
               <div
                 key={option.id}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-3"
+                className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3"
               >
                 <div className="flex items-center gap-3">
                   <Input
@@ -376,7 +376,7 @@ function PropertyOptionsDialog({
                     onChange={(event) =>
                       handleOptionChange(option.id, { label: event.target.value })
                     }
-                    className="h-9 border-white/10 bg-[#181715] text-zinc-100"
+                    className="h-9 border-foreground/10 bg-input text-foreground"
                     placeholder="Option label"
                   />
 
@@ -403,7 +403,7 @@ function PropertyOptionsDialog({
                         "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition",
                         getSelectColorClasses(color),
                         option.color === color
-                          ? "ring-1 ring-white/35"
+                          ? "ring-1 ring-foreground/35"
                           : "opacity-70 hover:opacity-100"
                       )}
                     >
@@ -421,7 +421,7 @@ function PropertyOptionsDialog({
           <Button
             type="button"
             variant="ghost"
-            className="justify-start rounded-xl text-zinc-200 hover:bg-white/[0.06] hover:text-white"
+            className="justify-start rounded-xl text-foreground hover:bg-foreground/[0.06] hover:text-foreground"
             onClick={() =>
               setDraftOptions((current) => [
                 ...current,
@@ -439,7 +439,7 @@ function PropertyOptionsDialog({
 
           <Button
             type="button"
-            className="rounded-xl bg-white text-black hover:bg-zinc-200"
+            className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={handleSave}
           >
             Save changes
@@ -518,11 +518,11 @@ function PropertyFormulaDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         title="Edit formula"
-        className="grid max-h-[min(88vh,760px)] max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-white/10 bg-[#141311] p-0 text-zinc-100 sm:rounded-2xl"
+        className="grid max-h-[min(88vh,760px)] max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-foreground/10 bg-card p-0 text-foreground sm:rounded-2xl"
       >
-        <DialogHeader className="shrink-0 border-b border-white/10 px-5 py-4 pr-14">
-          <DialogTitle className="text-zinc-100">Configure formula</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+        <DialogHeader className="shrink-0 border-b border-foreground/10 px-5 py-4 pr-14">
+          <DialogTitle className="text-foreground">Configure formula</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Build a computed field for {propertyName || "this property"} using other columns.
           </DialogDescription>
         </DialogHeader>
@@ -530,7 +530,7 @@ function PropertyFormulaDialog({
         <div className="min-h-0 overflow-y-auto px-5 py-4">
           <div className="space-y-3.5">
           <div className="space-y-2">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Expression
             </div>
             <Textarea
@@ -542,13 +542,13 @@ function PropertyFormulaDialog({
                 }))
               }
               placeholder='Example: RENEWS_IN(PROP("Claude Renewal"))'
-              className="min-h-[112px] max-h-[24vh] resize-y border-white/10 bg-[#181715] text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-1 focus-visible:ring-white/15 sm:min-h-[124px]"
+              className="min-h-[112px] max-h-[24vh] resize-y border-foreground/10 bg-input text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-foreground/15 sm:min-h-[124px]"
             />
           </div>
 
           <div className="grid gap-2.5 md:grid-cols-2">
             <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Result type
               </div>
               <Select
@@ -560,10 +560,10 @@ function PropertyFormulaDialog({
                   }))
                 }
               >
-                <SelectTrigger className="h-10 border-white/10 bg-[#181715] text-zinc-100 focus:ring-white/15">
+                <SelectTrigger className="h-10 border-foreground/10 bg-input text-foreground focus:ring-foreground/15">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+                <SelectContent className="border-foreground/10 bg-popover text-foreground">
                   <SelectItem value="text">Text</SelectItem>
                   <SelectItem value="number">Number</SelectItem>
                   <SelectItem value="date">Date</SelectItem>
@@ -572,7 +572,7 @@ function PropertyFormulaDialog({
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Display
               </div>
               <Select
@@ -584,10 +584,10 @@ function PropertyFormulaDialog({
                   }))
                 }
               >
-                <SelectTrigger className="h-10 border-white/10 bg-[#181715] text-zinc-100 focus:ring-white/15">
+                <SelectTrigger className="h-10 border-foreground/10 bg-input text-foreground focus:ring-foreground/15">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+                <SelectContent className="border-foreground/10 bg-popover text-foreground">
                   <SelectItem value="auto">Auto badge</SelectItem>
                   <SelectItem value="plain">Plain text</SelectItem>
                   <SelectItem value="badge">Always badge</SelectItem>
@@ -597,7 +597,7 @@ function PropertyFormulaDialog({
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Quick templates
             </div>
             <div className="grid content-start gap-2.5 md:grid-cols-3">
@@ -606,11 +606,11 @@ function PropertyFormulaDialog({
                   key={preset.label}
                   type="button"
                   onClick={() => setDraftFormula(preset.formula)}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-left transition hover:bg-white/[0.05]"
+                  className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3 text-left transition hover:bg-foreground/[0.05]"
                 >
-                  <div className="text-sm font-medium text-zinc-100">{preset.label}</div>
-                  <div className="mt-1 text-xs leading-5 text-zinc-400">{preset.description}</div>
-                  <code className="mt-3 block rounded-xl bg-black/20 px-2.5 py-2 text-[11px] text-zinc-300">
+                  <div className="text-sm font-medium text-foreground">{preset.label}</div>
+                  <div className="mt-1 text-xs leading-5 text-muted-foreground">{preset.description}</div>
+                  <code className="mt-3 block rounded-xl bg-foreground/20 px-2.5 py-2 text-[11px] text-foreground/80">
                     {preset.formula.expression}
                   </code>
                 </button>
@@ -618,9 +618,9 @@ function PropertyFormulaDialog({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-sm text-zinc-300">
-            <div className="font-medium text-zinc-100">Supported helpers</div>
-            <div className="mt-2 leading-6 text-zinc-400">
+          <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3.5 text-sm text-foreground/80">
+            <div className="font-medium text-foreground">Supported helpers</div>
+            <div className="mt-2 leading-6 text-muted-foreground">
               Use <code>PROP("Column Name")</code> to reference another field.
               Functions available: <code>IF</code>, <code>NOW</code>, <code>TODAY</code>,
               <code>RENEWS_IN</code>, <code>DAYS_UNTIL</code>, <code>DATE_DIFF</code>,
@@ -632,11 +632,11 @@ function PropertyFormulaDialog({
         </div>
         </div>
 
-        <DialogFooter className="shrink-0 border-t border-white/10 px-5 py-3 sm:justify-between">
+        <DialogFooter className="shrink-0 border-t border-foreground/10 px-5 py-3 sm:justify-between">
           <Button
             type="button"
             variant="ghost"
-            className="rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+            className="rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
             onClick={() =>
               setDraftFormula({
                 expression: "",
@@ -650,7 +650,7 @@ function PropertyFormulaDialog({
 
           <Button
             type="button"
-            className="rounded-xl bg-white text-black hover:bg-zinc-200"
+            className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={handleSave}
           >
             Save formula

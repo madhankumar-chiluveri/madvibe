@@ -7,9 +7,26 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function sanitizeForConvex(data: any): any {
-    // Deep clone via JSON round-trip to strip undefined/non-serializable values
-    // while keeping the object structure intact (NOT converting to a string)
-    return JSON.parse(JSON.stringify(data));
+    // Deep clone + strip undefined/null array slots so BlockNote never receives
+    // null elements (JSON.stringify converts undefined-in-array to null, which
+    // later crashes ProseMirror's renderSpec when loaded back).
+    if (Array.isArray(data)) {
+        const result: any[] = [];
+        for (const item of data) {
+            if (item === undefined || item === null) continue;
+            result.push(sanitizeForConvex(item));
+        }
+        return result;
+    }
+    if (data && typeof data === "object") {
+        const result: Record<string, any> = {};
+        for (const [key, value] of Object.entries(data)) {
+            if (value === undefined) continue;
+            result[key] = sanitizeForConvex(value);
+        }
+        return result;
+    }
+    return data;
 }
 
 export const ACCENT_COLORS = [

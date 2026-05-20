@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
@@ -208,12 +208,12 @@ export function CsvImportModal({
 
   return (
     <Dialog open={open} onOpenChange={val => !val && handleClose()}>
-      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col border-white/10 bg-[#161513] p-0 text-zinc-100 sm:rounded-[28px]">
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col border-foreground/10 bg-card p-0 text-foreground sm:rounded-[28px]">
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-white/10 px-6 pb-4 pt-6">
+        <div className="flex-shrink-0 border-b border-foreground/10 px-6 pb-4 pt-6">
           <DialogHeader>
-            <DialogTitle className="text-xl text-zinc-100">Import from CSV</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogTitle className="text-xl text-foreground">Import from CSV</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Column types are detected automatically. Override any type before importing.
             </DialogDescription>
           </DialogHeader>
@@ -228,19 +228,19 @@ export function CsvImportModal({
                 "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-14 transition-colors",
                 isDragging
                   ? "border-blue-500/60 bg-blue-500/5"
-                  : "border-white/15 hover:border-white/30 hover:bg-white/[0.02]"
+                  : "border-foreground/15 hover:border-foreground/30 hover:bg-foreground/[0.02]"
               )}
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={() => setIsDragging(false)}
             >
-              <FileUp className="h-10 w-10 text-zinc-500" />
+              <FileUp className="h-10 w-10 text-muted-foreground" />
               <div className="text-center">
-                <p className="text-sm font-medium text-zinc-200">
+                <p className="text-sm font-medium text-foreground">
                   Drop CSV file here or click to browse
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">Supports .csv · max 10 MB</p>
+                <p className="mt-1 text-xs text-muted-foreground">Supports .csv · max 10 MB</p>
               </div>
             </div>
           ) : (
@@ -248,35 +248,35 @@ export function CsvImportModal({
               {/* Database name + row count */}
               <div className="flex items-end gap-4">
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs text-zinc-400">Database name</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">Database name</label>
                   <Input
                     value={dbName}
                     onChange={e => setDbName(e.target.value)}
-                    className="h-9 rounded-xl border-white/10 bg-white/[0.04] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                    className="h-9 rounded-xl border-foreground/10 bg-foreground/[0.04] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                     placeholder="Database name"
                   />
                 </div>
-                <p className="mb-1 whitespace-nowrap text-sm text-zinc-400">
+                <p className="mb-1 whitespace-nowrap text-sm text-muted-foreground">
                   {parsed.totalRows.toLocaleString()} rows · {columns.length} columns
                 </p>
               </div>
 
               {/* Column type table */}
               <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-widest text-zinc-500">
+                <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                   Detected columns
                 </p>
-                <div className="overflow-hidden rounded-2xl border border-white/10">
+                <div className="overflow-hidden rounded-2xl border border-foreground/10">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.03]">
-                        <th className="w-[38%] px-4 py-2.5 text-left text-xs font-medium text-zinc-400">
+                      <tr className="border-b border-foreground/10 bg-foreground/[0.03]">
+                        <th className="w-[38%] px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
                           Column
                         </th>
-                        <th className="w-[22%] px-4 py-2.5 text-left text-xs font-medium text-zinc-400">
+                        <th className="w-[22%] px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
                           Type
                         </th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-400">
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
                           Sample values
                         </th>
                       </tr>
@@ -287,12 +287,12 @@ export function CsvImportModal({
                         return (
                           <tr
                             key={col.id}
-                            className="border-b border-white/[0.06] last:border-0 hover:bg-white/[0.02]"
+                            className="border-b border-foreground/[0.06] last:border-0 hover:bg-foreground/[0.02]"
                           >
                             <td className="px-4 py-2.5">
                               <div className="flex items-center gap-2">
-                                <Icon className="h-3.5 w-3.5 flex-shrink-0 text-zinc-400" />
-                                <span className="truncate text-zinc-200">{col.name}</span>
+                                <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                                <span className="truncate text-foreground">{col.name}</span>
                               </div>
                             </td>
                             <td className="px-4 py-2.5">
@@ -300,10 +300,10 @@ export function CsvImportModal({
                                 value={col.currentType}
                                 onValueChange={val => updateColumnType(i, val as PropertyType)}
                               >
-                                <SelectTrigger className="h-7 w-full rounded-lg border-white/10 bg-white/[0.04] px-2 text-xs text-zinc-200 focus:ring-white/15">
+                                <SelectTrigger className="h-7 w-full rounded-lg border-foreground/10 bg-foreground/[0.04] px-2 text-xs text-foreground focus:ring-foreground/15">
                                   <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="border-white/10 bg-[#1e1d1b] text-zinc-200">
+                                <SelectContent className="border-foreground/10 bg-popover text-foreground">
                                   {SUPPORTED_TYPES.map(t => (
                                     <SelectItem
                                       key={t.value}
@@ -316,12 +316,12 @@ export function CsvImportModal({
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td className="max-w-0 px-4 py-2.5 text-xs text-zinc-400">
+                            <td className="max-w-0 px-4 py-2.5 text-xs text-muted-foreground">
                               <span className="block truncate">
                                 {col.sampleValues.length > 0 ? (
                                   col.sampleValues.map(v => `"${v}"`).join(", ")
                                 ) : (
-                                  <span className="italic text-zinc-600">empty</span>
+                                  <span className="italic text-muted-foreground/70">empty</span>
                                 )}
                               </span>
                             </td>
@@ -336,17 +336,17 @@ export function CsvImportModal({
               {/* Data preview */}
               {previewRows.length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-widest text-zinc-500">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                     Preview ({Math.min(5, previewRows.length)} of {parsed.totalRows} rows)
                   </p>
-                  <div className="overflow-x-auto rounded-2xl border border-white/10">
+                  <div className="overflow-x-auto rounded-2xl border border-foreground/10">
                     <table className="w-full min-w-max text-xs">
                       <thead>
-                        <tr className="border-b border-white/10 bg-white/[0.03]">
+                        <tr className="border-b border-foreground/10 bg-foreground/[0.03]">
                           {columns.map(col => (
                             <th
                               key={col.id}
-                              className="max-w-[160px] px-3 py-2 text-left font-medium text-zinc-400"
+                              className="max-w-[160px] px-3 py-2 text-left font-medium text-muted-foreground"
                             >
                               <span className="block truncate">{col.name}</span>
                             </th>
@@ -357,18 +357,18 @@ export function CsvImportModal({
                         {previewRows.map((row, ri) => (
                           <tr
                             key={ri}
-                            className="border-b border-white/[0.06] last:border-0"
+                            className="border-b border-foreground/[0.06] last:border-0"
                           >
                             {columns.map((col, ci) => (
                               <td
                                 key={col.id}
-                                className="max-w-[160px] px-3 py-2 text-zinc-300"
+                                className="max-w-[160px] px-3 py-2 text-foreground/80"
                               >
                                 <span className="block max-w-[160px] truncate">
                                   {row[ci] !== undefined && row[ci] !== "" ? (
                                     row[ci]
                                   ) : (
-                                    <span className="text-zinc-600">—</span>
+                                    <span className="text-muted-foreground/70">—</span>
                                   )}
                                 </span>
                               </td>
@@ -393,12 +393,12 @@ export function CsvImportModal({
         </div>
 
         {/* Footer */}
-        <div className="flex flex-shrink-0 items-center justify-between border-t border-white/10 px-6 py-4">
+        <div className="flex flex-shrink-0 items-center justify-between border-t border-foreground/10 px-6 py-4">
           <Button
             variant="ghost"
             onClick={handleClose}
             disabled={isImporting}
-            className="text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100"
+            className="text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
           >
             Cancel
           </Button>
@@ -406,7 +406,7 @@ export function CsvImportModal({
           {parsed ? (
             <div className="flex items-center gap-3">
               <button
-                className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground/80"
                 onClick={() => { setParsed(null); setColumns([]); setDbName(""); }}
               >
                 Choose different file
@@ -414,7 +414,7 @@ export function CsvImportModal({
               <Button
                 onClick={handleImport}
                 disabled={isImporting || columns.length === 0}
-                className="rounded-xl bg-white text-black hover:bg-zinc-200"
+                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isImporting ? (
                   <>

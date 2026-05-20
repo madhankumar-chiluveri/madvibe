@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { memo, useEffect, useState } from "react";
 import { useAction, useQuery } from "convex/react";
@@ -84,11 +84,11 @@ const ArticleCard = memo(function ArticleCard({ article }: { article: any }) {
         )}
       >
         {article.isBreaking && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-notion-red-text px-2 py-0.5 text-[10px] font-bold text-white">
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-notion-red-text px-2 py-0.5 text-[10px] font-bold text-foreground">
             <Flame className="w-2.5 h-2.5" /> BREAKING
           </div>
         )}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-foreground/60 px-2 py-0.5 text-[10px] text-white">
+        <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-foreground/60 px-2 py-0.5 text-[10px] text-foreground">
           <Clock className="w-2.5 h-2.5" />
           {article.readingTimeMinutes ?? 3}m read
         </div>

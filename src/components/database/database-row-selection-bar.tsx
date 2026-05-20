@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { CheckSquare, ChevronDown, Trash2, X } from "lucide-react";
@@ -91,19 +91,19 @@ function BulkPropertyActionButton({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-zinc-100 transition-colors hover:bg-white/[0.06]"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 text-sm text-foreground transition-colors hover:bg-foreground/[0.06]"
         >
-          <span className="text-zinc-500">{getPropertyIcon(property.type)}</span>
+          <span className="text-muted-foreground">{getPropertyIcon(property.type)}</span>
           <span className="truncate">{property.name}</span>
-          <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[min(92vw,360px)] p-0">
-        <div className="border-b border-white/8 px-4 py-3">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+        <div className="border-b border-foreground/8 px-4 py-3">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             Selected rows
           </div>
-          <div className="mt-1 text-sm font-medium text-zinc-100">
+          <div className="mt-1 text-sm font-medium text-foreground">
             Update {property.name} for {selectedCount} row{selectedCount === 1 ? "" : "s"}
           </div>
         </div>
@@ -120,7 +120,7 @@ function BulkPropertyActionButton({
                 value={textValue}
                 onChange={(event) => setTextValue(event.target.value)}
                 placeholder={`Set ${property.name}`}
-                className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
               />
               <div className="flex items-center justify-between gap-2">
                 <Button
@@ -128,7 +128,7 @@ function BulkPropertyActionButton({
                   variant="ghost"
                   onClick={() => void applyValue(getClearedValueForProperty(property))}
                   disabled={busy}
-                  className="h-9 rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                  className="h-9 rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                 >
                   Clear
                 </Button>
@@ -136,7 +136,7 @@ function BulkPropertyActionButton({
                   type="button"
                   onClick={() => void applyValue(textValue)}
                   disabled={busy}
-                  className="h-9 rounded-xl bg-white text-black hover:bg-zinc-200"
+                  className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Apply
                 </Button>
@@ -147,10 +147,10 @@ function BulkPropertyActionButton({
           {property.type === "select" && (
             <>
               <Select value={selectValue} onValueChange={setSelectValue}>
-                <SelectTrigger className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus:ring-white/15">
+                <SelectTrigger className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus:ring-foreground/15">
                   <SelectValue placeholder={options.length > 0 ? "Choose an option" : "No options yet"} />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+                <SelectContent className="border-foreground/10 bg-popover text-foreground">
                   {options.map((option) => (
                     <SelectItem key={option.id} value={option.id}>
                       {option.label}
@@ -164,7 +164,7 @@ function BulkPropertyActionButton({
                   variant="ghost"
                   onClick={() => void applyValue(getClearedValueForProperty(property))}
                   disabled={busy}
-                  className="h-9 rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                  className="h-9 rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                 >
                   Clear
                 </Button>
@@ -172,7 +172,7 @@ function BulkPropertyActionButton({
                   type="button"
                   onClick={() => void applyValue(selectValue)}
                   disabled={busy || !selectValue}
-                  className="h-9 rounded-xl bg-white text-black hover:bg-zinc-200"
+                  className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Apply
                 </Button>
@@ -184,7 +184,7 @@ function BulkPropertyActionButton({
             <>
               <div className="max-h-[240px] space-y-2 overflow-y-auto pr-1">
                 {options.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-sm text-zinc-500">
+                  <div className="rounded-xl border border-dashed border-foreground/10 px-3 py-6 text-center text-sm text-muted-foreground">
                     No options yet.
                   </div>
                 ) : (
@@ -194,7 +194,7 @@ function BulkPropertyActionButton({
                     return (
                       <label
                         key={option.id}
-                        className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 transition-colors hover:bg-white/[0.05]"
+                        className="flex cursor-pointer items-center gap-3 rounded-xl border border-foreground/8 bg-foreground/[0.03] px-3 py-2 text-sm text-foreground transition-colors hover:bg-foreground/[0.05]"
                       >
                         <input
                           type="checkbox"
@@ -206,7 +206,7 @@ function BulkPropertyActionButton({
                                 : current.filter((value) => value !== option.id)
                             )
                           }
-                          className="h-4 w-4 rounded border-white/15 bg-white/[0.04] accent-white"
+                          className="h-4 w-4 rounded border-foreground/15 bg-foreground/[0.04] accent-white"
                         />
                         <span
                           className={cn(
@@ -227,7 +227,7 @@ function BulkPropertyActionButton({
                   variant="ghost"
                   onClick={() => void applyValue([])}
                   disabled={busy}
-                  className="h-9 rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                  className="h-9 rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                 >
                   Clear
                 </Button>
@@ -235,7 +235,7 @@ function BulkPropertyActionButton({
                   type="button"
                   onClick={() => void applyValue(multiSelectValues)}
                   disabled={busy || options.length === 0}
-                  className="h-9 rounded-xl bg-white text-black hover:bg-zinc-200"
+                  className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Apply
                 </Button>
@@ -249,7 +249,7 @@ function BulkPropertyActionButton({
                 type="button"
                 onClick={() => void applyValue(true)}
                 disabled={busy}
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-sm text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.03] text-sm text-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
               >
                 Checked
               </button>
@@ -257,7 +257,7 @@ function BulkPropertyActionButton({
                 type="button"
                 onClick={() => void applyValue(false)}
                 disabled={busy}
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-sm text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.03] text-sm text-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
               >
                 Unchecked
               </button>
@@ -270,7 +270,7 @@ function BulkPropertyActionButton({
                 type="date"
                 value={textValue}
                 onChange={(event) => setTextValue(event.target.value)}
-                className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus-visible:ring-white/15"
+                className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus-visible:ring-foreground/15"
               />
               <div className="flex items-center justify-between gap-2">
                 <Button
@@ -278,7 +278,7 @@ function BulkPropertyActionButton({
                   variant="ghost"
                   onClick={() => void applyValue(null)}
                   disabled={busy}
-                  className="h-9 rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                  className="h-9 rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                 >
                   Clear
                 </Button>
@@ -286,7 +286,7 @@ function BulkPropertyActionButton({
                   type="button"
                   onClick={() => void applyValue(textValue)}
                   disabled={busy}
-                  className="h-9 rounded-xl bg-white text-black hover:bg-zinc-200"
+                  className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Apply
                 </Button>
@@ -322,7 +322,7 @@ export function DatabaseRowSelectionBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-[18px] border border-white/8 bg-[#100f0d]/82 px-2.5 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-sm">
+    <div className="flex flex-wrap items-center gap-2 rounded-[18px] border border-foreground/8 bg-card/80 px-2.5 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-sm">
       <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-sky-500/22 bg-sky-500/14 px-3 text-sm font-medium text-sky-100">
         <CheckSquare className="h-4 w-4" />
         {selectedCount} selected
@@ -351,7 +351,7 @@ export function DatabaseRowSelectionBar({
         <button
           type="button"
           onClick={onClearSelection}
-          className="inline-flex h-10 items-center justify-center rounded-xl px-3 text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+          className="inline-flex h-10 items-center justify-center rounded-xl px-3 text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground"
           title="Clear selection"
           aria-label="Clear selection"
         >

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   CalendarDays,
@@ -930,7 +930,7 @@ export function shouldRenderFormulaAsBadge(property: PropertySchema, value: unkn
 export function getFormulaBadgeClasses(value: unknown) {
   const tone = getFormulaBadgeTone(value) ?? "gray";
   const palette: Record<BadgeTone, string> = {
-    gray: "border-white/10 bg-white/[0.05] text-zinc-200",
+    gray: "border-foreground/10 bg-foreground/[0.05] text-foreground",
     green: "border-emerald-500/22 bg-emerald-500/18 text-emerald-100",
     red: "border-red-500/22 bg-red-500/18 text-red-100",
     amber: "border-amber-400/22 bg-amber-400/18 text-amber-100",
@@ -1220,15 +1220,15 @@ export function filterAndSortRows(
 
 export function getSelectColorClasses(color: string): string {
   const palette: Record<string, string> = {
-    gray: "border-zinc-500/20 bg-zinc-500/14 text-zinc-200",
-    brown: "border-amber-900/30 bg-amber-900/25 text-amber-100",
-    orange: "border-orange-500/25 bg-orange-500/18 text-orange-100",
-    yellow: "border-amber-400/20 bg-amber-400/16 text-amber-100",
-    green: "border-emerald-500/20 bg-emerald-500/18 text-emerald-100",
-    blue: "border-sky-500/20 bg-sky-500/18 text-sky-100",
-    purple: "border-violet-500/20 bg-violet-500/18 text-violet-100",
-    pink: "border-pink-500/20 bg-pink-500/18 text-pink-100",
-    red: "border-red-500/20 bg-red-500/18 text-red-100",
+    gray: "border-transparent bg-zinc-200 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100",
+    brown: "border-transparent bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-100",
+    orange: "border-transparent bg-orange-200 text-orange-900 dark:bg-orange-800 dark:text-orange-100",
+    yellow: "border-transparent bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100",
+    green: "border-transparent bg-emerald-200 text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100",
+    blue: "border-transparent bg-sky-200 text-sky-900 dark:bg-sky-800 dark:text-sky-100",
+    purple: "border-transparent bg-violet-200 text-violet-900 dark:bg-violet-800 dark:text-violet-100",
+    pink: "border-transparent bg-pink-200 text-pink-900 dark:bg-pink-800 dark:text-pink-100",
+    red: "border-transparent bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
   };
 
   return palette[color] ?? palette.gray;
@@ -1236,7 +1236,7 @@ export function getSelectColorClasses(color: string): string {
 
 export function getSelectColorDotClass(color: string): string {
   const palette: Record<string, string> = {
-    gray: "bg-zinc-300",
+    gray: "bg-muted-foreground/50",
     brown: "bg-amber-200",
     orange: "bg-orange-300",
     yellow: "bg-amber-300",

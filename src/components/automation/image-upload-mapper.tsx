@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAction, useMutation } from "convex/react";
@@ -372,7 +372,7 @@ export function ImageUploadMapper({
             )}
             Upload all &amp; fill Media URLs
             {pendingCount > 0 && (
-              <span className="ml-1.5 rounded-full bg-white/15 px-1.5 py-0.5 text-[11px]">{pendingCount}</span>
+              <span className="ml-1.5 rounded-full bg-foreground/15 px-1.5 py-0.5 text-[11px]">{pendingCount}</span>
             )}
           </Button>
           {!ociConfigured && (

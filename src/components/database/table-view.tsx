@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useCallback,
@@ -382,8 +382,8 @@ export function TableView({
       : `${rowCount} rows`;
 
   return (
-    <div className="database-shell overflow-hidden rounded-[24px] border border-white/8 bg-[#12110f] shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
-      <div className="border-b border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-4 py-3">
+    <div className="database-shell overflow-hidden rounded-[24px] border border-foreground/8 bg-card shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
+      <div className="border-b border-foreground/8 bg-foreground/[0.03] px-4 py-3">
         {editable && selectedCount > 0 ? (
           <DatabaseRowSelectionBar
             properties={properties}
@@ -394,8 +394,8 @@ export function TableView({
           />
         ) : (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-zinc-300">
-              <Rows3 className="h-4 w-4 text-zinc-500" />
+            <div className="flex items-center gap-2 text-sm text-foreground/80">
+              <Rows3 className="h-4 w-4 text-muted-foreground" />
               <span>{rowCountLabel}</span>
             </div>
 
@@ -405,14 +405,14 @@ export function TableView({
                 variant="ghost"
                 size="sm"
                 disabled={newPropertyLoading}
-                className="rounded-xl border border-white/8 bg-white/[0.03] text-zinc-100 hover:bg-white/[0.08] hover:text-white"
+                className="rounded-xl border border-foreground/8 bg-foreground/[0.03] text-foreground hover:bg-foreground/[0.08] hover:text-foreground"
                 onClick={() => void insertPropertyAt(properties.length)}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
                 {newPropertyLoading ? "Adding..." : "New property"}
               </Button>
             ) : (
-              <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+              <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 View only
               </span>
             )}
@@ -422,7 +422,7 @@ export function TableView({
 
       <div className="notion-table-scroll min-h-[420px] w-full overflow-x-auto">
         <table
-          className="notion-database-table w-full table-fixed border-collapse text-[13px] text-zinc-100"
+          className="notion-database-table w-full table-fixed border-collapse text-[13px] text-foreground"
           style={{ minWidth: tableMinWidth }}
         >
           <colgroup>
@@ -433,9 +433,9 @@ export function TableView({
             <col style={{ width: ACTION_COLUMN_WIDTH }} />
           </colgroup>
 
-          <thead className="sticky top-0 z-30 bg-[#12110f]/95 backdrop-blur-md">
-            <tr className="h-11 border-b border-white/8">
-              <th className="sticky left-0 z-50 border-r border-white/6 bg-[#171614] px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]">
+          <thead className="sticky top-0 z-30 bg-card/95 backdrop-blur-md">
+            <tr className="h-11 border-b border-foreground/8">
+              <th className="sticky left-0 z-50 border-r border-foreground/6 bg-secondary px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]">
                 {editable ? (
                   <label className="flex h-11 items-center justify-center">
                     <input
@@ -443,7 +443,7 @@ export function TableView({
                       type="checkbox"
                       checked={allRowsSelected}
                       onChange={(event) => toggleAllVisibleRows(event.target.checked)}
-                      className="h-4 w-4 rounded border-white/15 bg-white/[0.04] accent-white"
+                      className="h-4 w-4 rounded border-foreground/15 bg-foreground/[0.04] accent-white"
                       aria-label="Select all rows"
                     />
                   </label>
@@ -461,9 +461,9 @@ export function TableView({
                     key={property.id}
                     style={isFrozen ? { left } : undefined}
                     className={cn(
-                      "group/column relative border-r border-white/6 bg-[#171614] px-2.5 py-0 text-left align-middle font-medium text-zinc-300",
+                      "group/column relative border-r border-foreground/6 bg-secondary px-2.5 py-0 text-left align-middle font-medium text-foreground/80",
                       isFrozen && "sticky z-40",
-                      resizingPropertyId === property.id && "bg-[#1c1a17]",
+                      resizingPropertyId === property.id && "bg-accent",
                       isFrozen &&
                         property.id === frozenState.lastFrozenId &&
                         "shadow-[1px_0_0_0_rgba(255,255,255,0.06),14px_0_28px_rgba(0,0,0,0.18)]"
@@ -563,7 +563,7 @@ export function TableView({
                         >
                           <span
                             className={cn(
-                              "pointer-events-none absolute right-[3px] top-2 bottom-2 w-px rounded bg-white/25 transition-opacity",
+                              "pointer-events-none absolute right-[3px] top-2 bottom-2 w-px rounded bg-foreground/25 transition-opacity",
                               resizingPropertyId === property.id
                                 ? "opacity-100 bg-sky-300/80"
                                 : "opacity-0 group-hover/column:opacity-100"
@@ -580,14 +580,14 @@ export function TableView({
                 );
               })}
 
-              <th className="sticky right-0 z-40 border-l border-white/6 bg-[#171614] px-0 py-0 shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]" />
+              <th className="sticky right-0 z-40 border-l border-foreground/6 bg-secondary px-0 py-0 shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]" />
             </tr>
           </thead>
 
           <tbody>
             {rows === undefined ? (
               <tr>
-                <td colSpan={properties.length + 2} className="h-12 px-4 text-sm text-zinc-500">
+                <td colSpan={properties.length + 2} className="h-12 px-4 text-sm text-muted-foreground">
                   Loading rows...
                 </td>
               </tr>
@@ -595,7 +595,7 @@ export function TableView({
               <tr>
                 <td
                   colSpan={properties.length + 2}
-                  className="px-4 py-16 text-center text-sm text-zinc-500"
+                  className="px-4 py-16 text-center text-sm text-muted-foreground"
                 >
                   No rows yet. Add your first entry to start building the database.
                 </td>
@@ -608,16 +608,16 @@ export function TableView({
                 <tr
                   key={row._id}
                   className={cn(
-                    "group border-b border-white/6 transition-colors",
+                    "group border-b border-foreground/6 transition-colors",
                     isSelected
                       ? "bg-sky-500/[0.09] hover:bg-sky-500/[0.12]"
-                      : "bg-[#12110f] hover:bg-[#1a1916]"
+                      : "bg-card hover:bg-accent"
                   )}
                 >
                   <td
                     className={cn(
-                      "sticky left-0 z-30 border-r border-white/6 px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]",
-                      isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-[#12110f] group-hover:bg-[#1a1916]"
+                      "sticky left-0 z-30 border-r border-foreground/6 px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]",
+                      isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
                     )}
                   >
                     {editable ? (
@@ -626,7 +626,7 @@ export function TableView({
                           type="checkbox"
                           checked={isSelected}
                           onChange={(event) => toggleRowSelection(row._id, event.target.checked)}
-                          className="h-4 w-4 rounded border-white/15 bg-white/[0.04] accent-white"
+                          className="h-4 w-4 rounded border-foreground/15 bg-foreground/[0.04] accent-white"
                           aria-label={`Select row ${titleProperty ? String(row.data?.[titleProperty.id] ?? "Untitled row") : String(row._id)}`}
                         />
                       </label>
@@ -643,13 +643,13 @@ export function TableView({
                         key={property.id}
                         style={isFrozen ? { left } : undefined}
                         className={cn(
-                          "border-r border-white/6 px-0 py-0 align-middle overflow-hidden",
+                          "border-r border-foreground/6 px-0 py-0 align-middle overflow-hidden",
                           isFrozen &&
                             "sticky z-20",
                           isFrozen &&
                             (isSelected
                               ? "bg-sky-950/55 group-hover:bg-sky-950/65"
-                              : "bg-[#12110f] group-hover:bg-[#1a1916]"),
+                              : "bg-card group-hover:bg-accent"),
                           isFrozen &&
                             property.id === frozenState.lastFrozenId &&
                             "shadow-[1px_0_0_0_rgba(255,255,255,0.06),14px_0_28px_rgba(0,0,0,0.18)]"
@@ -674,8 +674,8 @@ export function TableView({
                   })}
 
                   <td className={cn(
-                    "sticky right-0 z-20 border-l border-white/6 px-0 py-0 align-middle shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]",
-                    isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-[#12110f] group-hover:bg-[#1a1916]"
+                    "sticky right-0 z-20 border-l border-foreground/6 px-0 py-0 align-middle shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]",
+                    isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
                   )}>
                     <div className="flex items-center justify-center gap-1">
                       <ReminderTriggerButton
@@ -699,7 +699,7 @@ export function TableView({
                       {editable ? (
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 opacity-0 transition-all hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
                           onClick={() => onDeleteRow(row._id)}
                           title="Delete row"
                           aria-label="Delete row"
@@ -715,12 +715,12 @@ export function TableView({
           </tbody>
 
           <tfoot>
-            <tr className="h-11 border-t border-white/8 bg-[#151412]">
+            <tr className="h-11 border-t border-foreground/8 bg-background">
               <td colSpan={properties.length + 2} className="px-2 py-0">
                 {editable ? (
                   <button
                     type="button"
-                    className="flex h-9 w-full items-center gap-2 rounded-xl px-3 text-left text-[13px] text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
+                    className="flex h-9 w-full items-center gap-2 rounded-xl px-3 text-left text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground"
                     onClick={() => void handleAddRow()}
                     disabled={newRowLoading}
                   >
@@ -728,7 +728,7 @@ export function TableView({
                     {newRowLoading ? "Adding row..." : "New row"}
                   </button>
                 ) : (
-                  <div className="flex h-9 items-center px-3 text-[13px] text-zinc-500">
+                  <div className="flex h-9 items-center px-3 text-[13px] text-muted-foreground">
                     View-only access. Editors can add rows and update properties.
                   </div>
                 )}

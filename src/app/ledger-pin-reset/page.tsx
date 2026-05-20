@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { type ReactNode, useMemo, useState } from "react";
@@ -67,19 +67,19 @@ export default function LedgerPinResetPage() {
   const isAuthenticated = Boolean(user);
 
   return (
-    <div className="min-h-screen bg-[#0f0e0d] px-4 py-10 text-zinc-100">
+    <div className="min-h-screen bg-background px-4 py-10 text-foreground">
       <div className="mx-auto max-w-md">
         <div className="mb-8 flex items-center gap-3">
           <AppIcon className="h-10 w-10 rounded-2xl" />
           <div>
-            <p className="text-sm font-semibold tracking-[0.18em] text-zinc-500 uppercase">
+            <p className="text-sm font-semibold tracking-[0.18em] text-muted-foreground uppercase">
               MadVibe
             </p>
             <h1 className="text-xl font-semibold">Ledger PIN reset</h1>
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-[#161513] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+        <div className="rounded-[28px] border border-foreground/10 bg-card p-6 shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
           {!token ? (
             <StateBlock
               icon={<LockKeyhole className="h-5 w-5" />}
@@ -99,7 +99,7 @@ export default function LedgerPinResetPage() {
                 title="Sign in to continue"
                 description={`This Ledger PIN reset link is reserved for ${tokenStatus?.maskedEmail ?? "your account"} and only works after you sign in.`}
               />
-              <Button asChild className="h-11 w-full rounded-2xl bg-white text-black hover:bg-zinc-200">
+              <Button asChild className="h-11 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90">
                 <Link href={`/login?redirectTo=${encodeURIComponent(loginRedirect)}`}>
                   Sign in
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -109,20 +109,20 @@ export default function LedgerPinResetPage() {
           ) : tokenStatus.valid ? (
             <div className="space-y-5">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100">
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Verified
                 </div>
                 <h2 className="mt-4 text-2xl font-semibold tracking-tight">
                   Choose a new Ledger PIN
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-400">
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Set a fresh 4-digit PIN for Ledger. After saving, you can unlock Ledger with the new PIN right away.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+                <label className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                   New PIN
                 </label>
                 <Input
@@ -134,12 +134,12 @@ export default function LedgerPinResetPage() {
                     setPin(event.target.value.replace(/\D/g, "").slice(0, 4))
                   }
                   placeholder="4 digits"
-                  className="h-12 rounded-2xl border-white/10 bg-[#1a1917] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                  className="h-12 rounded-2xl border-foreground/10 bg-input text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+                <label className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                   Confirm PIN
                 </label>
                 <Input
@@ -151,13 +151,13 @@ export default function LedgerPinResetPage() {
                     setConfirmPin(event.target.value.replace(/\D/g, "").slice(0, 4))
                   }
                   placeholder="Repeat PIN"
-                  className="h-12 rounded-2xl border-white/10 bg-[#1a1917] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                  className="h-12 rounded-2xl border-foreground/10 bg-input text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                 />
               </div>
 
               <Button
                 type="button"
-                className="h-12 w-full rounded-2xl bg-white text-black hover:bg-zinc-200"
+                className="h-12 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => void handleSubmit()}
                 disabled={saving}
               >
@@ -177,10 +177,10 @@ export default function LedgerPinResetPage() {
                 description={getResetDescription(tokenStatus.reason, tokenStatus.maskedEmail)}
               />
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button asChild variant="outline" className="h-11 flex-1 rounded-2xl border-white/10 bg-white/[0.03] text-zinc-100 hover:bg-white/[0.07]">
+                <Button asChild variant="outline" className="h-11 flex-1 rounded-2xl border-foreground/10 bg-foreground/[0.03] text-foreground hover:bg-foreground/[0.07]">
                   <Link href="/workspace/settings">Open settings</Link>
                 </Button>
-                <Button asChild className="h-11 flex-1 rounded-2xl bg-white text-black hover:bg-zinc-200">
+                <Button asChild className="h-11 flex-1 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90">
                   <Link href={DEFAULT_WORKSPACE_ROUTE}>Back to workspace</Link>
                 </Button>
               </div>
@@ -203,11 +203,11 @@ function StateBlock({
 }) {
   return (
     <div>
-      <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-300">
+      <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-foreground/10 bg-foreground/[0.03] text-foreground/80">
         {icon}
       </div>
       <h2 className="mt-4 text-2xl font-semibold tracking-tight">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-zinc-400">{description}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useMemo,
@@ -204,11 +204,11 @@ const inputCls =
   "w-full rounded-xl border border-border bg-muted/45 px-3 py-2.5 text-sm transition-colors placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/35";
 const textareaCls = `${inputCls} min-h-[112px] resize-y`;
 const ledgerSelectTriggerBaseCls =
-  "w-full border-white/10 bg-white/[0.03] text-zinc-100 shadow-none transition-colors hover:bg-white/[0.06] focus:ring-1 focus:ring-white/15 focus:ring-offset-0 data-[placeholder]:text-zinc-500 [&>svg]:text-zinc-500";
+  "w-full border-foreground/10 bg-foreground/[0.03] text-foreground shadow-none transition-colors hover:bg-foreground/[0.06] focus:ring-1 focus:ring-foreground/15 focus:ring-offset-0 data-[placeholder]:text-muted-foreground [&>svg]:text-muted-foreground";
 const ledgerSelectContentCls =
-  "rounded-[18px] border-white/10 bg-[#191816] p-1 text-zinc-100 shadow-[0_24px_60px_rgba(0,0,0,0.45)]";
+  "rounded-[18px] border-foreground/10 bg-popover p-1 text-foreground shadow-[0_24px_60px_rgba(0,0,0,0.45)]";
 const ledgerSelectItemCls =
-  "min-h-[38px] rounded-xl px-3 py-2 text-sm text-zinc-200 focus:bg-white/[0.06] focus:text-white data-[state=checked]:bg-white/[0.08] data-[state=checked]:text-white";
+  "min-h-[38px] rounded-xl px-3 py-2 text-sm text-foreground focus:bg-foreground/[0.06] focus:text-foreground data-[state=checked]:bg-foreground/[0.08] data-[state=checked]:text-foreground";
 
 function getEmptyTransactionForm(accountId = ""): TransactionFormState {
   return {
@@ -373,7 +373,7 @@ function Modal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+6.25rem)] pt-6 backdrop-blur-sm sm:items-center sm:pb-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/60 p-4 pb-[calc(env(safe-area-inset-bottom)+6.25rem)] pt-6 backdrop-blur-sm sm:items-center sm:pb-4">
       <div className="max-h-[min(88vh,calc(100dvh-8rem-env(safe-area-inset-bottom)))] w-full max-w-2xl overflow-y-auto rounded-3xl border bg-card shadow-2xl sm:max-h-[90vh]">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-5 py-4">
           <h2 className="text-sm font-semibold">{title}</h2>

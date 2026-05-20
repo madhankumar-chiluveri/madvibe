@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -46,7 +46,7 @@ function Avatar({ name }: { name?: string }) {
     .toUpperCase();
 
   return (
-    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-xs font-semibold text-white select-none">
+    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-xs font-semibold text-foreground select-none">
       {initials}
     </div>
   );

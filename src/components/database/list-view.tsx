@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Plus, Trash2 } from "lucide-react";
 
@@ -41,16 +41,16 @@ export function ListView({
   return (
     <div className="space-y-2 pt-2">
       {rows === undefined ? (
-        <p className="py-4 text-sm text-zinc-500">Loading...</p>
+        <p className="py-4 text-sm text-muted-foreground">Loading...</p>
       ) : rows.length === 0 ? (
-        <div className="rounded-[24px] border border-dashed border-white/10 bg-black/20 px-6 py-12 text-center text-sm text-zinc-500">
+        <div className="rounded-[24px] border border-dashed border-foreground/10 bg-foreground/20 px-6 py-12 text-center text-sm text-muted-foreground">
           No items yet.
         </div>
       ) : (
         rows.map((row: any) => (
           <div
             key={row._id}
-            className="group rounded-[22px] border border-white/8 bg-black/20 px-3 py-3 transition-colors hover:bg-black/30"
+            className="group rounded-[22px] border border-foreground/8 bg-foreground/20 px-3 py-3 transition-colors hover:bg-foreground/30"
           >
             <div className="flex items-start gap-4">
               <div className="min-w-0 flex-1">
@@ -74,7 +74,7 @@ export function ListView({
                     }
                   />
                 ) : (
-                  <span className="text-sm font-medium text-zinc-100">Row</span>
+                  <span className="text-sm font-medium text-foreground">Row</span>
                 )}
               </div>
 
@@ -100,7 +100,7 @@ export function ListView({
                 {editable ? (
                   <button
                     type="button"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 opacity-0 transition hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
                     onClick={() => onDeleteRow(row._id)}
                     aria-label="Delete row"
                   >
@@ -115,9 +115,9 @@ export function ListView({
                 {secondaryProperties.slice(0, 6).map((property) => (
                   <div
                     key={property.id}
-                    className="rounded-[18px] border border-white/6 bg-[#151412] p-1.5"
+                    className="rounded-[18px] border border-foreground/6 bg-background p-1.5"
                   >
-                    <div className="px-2 pb-0.5 pt-1 text-[11px] uppercase tracking-[0.16em] text-zinc-500">
+                    <div className="px-2 pb-0.5 pt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                       {property.name}
                     </div>
                     <PropertyCell
@@ -149,7 +149,7 @@ export function ListView({
       {editable ? (
         <button
           type="button"
-          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
+          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground"
           onClick={() => onAddRow()}
         >
           <Plus className="h-3.5 w-3.5" />

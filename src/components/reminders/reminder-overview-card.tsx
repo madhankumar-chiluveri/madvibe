@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { useQuery } from "convex/react";
@@ -66,7 +66,7 @@ export function ReminderOverviewCard() {
                   ? "border-red-500/20 bg-red-500/8 text-red-300"
                   : bucket === "today"
                     ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                    : "border-white/10 bg-white/[0.03] text-foreground";
+                    : "border-foreground/10 bg-foreground/[0.03] text-foreground";
 
               return (
                 <div

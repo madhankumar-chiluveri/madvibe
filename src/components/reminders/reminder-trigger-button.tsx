@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Bell } from "lucide-react";
@@ -36,7 +36,7 @@ export function ReminderTriggerButton({
         className={cn(
           "inline-flex items-center justify-center gap-1.5 rounded-lg transition-colors",
           iconOnly
-            ? "h-8 w-8 text-zinc-500 hover:bg-white/[0.06] hover:text-white"
+            ? "h-8 w-8 text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
             : "px-2 py-1 text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground",
           className
         )}

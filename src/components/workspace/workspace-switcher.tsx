@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 "use client";
 
@@ -87,7 +87,7 @@ function WorkspaceRoleBadge({ role }: { role?: "owner" | "editor" | "viewer" | n
         "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
         normalizedRole === "owner" && "border-emerald-400/16 bg-emerald-400/[0.08] text-emerald-200",
         normalizedRole === "editor" && "border-sky-400/16 bg-sky-400/[0.08] text-sky-200",
-        normalizedRole === "viewer" && "border-white/10 bg-white/[0.04] text-zinc-400"
+        normalizedRole === "viewer" && "border-foreground/10 bg-foreground/[0.04] text-muted-foreground"
       )}
     >
       {normalizedRole}
@@ -432,7 +432,7 @@ export function WorkspaceSwitcherContent({
 
         <div className="border-b border-border/70 px-4 py-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-sm font-semibold text-foreground">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-foreground/10 bg-foreground/[0.05] text-sm font-semibold text-foreground">
               {getWorkspaceInitial(currentWorkspace?.name)}
             </div>
             <div className="min-w-0 flex-1">
@@ -463,7 +463,7 @@ export function WorkspaceSwitcherContent({
                 return (
                   <div
                     key={invite._id}
-                    className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3"
+                    className="rounded-2xl border border-foreground/8 bg-foreground/[0.03] px-3 py-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -536,7 +536,7 @@ export function WorkspaceSwitcherContent({
                         : "text-foreground hover:bg-accent/60"
                     )}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-xs font-semibold">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.05] text-xs font-semibold">
                       {getWorkspaceInitial(workspace.name)}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -686,11 +686,11 @@ export function CreateWorkspaceDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         title="Create workspace"
-        className="flex max-h-[min(88vh,calc(100dvh-1.5rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-white/10 bg-[#161513] text-zinc-100 sm:w-[28rem] sm:max-w-[28rem]"
+        className="flex max-h-[min(88vh,calc(100dvh-1.5rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-foreground/10 bg-card text-foreground sm:w-[28rem] sm:max-w-[28rem]"
       >
         <DialogHeader>
           <DialogTitle>Create a new workspace</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-muted-foreground">
             Add another workspace without affecting your existing spaces, pages,
             or settings.
           </DialogDescription>
@@ -707,7 +707,7 @@ export function CreateWorkspaceDialog({
               }
             }}
             placeholder="Workspace name"
-            className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+            className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
             autoFocus
           />
         </div>
@@ -716,14 +716,14 @@ export function CreateWorkspaceDialog({
           <Button
             type="button"
             variant="ghost"
-            className="rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+            className="rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
             onClick={() => handleOpenChange(false)}
           >
             Cancel
           </Button>
           <Button
             type="button"
-            className="rounded-xl bg-white text-black hover:bg-zinc-200"
+            className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => void handleCreateWorkspace()}
             disabled={isSubmitting}
           >

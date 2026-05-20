@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
@@ -21,7 +21,7 @@ const PopoverContent = React.forwardRef<
       collisionPadding={16}
       sticky="always"
       className={cn(
-        "z-50 rounded-2xl border border-white/10 bg-[#201f1d] text-zinc-100 shadow-[0_24px_60px_rgba(0,0,0,0.45)] outline-none",
+        "z-50 rounded-2xl border border-foreground/10 bg-popover text-foreground shadow-[0_24px_60px_rgba(0,0,0,0.45)] outline-none",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2",
         className

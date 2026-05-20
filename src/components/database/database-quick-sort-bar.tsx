@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -129,12 +129,12 @@ export function DatabaseQuickSortBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-[18px] border border-white/8 bg-[#100f0d]/72 px-2.5 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-sm",
+        "flex flex-wrap items-center gap-2 rounded-[18px] border border-foreground/8 bg-card/70 px-2.5 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-sm",
         className
       )}
     >
       {sortRules.length === 0 ? (
-        <div className="flex min-h-10 items-center px-1 text-sm text-zinc-500">
+        <div className="flex min-h-10 items-center px-1 text-sm text-muted-foreground">
           Quick sorts stay local to this view until you save them.
         </div>
       ) : (
@@ -153,29 +153,29 @@ export function DatabaseQuickSortBar({
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-10 max-w-full items-center gap-2 rounded-xl border border-white/12 bg-white/[0.05] px-3 text-sm text-zinc-100 transition-colors hover:bg-white/[0.08]"
+                  className="inline-flex h-10 max-w-full items-center gap-2 rounded-xl border border-foreground/12 bg-foreground/[0.05] px-3 text-sm text-foreground transition-colors hover:bg-foreground/[0.08]"
                 >
                   {sortRules.length > 1 ? (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[10px] font-semibold text-zinc-300">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] text-[10px] font-semibold text-foreground/80">
                       {index + 1}
                     </span>
                   ) : null}
-                  <span className="text-zinc-400">{getPropertyIcon(property.type)}</span>
+                  <span className="text-muted-foreground">{getPropertyIcon(property.type)}</span>
                   <span className="truncate">{formatSortChipLabel(property, rule)}</span>
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-[min(92vw,360px)] p-0">
-                <div className="border-b border-white/8 px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                <div className="border-b border-foreground/8 px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                     Quick sort
                   </div>
-                  <div className="mt-1 text-sm font-medium text-zinc-100">Edit sort rule</div>
+                  <div className="mt-1 text-sm font-medium text-foreground">Edit sort rule</div>
                 </div>
 
                 <div className="space-y-3 p-4">
                   <div className="space-y-2">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                       Property
                     </div>
                     <Select
@@ -187,10 +187,10 @@ export function DatabaseQuickSortBar({
                         }))
                       }
                     >
-                      <SelectTrigger className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus:ring-white/15">
+                      <SelectTrigger className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus:ring-foreground/15">
                         <SelectValue placeholder="Property" />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+                      <SelectContent className="border-foreground/10 bg-popover text-foreground">
                         {properties.map((propertyOption) => (
                           <SelectItem key={propertyOption.id} value={propertyOption.id}>
                             {propertyOption.name}
@@ -201,7 +201,7 @@ export function DatabaseQuickSortBar({
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                       Direction
                     </div>
                     <Select
@@ -213,10 +213,10 @@ export function DatabaseQuickSortBar({
                         }))
                       }
                     >
-                      <SelectTrigger className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus:ring-white/15">
+                      <SelectTrigger className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus:ring-foreground/15">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+                      <SelectContent className="border-foreground/10 bg-popover text-foreground">
                         <SelectItem value="asc">Ascending</SelectItem>
                         <SelectItem value="desc">Descending</SelectItem>
                       </SelectContent>
@@ -225,7 +225,7 @@ export function DatabaseQuickSortBar({
 
                   {sortRules.length > 1 ? (
                     <div className="space-y-2">
-                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                         Priority
                       </div>
                       <div className="flex items-center gap-2">
@@ -233,7 +233,7 @@ export function DatabaseQuickSortBar({
                           type="button"
                           onClick={() => moveSortRule(index, "up")}
                           disabled={index === 0}
-                          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-zinc-300 transition-colors hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex h-10 items-center gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 text-sm text-foreground/80 transition-colors hover:bg-foreground/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <MoveUp className="h-3.5 w-3.5" />
                           Move earlier
@@ -242,7 +242,7 @@ export function DatabaseQuickSortBar({
                           type="button"
                           onClick={() => moveSortRule(index, "down")}
                           disabled={index === sortRules.length - 1}
-                          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-zinc-300 transition-colors hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex h-10 items-center gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 text-sm text-foreground/80 transition-colors hover:bg-foreground/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <MoveDown className="h-3.5 w-3.5" />
                           Move later
@@ -252,7 +252,7 @@ export function DatabaseQuickSortBar({
                   ) : null}
                 </div>
 
-                <div className="flex items-center justify-between border-t border-white/8 px-3 py-2">
+                <div className="flex items-center justify-between border-t border-foreground/8 px-3 py-2">
                   <button
                     type="button"
                     onClick={() => removeSortRule(index)}
@@ -266,7 +266,7 @@ export function DatabaseQuickSortBar({
                     size="sm"
                     variant="ghost"
                     onClick={() => setEditingSortIndex(null)}
-                    className="h-9 rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                    className="h-9 rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                   >
                     Done
                   </Button>
@@ -281,14 +281,14 @@ export function DatabaseQuickSortBar({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-white/12 bg-white/[0.02] px-3 text-sm text-zinc-300 transition-colors hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-foreground/12 bg-foreground/[0.02] px-3 text-sm text-foreground/80 transition-colors hover:border-foreground/20 hover:bg-foreground/[0.05] hover:text-foreground"
           >
             <Plus className="h-3.5 w-3.5" />
             Sort
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[280px] p-2">
-          <div className="px-2 pb-2 pt-1 text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+          <div className="px-2 pb-2 pt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             Add a quick sort
           </div>
           <div className="max-h-[280px] space-y-1 overflow-y-auto pr-1">
@@ -297,11 +297,11 @@ export function DatabaseQuickSortBar({
                 key={property.id}
                 type="button"
                 onClick={() => addSortForProperty(property.id)}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-zinc-200 transition-colors hover:bg-white/[0.05] hover:text-white"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground"
               >
-                <span className="text-zinc-500">{getPropertyIcon(property.type)}</span>
+                <span className="text-muted-foreground">{getPropertyIcon(property.type)}</span>
                 <span className="min-w-0 flex-1 truncate">{property.name}</span>
-                <span className="flex items-center gap-1 text-xs text-zinc-500">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <ArrowUpDown className="h-3 w-3" />
                   asc
                 </span>
@@ -316,7 +316,7 @@ export function DatabaseQuickSortBar({
           type="button"
           onClick={onReset}
           disabled={!hasPendingChanges}
-          className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-white disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
+          className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Reset
@@ -325,7 +325,7 @@ export function DatabaseQuickSortBar({
           type="button"
           onClick={onSave}
           disabled={!hasPendingChanges}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/12 bg-white/[0.06] px-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/[0.1] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.04] disabled:text-zinc-500"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-foreground/12 bg-foreground/[0.06] px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/[0.1] disabled:cursor-not-allowed disabled:border-foreground/10 disabled:bg-foreground/[0.04] disabled:text-muted-foreground"
         >
           <Save className="h-3.5 w-3.5" />
           Save sort

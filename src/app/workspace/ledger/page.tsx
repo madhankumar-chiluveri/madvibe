@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -200,16 +200,16 @@ function MetricCard({ label, value, sub, positive = true, icon: Icon, gradient }
   label: string; value: string; sub?: string; positive?: boolean; icon: any; gradient: string;
 }) {
   return (
-    <div className={cn("rounded-2xl p-4 text-white", gradient)}>
+    <div className={cn("rounded-2xl p-4 text-foreground", gradient)}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-white/70 uppercase tracking-wide">{label}</span>
-        <Icon className="w-4 h-4 text-white/60" />
+        <span className="text-xs font-medium text-foreground/70 uppercase tracking-wide">{label}</span>
+        <Icon className="w-4 h-4 text-foreground/60" />
       </div>
       <p className="text-2xl font-bold leading-tight">{value}</p>
       {sub && (
         <div className="flex items-center gap-1 mt-1">
           {positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          <span className="text-xs text-white/70">{sub}</span>
+          <span className="text-xs text-foreground/70">{sub}</span>
         </div>
       )}
     </div>
@@ -221,7 +221,7 @@ function Modal({ open, onClose, title, children }: {
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 pb-[calc(env(safe-area-inset-bottom)+6.25rem)] pt-6 backdrop-blur-sm sm:items-center sm:pb-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/60 p-4 pb-[calc(env(safe-area-inset-bottom)+6.25rem)] pt-6 backdrop-blur-sm sm:items-center sm:pb-4">
       <div className="bg-card border rounded-2xl w-full max-w-lg max-h-[min(88vh,calc(100dvh-8rem-env(safe-area-inset-bottom)))] overflow-y-auto shadow-2xl sm:max-h-[90vh]">
         <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-card z-10">
           <h2 className="text-sm font-semibold">{title}</h2>
@@ -249,11 +249,11 @@ function Field({ label, children, required }: { label: string; children: React.R
 const inputCls = "w-full text-sm bg-muted/50 border border-border rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60 transition-all";
 const LEDGER_EMPTY_SELECT_VALUE = "__ledger_empty_value__";
 const ledgerSelectTriggerBaseCls =
-  "w-full border-white/10 bg-white/[0.03] text-zinc-100 shadow-none transition-colors hover:bg-white/[0.06] focus:ring-1 focus:ring-white/15 focus:ring-offset-0 data-[placeholder]:text-zinc-500 [&>svg]:text-zinc-500";
+  "w-full border-foreground/10 bg-foreground/[0.03] text-foreground shadow-none transition-colors hover:bg-foreground/[0.06] focus:ring-1 focus:ring-foreground/15 focus:ring-offset-0 data-[placeholder]:text-muted-foreground [&>svg]:text-muted-foreground";
 const ledgerSelectContentCls =
-  "rounded-[18px] border-white/10 bg-[#191816] p-1 text-zinc-100 shadow-[0_24px_60px_rgba(0,0,0,0.45)]";
+  "rounded-[18px] border-foreground/10 bg-popover p-1 text-foreground shadow-[0_24px_60px_rgba(0,0,0,0.45)]";
 const ledgerSelectItemCls =
-  "min-h-[38px] rounded-xl px-3 py-2 text-sm text-zinc-200 focus:bg-white/[0.06] focus:text-white data-[state=checked]:bg-white/[0.08] data-[state=checked]:text-white";
+  "min-h-[38px] rounded-xl px-3 py-2 text-sm text-foreground focus:bg-foreground/[0.06] focus:text-foreground data-[state=checked]:bg-foreground/[0.08] data-[state=checked]:text-foreground";
 
 function LedgerSelect({
   value,
@@ -907,10 +907,10 @@ function CreditCardsTab() {
                 `bg-gradient-to-br ${gradient}`, isSelected && "ring-2 ring-white")}
                 onClick={() => setSelectedCard(isSelected ? null : card._id)}>
                 {/* Card body */}
-                <div className="p-5 text-white">
+                <div className="p-5 text-foreground">
                   <div className="flex items-start justify-between mb-6">
                     <div>
-                      <p className="text-xs font-medium text-white/60 uppercase tracking-wide">{card.issuer}</p>
+                      <p className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{card.issuer}</p>
                       <p className="font-semibold">{card.cardName ?? "Credit Card"}</p>
                     </div>
                     <div className="flex gap-1">
@@ -920,33 +920,33 @@ function CreditCardsTab() {
                           if (!confirmDeleteRecord("credit card")) return;
                           void deleteCard({ id: card._id });
                         }}
-                        className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                        className="p-1.5 rounded-lg bg-foreground/10 hover:bg-foreground/20 transition-colors">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
-                  <p className="text-xs tracking-[0.3em] text-white/50 mb-4">
+                  <p className="text-xs tracking-[0.3em] text-foreground/50 mb-4">
                     •••• •••• •••• {card.lastFour ?? "••••"}
                   </p>
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-xs text-white/60">Balance</p>
+                      <p className="text-xs text-foreground/60">Balance</p>
                       <p className="text-lg font-bold">{fmt(card.currentBalance)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-white/60">Limit</p>
+                      <p className="text-xs text-foreground/60">Limit</p>
                       <p className="text-sm font-medium">{fmt(card.creditLimit)}</p>
                     </div>
                   </div>
                   {/* Utilization bar */}
-                  <div className="mt-3 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                  <div className="mt-3 h-1.5 bg-foreground/20 rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all",
                       utilPct >= 90 ? "bg-notion-red-text" : utilPct >= 75 ? "bg-notion-yellow-text" : "bg-notion-blue-text")}
                       style={{ width: `${Math.min(100, utilPct)}%` }} />
                   </div>
                   <div className="flex justify-between mt-1">
-                    <p className="text-xs text-white/50">Used: {utilPct.toFixed(0)}%</p>
-                    <p className="text-xs text-white/50">Due day: {card.dueDay}</p>
+                    <p className="text-xs text-foreground/50">Used: {utilPct.toFixed(0)}%</p>
+                    <p className="text-xs text-foreground/50">Due day: {card.dueDay}</p>
                   </div>
                 </div>
               </div>

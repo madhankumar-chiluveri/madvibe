@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -175,7 +175,7 @@ function ModelPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-zinc-200 transition-all hover:border-white/18 hover:bg-white/[0.07]"
+          className="flex items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/[0.04] px-3 py-1.5 text-xs text-foreground transition-all hover:border-foreground/18 hover:bg-foreground/[0.07]"
         >
           <Sparkles className="h-3 w-3 text-violet-400" />
           <span className="max-w-[120px] truncate">{active.label}</span>
@@ -185,17 +185,17 @@ function ModelPicker({
           )}>
             {active.badge}
           </span>
-          <ChevronDown className="h-3 w-3 text-zinc-500" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-[340px] max-w-[calc(100vw-1.5rem)] border-white/10 bg-[#18171580] p-2 backdrop-blur-2xl"
+        className="w-[340px] max-w-[calc(100vw-1.5rem)] border-foreground/10 bg-[#18171580] p-2 backdrop-blur-2xl"
         style={{ backdropFilter: "blur(24px)" }}
       >
         <div className="mb-2 px-2 pt-1">
-          <p className="text-sm font-semibold text-white">Choose an agent model</p>
-          <p className="text-[11px] text-zinc-500">Free models first; pro models use OpenRouter credits</p>
+          <p className="text-sm font-semibold text-foreground">Choose an agent model</p>
+          <p className="text-[11px] text-muted-foreground">Free models first; pro models use OpenRouter credits</p>
         </div>
         <div className="max-h-[360px] space-y-0.5 overflow-y-auto">
           {MADDY_MODELS.map((m) => {
@@ -208,16 +208,16 @@ function ModelPicker({
                 className={cn(
                   "group flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
                   isActive
-                    ? "bg-white/[0.09]"
-                    : "hover:bg-white/[0.05]"
+                    ? "bg-foreground/[0.09]"
+                    : "hover:bg-foreground/[0.05]"
                 )}
               >
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.04]">
                   {isActive && <Check className="h-3 w-3 text-emerald-400" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white">{m.label}</span>
+                    <span className="text-sm font-medium text-foreground">{m.label}</span>
                     <span className={cn(
                       "rounded-full px-1.5 py-px text-[9px] font-bold uppercase tracking-wider",
                       BADGE_COLOR[m.badge]
@@ -225,14 +225,14 @@ function ModelPicker({
                       {m.badge}
                     </span>
                   </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-zinc-500">
+                  <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                     <span>{m.maker}</span>
                     <span>·</span>
                     <span>{m.ctx} ctx</span>
                     <span>·</span>
                     <span className={cn("font-medium", SPEED_COLOR[m.speed])}>{m.speed}</span>
                   </div>
-                  <p className="mt-1 text-[11px] text-zinc-600">{m.best}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground/70">{m.best}</p>
                 </div>
               </button>
             );
@@ -264,7 +264,7 @@ function MessageBubble({ msg }: { msg: AgentMessage }) {
       className={cn("group flex gap-2", isUser ? "justify-end" : "justify-start")}
     >
       {!isUser && (
-        <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+        <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.04]">
           <AppIcon className="h-3.5 w-3.5 rounded-full" />
         </div>
       )}
@@ -273,21 +273,21 @@ function MessageBubble({ msg }: { msg: AgentMessage }) {
           className={cn(
             "rounded-[20px] px-4 py-3 text-[13px] leading-[1.65]",
             isUser
-              ? "rounded-tr-sm bg-white/[0.12] text-white"
-              : "rounded-tl-sm border border-white/8 bg-white/[0.04] text-zinc-100"
+              ? "rounded-tr-sm bg-foreground/[0.12] text-foreground"
+              : "rounded-tl-sm border border-foreground/8 bg-foreground/[0.04] text-foreground"
           )}
         >
           {isUser ? (
             <p className="whitespace-pre-wrap break-words">{msg.content}</p>
           ) : (
-            <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:text-white prose-headings:font-semibold">
+            <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:text-foreground prose-headings:font-semibold">
               <ReactMarkdown>{msg.content}</ReactMarkdown>
             </div>
           )}
         </div>
         <div className={cn("flex items-center gap-2 px-1", isUser ? "justify-end" : "justify-start")}>
           {!isUser && msg.toolsUsed && msg.toolsUsed.length > 0 && (
-            <span className="flex items-center gap-1 text-[10px] text-zinc-600">
+            <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
               <Zap className="h-2.5 w-2.5" />
               {msg.toolsUsed.join(", ")}
             </span>
@@ -295,7 +295,7 @@ function MessageBubble({ msg }: { msg: AgentMessage }) {
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1 text-[10px] text-zinc-700 opacity-0 transition-all group-hover:opacity-100 hover:text-zinc-400"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground/50 opacity-0 transition-all group-hover:opacity-100 hover:text-muted-foreground"
           >
             {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
             {copied ? "Copied" : "Copy"}
@@ -316,14 +316,14 @@ function TypingIndicator() {
       exit={{ opacity: 0 }}
       className="flex items-center gap-2"
     >
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.04]">
         <AppIcon className="h-3.5 w-3.5 rounded-full" />
       </div>
-      <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm border border-white/8 bg-white/[0.04] px-4 py-3">
+      <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm border border-foreground/8 bg-foreground/[0.04] px-4 py-3">
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="h-1.5 w-1.5 rounded-full bg-zinc-500"
+            className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
           />
@@ -340,12 +340,12 @@ function EmptyState({ onPrompt }: { onPrompt: (p: string) => void }) {
     <div className="flex h-full flex-col items-center justify-center px-5 py-8 text-center">
       <div className="relative mb-4 flex h-16 w-16 items-center justify-center">
         <div className="absolute inset-0 rounded-[22px] bg-gradient-to-br from-violet-500/20 to-indigo-500/10 blur-lg" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-[22px] border border-white/12 bg-white/[0.05] shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-[22px] border border-foreground/12 bg-foreground/[0.05] shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
           <AppIcon className="h-8 w-8 rounded-xl" />
         </div>
       </div>
-      <h2 className="text-base font-semibold tracking-tight text-white">Maddy AI Agent</h2>
-      <p className="mt-2 max-w-[260px] text-[13px] leading-6 text-zinc-500">
+      <h2 className="text-base font-semibold tracking-tight text-foreground">Maddy AI Agent</h2>
+      <p className="mt-2 max-w-[260px] text-[13px] leading-6 text-muted-foreground">
         I can read your pages, reminders, habits, and finances. Powered by OpenRouter agent models.
       </p>
       <div className="mt-6 grid w-full gap-2">
@@ -354,7 +354,7 @@ function EmptyState({ onPrompt }: { onPrompt: (p: string) => void }) {
             key={p}
             type="button"
             onClick={() => onPrompt(p)}
-            className="rounded-[14px] border border-white/8 bg-white/[0.025] px-4 py-2.5 text-left text-[13px] text-zinc-300 transition-all hover:border-white/14 hover:bg-white/[0.05] hover:text-white"
+            className="rounded-[14px] border border-foreground/8 bg-foreground/[0.025] px-4 py-2.5 text-left text-[13px] text-foreground/80 transition-all hover:border-foreground/14 hover:bg-foreground/[0.05] hover:text-foreground"
           >
             {p}
           </button>
@@ -380,7 +380,7 @@ function HistoryPanel({
   return (
     <div className="w-full space-y-0.5">
       {conversations.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/8 px-4 py-6 text-center text-[13px] text-zinc-600">
+        <div className="rounded-xl border border-dashed border-foreground/8 px-4 py-6 text-center text-[13px] text-muted-foreground/70">
           No conversations yet
         </div>
       ) : (
@@ -394,19 +394,19 @@ function HistoryPanel({
               onClick={() => onSelect(c._id)}
               className={cn(
                 "group flex w-full items-start gap-2 rounded-xl px-3 py-2.5 text-left transition-all",
-                isActive ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
+                isActive ? "bg-foreground/[0.08]" : "hover:bg-foreground/[0.04]"
               )}
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium text-white">{c.title}</p>
-                <p className="mt-0.5 text-[11px] text-zinc-600">
+                <p className="truncate text-[13px] font-medium text-foreground">{c.title}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/70">
                   {m.label} · {formatRelativeTime(c.updatedAt)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onDelete(c._id); }}
-                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-zinc-700 opacity-0 transition-all hover:bg-white/[0.06] hover:text-red-400 group-hover:opacity-100"
+                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground/50 opacity-0 transition-all hover:bg-foreground/[0.06] hover:text-red-400 group-hover:opacity-100"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -615,27 +615,27 @@ function MaddyPanelSurface({
       }}
     >
       {/* ── Header ── */}
-      <div className="shrink-0 border-b border-white/[0.06] px-4 pt-4 pb-3">
+      <div className="shrink-0 border-b border-foreground/[0.06] px-4 pt-4 pb-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             {isPageMode && (
               <button
                 type="button"
                 onClick={onDismiss}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:bg-white/[0.07] hover:text-white"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.03] text-muted-foreground transition-all hover:bg-foreground/[0.07] hover:text-foreground"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
               </button>
             )}
             <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
               <div className="absolute inset-0 rounded-[14px] bg-gradient-to-br from-violet-500/30 to-indigo-500/10 blur-md" />
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-[14px] border border-white/12 bg-white/[0.06]">
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-[14px] border border-foreground/12 bg-foreground/[0.06]">
                 <AppIcon className="h-5 w-5 rounded-xl" />
               </div>
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-white">Maddy AI</div>
-              <div className="truncate text-[11px] text-zinc-600">{contextLine}</div>
+              <div className="text-sm font-semibold text-foreground">Maddy AI</div>
+              <div className="truncate text-[11px] text-muted-foreground/70">{contextLine}</div>
             </div>
           </div>
 
@@ -645,13 +645,13 @@ function MaddyPanelSurface({
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:bg-white/[0.07] hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.03] text-muted-foreground transition-all hover:bg-foreground/[0.07] hover:text-foreground"
                 >
                   <History className="h-3.5 w-3.5" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-[300px] border-white/10 bg-[#181716] p-3">
-                <p className="mb-3 px-1 text-sm font-semibold text-white">History</p>
+              <PopoverContent align="end" className="w-[300px] border-foreground/10 bg-popover p-3">
+                <p className="mb-3 px-1 text-sm font-semibold text-foreground">History</p>
                 <HistoryPanel
                   conversations={conversations}
                   selectedId={selectedConvId}
@@ -665,7 +665,7 @@ function MaddyPanelSurface({
             <button
               type="button"
               onClick={() => void handleNewChat()}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:bg-white/[0.07] hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.03] text-muted-foreground transition-all hover:bg-foreground/[0.07] hover:text-foreground"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -674,7 +674,7 @@ function MaddyPanelSurface({
               <button
                 type="button"
                 onClick={onDismiss}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-400 transition-all hover:bg-white/[0.07] hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/[0.03] text-muted-foreground transition-all hover:bg-foreground/[0.07] hover:text-foreground"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -702,10 +702,10 @@ function MaddyPanelSurface({
 
       {/* ── Input ── */}
       <div
-        className="shrink-0 border-t border-white/[0.06] px-4 py-3"
+        className="shrink-0 border-t border-foreground/[0.06] px-4 py-3"
         style={isPageMode ? { paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" } : undefined}
       >
-        <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.04] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all focus-within:border-white/[0.14]">
+        <div className="rounded-[20px] border border-foreground/[0.08] bg-foreground/[0.04] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all focus-within:border-foreground/[0.14]">
           <textarea
             ref={textareaRef}
             value={input}
@@ -718,7 +718,7 @@ function MaddyPanelSurface({
             }}
             rows={1}
             placeholder="Ask Maddy about your workspace…"
-            className="w-full resize-none bg-transparent text-[13px] leading-6 text-white outline-none placeholder:text-zinc-600"
+            className="w-full resize-none bg-transparent text-[13px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
             style={{ minHeight: "40px", maxHeight: "160px" }}
           />
           <div className="mt-2 flex items-center justify-between gap-2">
@@ -730,8 +730,8 @@ function MaddyPanelSurface({
               className={cn(
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all",
                 loading || !input.trim()
-                  ? "cursor-not-allowed bg-white/[0.04] text-zinc-600"
-                  : "bg-violet-600 text-white shadow-[0_8px_24px_rgba(139,92,246,0.35)] hover:bg-violet-500 hover:scale-105"
+                  ? "cursor-not-allowed bg-foreground/[0.04] text-muted-foreground/70"
+                  : "bg-violet-600 text-foreground shadow-[0_8px_24px_rgba(139,92,246,0.35)] hover:bg-violet-500 hover:scale-105"
               )}
             >
               {loading ? (
@@ -751,7 +751,7 @@ function MaddyPanelSurface({
 
 export function MaddyScreen({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div className="h-full min-h-full overflow-hidden bg-[#0f0e0d]">
+    <div className="h-full min-h-full overflow-hidden bg-background">
       <MaddyPanelSurface mode="page" onDismiss={onDismiss} />
     </div>
   );
@@ -767,7 +767,7 @@ export function MaddyPanel() {
         <>
           <motion.div
             key="maddy-backdrop"
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[3px]"
+            className="fixed inset-0 z-40 bg-foreground/50 backdrop-blur-[3px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

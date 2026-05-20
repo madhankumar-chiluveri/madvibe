@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   type ReactNode,
@@ -389,14 +389,14 @@ function ToolbarIconButton({
         "relative flex h-9 w-9 items-center justify-center rounded-xl border transition-colors",
         active
           ? "border-sky-500/30 bg-sky-500/14 text-sky-100"
-          : "border-white/8 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06] hover:text-white",
-        disabled && "cursor-not-allowed border-white/6 bg-white/[0.02] text-zinc-700 hover:bg-white/[0.02] hover:text-zinc-700",
+          : "border-foreground/8 bg-foreground/[0.03] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground",
+        disabled && "cursor-not-allowed border-foreground/6 bg-foreground/[0.02] text-muted-foreground/50 hover:bg-foreground/[0.02] hover:text-muted-foreground/50",
         className
       )}
     >
       {children}
       {count && count > 0 ? (
-        <span className="absolute -right-1.5 -top-1.5 min-w-[18px] rounded-full border border-sky-400/25 bg-sky-500 px-1.5 text-center text-[10px] font-semibold leading-5 text-white shadow-[0_6px_14px_rgba(14,165,233,0.28)]">
+        <span className="absolute -right-1.5 -top-1.5 min-w-[18px] rounded-full border border-sky-400/25 bg-sky-500 px-1.5 text-center text-[10px] font-semibold leading-5 text-foreground shadow-[0_6px_14px_rgba(14,165,233,0.28)]">
           {count}
         </span>
       ) : null}
@@ -424,14 +424,14 @@ function ActiveControlChip({
       className={cn(
         "inline-flex items-center rounded-full border text-xs transition-colors",
         tone === "accent" && "border-sky-500/25 bg-sky-500/14 text-sky-100",
-        tone === "neutral" && "border-white/10 bg-white/[0.05] text-zinc-300",
-        tone === "muted" && "border-white/8 bg-white/[0.03] text-zinc-400"
+        tone === "neutral" && "border-foreground/10 bg-foreground/[0.05] text-foreground/80",
+        tone === "muted" && "border-foreground/8 bg-foreground/[0.03] text-muted-foreground"
       )}
     >
       <button
         type="button"
         onClick={onClick ?? onRemove}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 transition-colors hover:text-white"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 transition-colors hover:text-foreground"
       >
         {icon}
         <span className="truncate">{label}</span>
@@ -440,7 +440,7 @@ function ActiveControlChip({
         <button
           type="button"
           onClick={onRemove}
-          className="pr-2 text-zinc-500 transition-colors hover:text-white"
+          className="pr-2 text-muted-foreground transition-colors hover:text-foreground"
           aria-label={`Remove ${label}`}
           title={`Remove ${label}`}
         >
@@ -1405,9 +1405,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   const renderToolbarPanel = () => {
     if (activePanel === "group") {
       return (
-        <div className="w-full max-w-[620px] rounded-[18px] border border-white/8 bg-[#12110f]/95 p-3 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+        <div className="w-full max-w-[620px] rounded-[18px] border border-foreground/8 bg-card/95 p-3 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-sm">
           {selectProperties.length === 0 ? (
-            <div className="rounded-[16px] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-zinc-400">
+            <div className="rounded-[16px] border border-dashed border-foreground/10 px-4 py-8 text-center text-sm text-muted-foreground">
               Add a Select property to enable board grouping.
             </div>
           ) : (
@@ -1426,11 +1426,11 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                       "rounded-[18px] border px-4 py-3 text-left transition-colors",
                       isActive
                         ? "border-sky-500/30 bg-sky-500/12 text-sky-100"
-                        : "border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                        : "border-foreground/10 bg-foreground/[0.03] text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                     )}
                   >
                     <div className="text-sm font-medium">{property.name}</div>
-                    <div className="mt-1 text-xs text-zinc-500">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {property.config?.options?.length ?? 0} column
                       {(property.config?.options?.length ?? 0) === 1 ? "" : "s"}
                     </div>
@@ -1447,9 +1447,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   };
 
   return (
-    <div className="database-page min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_28%),linear-gradient(180deg,#151412_0%,#0f0e0d_100%)] text-zinc-100">
+    <div className="database-page min-h-screen bg-background text-foreground">
       <WorkspaceTopBar
-        className="border-white/8 bg-[#0f0e0d]/80"
+        className="border-foreground/8 bg-background/80"
         breadcrumbContent={
           <PageBreadcrumb
             pageId={page._id}
@@ -1473,13 +1473,13 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   setEditingTitle(false);
                 }
               }}
-              className="h-auto border-none bg-transparent p-0 text-5xl font-semibold tracking-[-0.04em] text-white shadow-none focus-visible:ring-0"
+              className="h-auto border-none bg-transparent p-0 text-5xl font-semibold tracking-[-0.04em] text-foreground shadow-none focus-visible:ring-0"
               autoFocus
             />
           ) : (
             <h1
               className={cn(
-                "mb-4 text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-white transition-opacity",
+                "mb-4 text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-foreground transition-opacity",
                 canEditWorkspace ? "cursor-text hover:opacity-80" : "cursor-default"
               )}
               onClick={() => {
@@ -1487,7 +1487,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                 setEditingTitle(true);
               }}
             >
-              {page.title || <span className="text-zinc-600">Untitled</span>}
+              {page.title || <span className="text-muted-foreground/70">Untitled</span>}
             </h1>
           )}
 
@@ -1496,7 +1496,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               {page.maddyTags.map((tag: string) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1 text-xs text-zinc-300"
+                  className="rounded-full border border-foreground/8 bg-foreground/[0.04] px-3 py-1 text-xs text-foreground/80"
                 >
                   {tag}
                 </span>
@@ -1504,9 +1504,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
             </div>
           )}
 
-          <div className="rounded-[26px] border border-white/8 bg-black/20 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-            <div className="flex flex-wrap items-center gap-2 rounded-[20px] border border-white/6 bg-white/[0.03] px-2 py-2">
-              <div className="flex items-center gap-1 rounded-xl border border-white/8 bg-white/[0.02] p-1">
+          <div className="rounded-[26px] border border-foreground/8 bg-foreground/20 p-2 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+            <div className="flex flex-wrap items-center gap-2 rounded-[20px] border border-foreground/6 bg-foreground/[0.03] px-2 py-2">
+              <div className="flex items-center gap-1 rounded-xl border border-foreground/8 bg-foreground/[0.02] p-1">
                 {viewTabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -1517,8 +1517,8 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                     className={cn(
                       "flex items-center gap-2 rounded-xl px-3.5 py-2 text-[13px] leading-none transition-colors",
                       viewType === tab.id
-                        ? "bg-white text-black"
-                        : "text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
                     )}
                     title={`${tab.label} view`}
                     aria-label={`${tab.label} view`}
@@ -1531,7 +1531,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
 
               <div className="ml-auto flex flex-wrap items-center gap-1.5">
                 {!canEditWorkspace ? (
-                  <span className="mr-1 inline-flex h-9 items-center rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-400">
+                  <span className="mr-1 inline-flex h-9 items-center rounded-xl border border-foreground/10 bg-foreground/[0.04] px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                     View only
                   </span>
                 ) : null}
@@ -1567,7 +1567,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="Type to search..."
                     autoFocus={searchOpen && !searchQuery.trim()}
-                    className="h-9 w-[180px] rounded-xl border-white/8 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15 md:w-[240px]"
+                    className="h-9 w-[180px] rounded-xl border-foreground/8 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15 md:w-[240px]"
                   />
                 )}
                 {viewType === "board" && (
@@ -1584,20 +1584,20 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   <ToolbarIconButton
                     label="Clear search, filters, and sorts"
                     onClick={clearControls}
-                    className="text-zinc-500 hover:text-white"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </ToolbarIconButton>
                 )}
 
-                <div className="mx-1 h-8 w-px bg-white/8" />
+                <div className="mx-1 h-8 w-px bg-foreground/8" />
 
                 <ReminderTriggerButton
                   workspaceId={page.workspaceId}
                   iconOnly
                   label="Create reminder for this database"
                   title="Create reminder for this database"
-                  className="h-9 w-9 rounded-xl border border-white/8 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                  className="h-9 w-9 rounded-xl border border-foreground/8 bg-foreground/[0.03] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
                   initialValues={{
                     title: page.title ? `Review ${page.title}` : "Review database",
                     pageId: page._id,
@@ -1612,7 +1612,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   size="sm"
                   onClick={() => void handleQuickAddRow()}
                   disabled={!database || quickAddLoading || !canEditWorkspace}
-                  className="h-9 gap-1.5 rounded-xl bg-white px-3 text-[13px] font-medium text-black hover:bg-zinc-200"
+                  className="h-9 gap-1.5 rounded-xl bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   {quickAddLoading ? "Adding..." : "New row"}
@@ -1655,7 +1655,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                   label={`Group: ${activeBoardGroupProperty.name}`}
                   onClick={openGroupByPanel}
                   removable={false}
-                  icon={<Rows3 className="h-3 w-3 text-zinc-500" />}
+                  icon={<Rows3 className="h-3 w-3 text-muted-foreground" />}
                 />
               </div>
             )}
@@ -1672,12 +1672,12 @@ export function DatabaseView({ page }: DatabaseViewProps) {
       <div className="px-6 pb-14 md:px-10">
         <div className="mx-auto max-w-[1440px]">
           {database === undefined ? (
-            <div className="py-8 text-sm text-zinc-500">Loading database...</div>
+            <div className="py-8 text-sm text-muted-foreground">Loading database...</div>
           ) : database === null ? (
             <CreateDatabase pageId={page._id} editable={canEditWorkspace} />
           ) : (
             <>
-              <div className="mb-3 flex items-center justify-between px-1 text-sm text-zinc-500">
+              <div className="mb-3 flex items-center justify-between px-1 text-sm text-muted-foreground">
                 <span>
                   {visibleRows?.length ?? 0}
                   {rows && visibleRows && rows.length !== visibleRows.length ? ` of ${rows.length}` : ""}
@@ -1807,8 +1807,8 @@ function CreateDatabase({
   };
 
   return (
-    <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed border-white/10 bg-black/20 px-6 py-16 text-center">
-      <p className="max-w-md text-sm text-zinc-400">
+    <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed border-foreground/10 bg-foreground/20 px-6 py-16 text-center">
+      <p className="max-w-md text-sm text-muted-foreground">
         No database schema exists on this page yet. Initialize one with a Notion-style starter setup.
       </p>
       {editable ? (
@@ -1816,13 +1816,13 @@ function CreateDatabase({
           type="button"
           onClick={() => void handleCreate()}
           disabled={creating}
-          className="rounded-xl bg-white text-black hover:bg-zinc-200"
+          className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="mr-2 h-4 w-4" />
           {creating ? "Creating..." : "Initialize Database"}
         </Button>
       ) : (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted-foreground">
           You have view-only access to this workspace, so only editors can create the database schema.
         </p>
       )}

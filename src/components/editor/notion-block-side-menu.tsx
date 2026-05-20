@@ -79,7 +79,9 @@ function cloneBlockForInsertion(block: EditorBlock): EditorPartialBlock {
       block.content === undefined
         ? undefined
         : deepClone(block.content) as EditorPartialBlock["content"],
-    children: block.children?.map(cloneBlockForInsertion),
+    children: Array.isArray(block.children)
+      ? block.children.filter(Boolean).map(cloneBlockForInsertion)
+      : [],
   } as EditorPartialBlock;
 }
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, FileText, Link2, Mail, Phone, Sigma } from "lucide-react";
@@ -203,9 +203,9 @@ export function PropertyCell({
           )}
         >
           {resolvedValue === null || resolvedValue === undefined || resolvedValue === "" ? (
-            <span className="text-zinc-500">Auto</span>
+            <span className="text-muted-foreground">Auto</span>
           ) : (
-            <span className="block max-w-full truncate font-medium tabular-nums text-zinc-300">
+            <span className="block max-w-full truncate font-medium tabular-nums text-foreground/80">
               {String(resolvedValue)}
             </span>
           )}
@@ -234,13 +234,13 @@ export function PropertyCell({
 
       const prefixIcon =
         property.type === "title" && property.config?.showPageIcon ? (
-          <FileText className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+          <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         ) : property.type === "email" ? (
-          <Mail className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+          <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         ) : property.type === "phone" ? (
-          <Phone className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+          <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         ) : property.type === "url" ? (
-          <Link2 className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+          <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         ) : null;
 
       if (!isEditable) {
@@ -260,7 +260,7 @@ export function PropertyCell({
                   rel={property.type === "url" ? "noopener noreferrer" : undefined}
                   className={cn(
                     textValueClass,
-                    "text-zinc-100 underline decoration-zinc-600 underline-offset-2"
+                    "text-foreground underline decoration-muted-foreground underline-offset-2"
                   )}
                 >
                   {String(resolvedValue)}
@@ -269,8 +269,8 @@ export function PropertyCell({
                 <span
                   className={cn(
                     textValueClass,
-                    property.type === "title" ? "font-medium text-zinc-100" : "text-zinc-200",
-                    !resolvedValue && "font-normal text-zinc-500"
+                    property.type === "title" ? "font-medium text-foreground" : "text-foreground",
+                    !resolvedValue && "font-normal text-muted-foreground"
                   )}
                 >
                   {resolvedValue ? String(resolvedValue) : property.type === "title" ? "Untitled" : "Empty"}
@@ -305,7 +305,7 @@ export function PropertyCell({
               }
             }}
             className={cn(
-              "my-1 min-h-[32px] resize-none overflow-hidden rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-[13px] text-zinc-100 shadow-sm outline-none ring-0 focus:border-white/15 focus:ring-1 focus:ring-white/10",
+              "my-1 min-h-[32px] resize-none overflow-hidden rounded-lg border border-foreground/10 bg-foreground/[0.05] px-2.5 py-1.5 text-[13px] text-foreground shadow-sm outline-none ring-0 focus:border-foreground/15 focus:ring-1 focus:ring-foreground/10",
               "whitespace-pre-wrap break-words",
               fieldWidthClass
             )}
@@ -334,7 +334,7 @@ export function PropertyCell({
               }
             }}
             className={cn(
-              "my-1 h-8 min-w-0 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-[13px] text-zinc-100 shadow-sm outline-none ring-0 focus:border-white/15 focus:ring-1 focus:ring-white/10",
+              "my-1 h-8 min-w-0 rounded-lg border border-foreground/10 bg-foreground/[0.05] px-2.5 text-[13px] text-foreground shadow-sm outline-none ring-0 focus:border-foreground/15 focus:ring-1 focus:ring-foreground/10",
               fieldWidthClass
             )}
             autoFocus
@@ -353,7 +353,7 @@ export function PropertyCell({
         <button
           type="button"
           className={cn(
-            "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors hover:bg-white/[0.05]",
+            "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors hover:bg-foreground/[0.05]",
             displayWidthClass
           )}
           onClick={() => {
@@ -370,7 +370,7 @@ export function PropertyCell({
                 rel={property.type === "url" ? "noopener noreferrer" : undefined}
                 className={cn(
                   textValueClass,
-                  "text-zinc-100 underline decoration-zinc-600 underline-offset-2"
+                  "text-foreground underline decoration-muted-foreground underline-offset-2"
                 )}
                 onClick={(event) => event.stopPropagation()}
               >
@@ -380,8 +380,8 @@ export function PropertyCell({
               <span
                 className={cn(
                   textValueClass,
-                  property.type === "title" ? "font-medium text-zinc-100" : "text-zinc-200",
-                  !resolvedValue && "font-normal text-zinc-500"
+                  property.type === "title" ? "font-medium text-foreground" : "text-foreground",
+                  !resolvedValue && "font-normal text-muted-foreground"
                 )}
               >
                 {resolvedValue ? String(resolvedValue) : property.type === "title" ? "Untitled" : "Empty"}
@@ -402,9 +402,9 @@ export function PropertyCell({
             )}
           >
             {resolvedValue === null || resolvedValue === undefined || resolvedValue === "" ? (
-              <span className="text-zinc-500">Empty</span>
+              <span className="text-muted-foreground">Empty</span>
             ) : (
-              <span className="block max-w-full truncate text-zinc-100">
+              <span className="block max-w-full truncate text-foreground">
                 {Number(resolvedValue).toLocaleString()}
               </span>
             )}
@@ -426,7 +426,7 @@ export function PropertyCell({
             }
           }}
           className={cn(
-            "my-1 h-8 rounded-lg border border-white/10 bg-white/[0.05] px-2.5 text-right text-[13px] text-zinc-100 shadow-sm outline-none ring-0 focus:border-white/15 focus:ring-1 focus:ring-white/10",
+            "my-1 h-8 rounded-lg border border-foreground/10 bg-foreground/[0.05] px-2.5 text-right text-[13px] text-foreground shadow-sm outline-none ring-0 focus:border-foreground/15 focus:ring-1 focus:ring-foreground/10",
             fieldWidthClass
           )}
           autoFocus
@@ -435,7 +435,7 @@ export function PropertyCell({
         <button
           type="button"
           className={cn(
-            "flex min-h-[38px] items-center justify-end rounded-lg px-2.5 py-1.5 text-right text-[13px] transition-colors hover:bg-white/[0.05]",
+            "flex min-h-[38px] items-center justify-end rounded-lg px-2.5 py-1.5 text-right text-[13px] transition-colors hover:bg-foreground/[0.05]",
             displayWidthClass
           )}
           onClick={() => {
@@ -444,9 +444,9 @@ export function PropertyCell({
           }}
         >
           {resolvedValue === null || resolvedValue === undefined || resolvedValue === "" ? (
-            <span className="text-zinc-500">Empty</span>
+            <span className="text-muted-foreground">Empty</span>
           ) : (
-            <span className="block max-w-full truncate text-zinc-100">
+            <span className="block max-w-full truncate text-foreground">
               {Number(resolvedValue).toLocaleString()}
             </span>
           )}
@@ -474,7 +474,7 @@ export function PropertyCell({
                 <span className="truncate">{selected.label}</span>
               </span>
             ) : (
-              <span className="text-[13px] text-zinc-500">Empty</span>
+              <span className="text-[13px] text-muted-foreground">Empty</span>
             )}
           </div>
         );
@@ -486,7 +486,7 @@ export function PropertyCell({
             <button
               type="button"
               className={cn(
-                "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.05]",
+                "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-foreground/[0.05]",
                 displayWidthClass
               )}
             >
@@ -500,17 +500,17 @@ export function PropertyCell({
                   <span className="truncate">{selected.label}</span>
                 </span>
               ) : (
-                <span className="text-[13px] text-zinc-500">Empty</span>
+                <span className="text-[13px] text-muted-foreground">Empty</span>
               )}
-              <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-zinc-600" />
+              <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
             </button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
             align="start"
-            className="w-[220px] border-white/10 bg-[#191816] text-zinc-100"
+            className="w-[220px] border-foreground/10 bg-popover text-foreground"
           >
-            <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={() => onChange?.(null)}>
+            <DropdownMenuItem className="focus:bg-foreground/[0.06]" onSelect={() => onChange?.(null)}>
               Clear
             </DropdownMenuItem>
 
@@ -522,7 +522,7 @@ export function PropertyCell({
               (property.config?.options ?? []).map((option) => (
                 <DropdownMenuItem
                   key={option.id}
-                  className="focus:bg-white/[0.06]"
+                  className="focus:bg-foreground/[0.06]"
                   onSelect={() => onChange?.(option.id)}
                 >
                   <span
@@ -533,7 +533,7 @@ export function PropertyCell({
                   >
                     {option.label}
                   </span>
-                  {selected?.id === option.id && <Check className="ml-auto h-4 w-4 text-zinc-300" />}
+                  {selected?.id === option.id && <Check className="ml-auto h-4 w-4 text-foreground/80" />}
                 </DropdownMenuItem>
               ))
             )}
@@ -569,7 +569,7 @@ export function PropertyCell({
                 ))}
               </div>
             ) : (
-              <span className="text-[13px] text-zinc-500">Empty</span>
+              <span className="text-[13px] text-muted-foreground">Empty</span>
             )}
           </div>
         );
@@ -581,7 +581,7 @@ export function PropertyCell({
             <button
               type="button"
               className={cn(
-                "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-white/[0.05]",
+                "flex min-h-[38px] w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-foreground/[0.05]",
                 displayWidthClass
               )}
             >
@@ -600,15 +600,15 @@ export function PropertyCell({
                   ))}
                 </div>
               ) : (
-                <span className="text-[13px] text-zinc-500">Empty</span>
+                <span className="text-[13px] text-muted-foreground">Empty</span>
               )}
-              <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-zinc-600" />
+              <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
             </button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
             align="start"
-            className="w-[240px] border-white/10 bg-[#191816] text-zinc-100"
+            className="w-[240px] border-foreground/10 bg-popover text-foreground"
           >
             {(property.config?.options ?? []).length === 0 ? (
               <DropdownMenuItem disabled className="opacity-50">
@@ -619,7 +619,7 @@ export function PropertyCell({
                 <DropdownMenuCheckboxItem
                   key={option.id}
                   checked={selectedIds.has(option.id)}
-                  className="focus:bg-white/[0.06]"
+                  className="focus:bg-foreground/[0.06]"
                   onSelect={(event: Event) => event.preventDefault()}
                   onCheckedChange={(checked: boolean) => {
                     const next = new Set(selectedIds);
@@ -644,7 +644,7 @@ export function PropertyCell({
               ))
             )}
 
-            <DropdownMenuItem className="focus:bg-white/[0.06]" onSelect={() => onChange?.([])}>
+            <DropdownMenuItem className="focus:bg-foreground/[0.06]" onSelect={() => onChange?.([])}>
               Clear all
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -661,7 +661,7 @@ export function PropertyCell({
                 "flex h-4 w-4 items-center justify-center rounded border",
                 resolvedValue
                   ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
-                  : "border-white/15 bg-white/[0.04] text-transparent"
+                  : "border-foreground/15 bg-foreground/[0.04] text-transparent"
               )}
             >
               <Check className="h-3 w-3" />
@@ -676,7 +676,7 @@ export function PropertyCell({
             type="checkbox"
             checked={Boolean(resolvedValue)}
             onChange={(event) => onChange?.(event.target.checked)}
-            className="h-4 w-4 cursor-pointer rounded border-white/15 bg-white/[0.04] accent-white"
+            className="h-4 w-4 cursor-pointer rounded border-foreground/15 bg-foreground/[0.04] accent-white"
           />
         </label>
       );
@@ -690,7 +690,7 @@ export function PropertyCell({
               displayWidthClass
             )}
           >
-            <span className={resolvedValue ? "text-zinc-200" : "text-zinc-500"}>
+            <span className={resolvedValue ? "text-foreground" : "text-muted-foreground"}>
               {formatDateValue(resolvedValue) || "Empty"}
             </span>
           </div>
@@ -718,7 +718,7 @@ export function PropertyCell({
               displayWidthClass
             )}
           >
-            <span className={resolvedValue ? "text-zinc-200" : "text-zinc-500"}>
+            <span className={resolvedValue ? "text-foreground" : "text-muted-foreground"}>
               {formatDateTimeValue(resolvedValue) || "Empty"}
             </span>
           </div>
@@ -769,8 +769,8 @@ export function PropertyCell({
             </span>
           ) : (
             <div className="flex min-w-0 items-center gap-2">
-              <Sigma className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-              <span className={cn(textValueClass, "text-zinc-200", !displayText && "text-zinc-500")}>
+              <Sigma className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className={cn(textValueClass, "text-foreground", !displayText && "text-muted-foreground")}>
                 {displayText || "Empty"}
               </span>
             </div>
@@ -784,11 +784,11 @@ export function PropertyCell({
         return (
           <div
             className={cn(
-              "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] text-zinc-300",
+              "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] text-foreground/80",
               displayWidthClass
             )}
           >
-            <span className={cn(textValueClass, !resolvedValue && "text-zinc-500")}>
+            <span className={cn(textValueClass, !resolvedValue && "text-muted-foreground")}>
               {String(resolvedValue ?? "") || "Empty"}
             </span>
           </div>
@@ -799,7 +799,7 @@ export function PropertyCell({
         <button
           type="button"
           className={cn(
-            "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] text-zinc-300 transition-colors hover:bg-white/[0.05]",
+            "flex min-h-[38px] w-full min-w-0 items-center overflow-hidden rounded-lg px-2.5 py-1.5 text-left text-[13px] text-foreground/80 transition-colors hover:bg-foreground/[0.05]",
             displayWidthClass
           )}
           onClick={() => {
@@ -807,7 +807,7 @@ export function PropertyCell({
             setEditing(true);
           }}
         >
-          <span className={cn(textValueClass, !resolvedValue && "text-zinc-500")}>
+          <span className={cn(textValueClass, !resolvedValue && "text-muted-foreground")}>
             {String(resolvedValue ?? "") || "Empty"}
           </span>
         </button>

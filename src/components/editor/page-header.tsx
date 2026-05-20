@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
@@ -256,7 +256,7 @@ export function PageHeader({
           />
           {editable ? (
             <button
-              className="absolute top-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded hover:bg-black/60 transition"
+              className="absolute top-2 right-2 bg-foreground/40 text-foreground text-xs px-2 py-1 rounded hover:bg-foreground/60 transition"
               onClick={handleRemoveCover}
             >
               Remove cover

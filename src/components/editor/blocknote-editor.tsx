@@ -19,6 +19,35 @@ interface BlockNoteEditorProps {
   isFullWidth?: boolean;
 }
 
+// Recursively strip null/undefined/malformed entries so BlockNote receives a
+// shape ProseMirror can render. A single bad node (e.g. null child from an old
+// duplicate, missing string `type`) makes the entire editor view throw.
+function sanitizeBlockNoteDocument(blocks: unknown): any[] {
+  if (!Array.isArray(blocks)) return [];
+  const cleaned: any[] = [];
+  for (const block of blocks) {
+    if (!block || typeof block !== "object") continue;
+    const b = block as Record<string, any>;
+    if (typeof b.type !== "string" || b.type.length === 0) continue;
+
+    const next: Record<string, any> = { ...b };
+
+    if (Array.isArray(b.content)) {
+      next.content = b.content.filter(
+        (item: any) =>
+          item != null && typeof item === "object" && typeof item.type === "string"
+      );
+    }
+
+    if (Array.isArray(b.children)) {
+      next.children = sanitizeBlockNoteDocument(b.children);
+    }
+
+    cleaned.push(next);
+  }
+  return cleaned;
+}
+
 // Shimmer lines shown while blocks are loading
 function EditorSkeleton() {
   return (
@@ -98,7 +127,10 @@ export function BlockNoteEditor({
         blockContent = JSON.parse(blockContent);
       }
       if (Array.isArray(blockContent)) {
-        nextRemoteContent = blockContent;
+        // Guard against legacy/corrupted blocks that would crash BlockNote's
+        // ProseMirror renderSpec ("Invalid array passed to renderSpec").
+        // Drop null/undefined entries and anything without a string `type`.
+        nextRemoteContent = sanitizeBlockNoteDocument(blockContent);
       }
     } catch {
       nextRemoteContent = [];

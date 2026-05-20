@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback } from "react";
 import { useMutation } from "convex/react";
@@ -49,7 +49,7 @@ export function PageView({ page }: PageViewProps) {
   const saveStatusNode = (
     <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
       {!canEditWorkspace && <span>View only</span>}
-      {canEditWorkspace && saveStatus === "saving" && <span className="text-zinc-400">Saving...</span>}
+      {canEditWorkspace && saveStatus === "saving" && <span className="text-muted-foreground">Saving...</span>}
       {canEditWorkspace && saveStatus === "saved" && <span className="text-emerald-500">Saved</span>}
       {canEditWorkspace && saveStatus === "error" && <span className="text-red-400">Save failed</span>}
       {canEditWorkspace && saveStatus === "idle" && page.updatedAt && (

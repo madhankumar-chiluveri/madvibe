@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, Filter, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
@@ -56,10 +56,10 @@ function FilterValueEditor({
   if (property.type === "checkbox") {
     return (
       <Select value={String(condition.value ?? "true")} onValueChange={onValueChange}>
-        <SelectTrigger className="h-10 w-full rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus:ring-white/15">
+        <SelectTrigger className="h-10 w-full rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus:ring-foreground/15">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+        <SelectContent className="border-foreground/10 bg-popover text-foreground">
           <SelectItem value="true">Checked</SelectItem>
           <SelectItem value="false">Unchecked</SelectItem>
         </SelectContent>
@@ -75,10 +75,10 @@ function FilterValueEditor({
         value={String(condition.value || NONE_VALUE)}
         onValueChange={(value) => onValueChange(value === NONE_VALUE ? "" : value)}
       >
-        <SelectTrigger className="h-10 w-full rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus:ring-white/15">
+        <SelectTrigger className="h-10 w-full rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus:ring-foreground/15">
           <SelectValue placeholder="Select value" />
         </SelectTrigger>
-        <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+        <SelectContent className="border-foreground/10 bg-popover text-foreground">
           <SelectItem value={NONE_VALUE}>
             {options.length > 0 ? "Select value" : "No options yet"}
           </SelectItem>
@@ -105,7 +105,7 @@ function FilterValueEditor({
       value={String(condition.value ?? "")}
       onChange={(event) => onValueChange(event.target.value)}
       placeholder={isDateLike ? "Pick a date" : isNumberLike ? "Enter a number" : "Type a value"}
-      className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+      className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
     />
   );
 }
@@ -246,7 +246,7 @@ export function DatabaseQuickFilterBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-[18px] border border-white/8 bg-[#100f0d]/80 px-2.5 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-sm",
+        "flex flex-wrap items-center gap-2 rounded-[18px] border border-foreground/8 bg-card/80 px-2.5 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-sm",
         className
       )}
     >
@@ -255,11 +255,11 @@ export function DatabaseQuickFilterBar({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-zinc-300 transition-colors hover:bg-white/[0.07] hover:text-white"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 text-sm text-foreground/80 transition-colors hover:bg-foreground/[0.07] hover:text-foreground"
             >
-              <Filter className="h-3.5 w-3.5 text-zinc-500" />
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{filterGroup.operator === "and" ? "All filters" : "Any filter"}</span>
-              <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-[280px] p-2">
@@ -267,16 +267,16 @@ export function DatabaseQuickFilterBar({
               type="button"
               onClick={() => setFilterOperator("and")}
               className={cn(
-                "flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.05]",
-                filterGroup.operator === "and" && "bg-white/[0.06]"
+                "flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.05]",
+                filterGroup.operator === "and" && "bg-foreground/[0.06]"
               )}
             >
-              <span className="mt-0.5 flex h-4 w-4 items-center justify-center text-zinc-500">
+              <span className="mt-0.5 flex h-4 w-4 items-center justify-center text-muted-foreground">
                 {filterGroup.operator === "and" ? <Check className="h-3.5 w-3.5 text-sky-300" /> : null}
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-medium text-zinc-100">Match all filters</span>
-                <span className="mt-0.5 block text-xs text-zinc-500">
+                <span className="block text-sm font-medium text-foreground">Match all filters</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
                   Rows must satisfy every quick filter.
                 </span>
               </span>
@@ -285,16 +285,16 @@ export function DatabaseQuickFilterBar({
               type="button"
               onClick={() => setFilterOperator("or")}
               className={cn(
-                "mt-1 flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-white/[0.05]",
-                filterGroup.operator === "or" && "bg-white/[0.06]"
+                "mt-1 flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.05]",
+                filterGroup.operator === "or" && "bg-foreground/[0.06]"
               )}
             >
-              <span className="mt-0.5 flex h-4 w-4 items-center justify-center text-zinc-500">
+              <span className="mt-0.5 flex h-4 w-4 items-center justify-center text-muted-foreground">
                 {filterGroup.operator === "or" ? <Check className="h-3.5 w-3.5 text-sky-300" /> : null}
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-medium text-zinc-100">Match any filter</span>
-                <span className="mt-0.5 block text-xs text-zinc-500">
+                <span className="block text-sm font-medium text-foreground">Match any filter</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
                   Rows can satisfy just one quick filter.
                 </span>
               </span>
@@ -304,7 +304,7 @@ export function DatabaseQuickFilterBar({
       ) : null}
 
       {filterGroup.conditions.length === 0 ? (
-        <div className="flex min-h-10 items-center px-1 text-sm text-zinc-500">
+        <div className="flex min-h-10 items-center px-1 text-sm text-muted-foreground">
           Quick filters stay local to this view until you save them.
         </div>
       ) : (
@@ -339,16 +339,16 @@ export function DatabaseQuickFilterBar({
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-[min(92vw,360px)] p-0">
-                <div className="border-b border-white/8 px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                <div className="border-b border-foreground/8 px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                     Quick filter
                   </div>
-                  <div className="mt-1 text-sm font-medium text-zinc-100">Edit filter</div>
+                  <div className="mt-1 text-sm font-medium text-foreground">Edit filter</div>
                 </div>
 
                 <div className="space-y-3 p-4">
                   <div className="space-y-2">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                       Property
                     </div>
                     <Select
@@ -365,10 +365,10 @@ export function DatabaseQuickFilterBar({
                         }));
                       }}
                     >
-                      <SelectTrigger className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus:ring-white/15">
+                      <SelectTrigger className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus:ring-foreground/15">
                         <SelectValue placeholder="Property" />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+                      <SelectContent className="border-foreground/10 bg-popover text-foreground">
                         {properties.map((candidate) => (
                           <SelectItem key={candidate.id} value={candidate.id}>
                             {candidate.name}
@@ -379,7 +379,7 @@ export function DatabaseQuickFilterBar({
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                       Condition
                     </div>
                     <Select
@@ -393,10 +393,10 @@ export function DatabaseQuickFilterBar({
                         }));
                       }}
                     >
-                      <SelectTrigger className="h-10 rounded-xl border-white/10 bg-white/[0.03] text-zinc-100 focus:ring-white/15">
+                      <SelectTrigger className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.03] text-foreground focus:ring-foreground/15">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-white/10 bg-[#191816] text-zinc-100">
+                      <SelectContent className="border-foreground/10 bg-popover text-foreground">
                         {getFilterOperatorOptions(property).map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
@@ -407,7 +407,7 @@ export function DatabaseQuickFilterBar({
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                       Value
                     </div>
                     {filterOperatorNeedsValue(condition.operator) ? (
@@ -422,14 +422,14 @@ export function DatabaseQuickFilterBar({
                         }
                       />
                     ) : (
-                      <div className="flex h-10 items-center rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-zinc-500">
+                      <div className="flex h-10 items-center rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 text-sm text-muted-foreground">
                         This condition does not need a value.
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-white/8 px-3 py-2">
+                <div className="flex items-center justify-between border-t border-foreground/8 px-3 py-2">
                   <button
                     type="button"
                     onClick={() => removeCondition(index)}
@@ -443,7 +443,7 @@ export function DatabaseQuickFilterBar({
                     size="sm"
                     variant="ghost"
                     onClick={() => setEditingFilterIndex(null)}
-                    className="h-9 rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                    className="h-9 rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                   >
                     Done
                   </Button>
@@ -458,14 +458,14 @@ export function DatabaseQuickFilterBar({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-white/12 bg-white/[0.02] px-3 text-sm text-zinc-300 transition-colors hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-foreground/12 bg-foreground/[0.02] px-3 text-sm text-foreground/80 transition-colors hover:border-foreground/20 hover:bg-foreground/[0.05] hover:text-foreground"
           >
             <Plus className="h-3.5 w-3.5" />
             Filter
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[280px] p-2">
-          <div className="px-2 pb-2 pt-1 text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+          <div className="px-2 pb-2 pt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             Add a quick filter
           </div>
           <div className="max-h-[280px] space-y-1 overflow-y-auto pr-1">
@@ -474,11 +474,11 @@ export function DatabaseQuickFilterBar({
                 key={property.id}
                 type="button"
                 onClick={() => addConditionForProperty(property.id)}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-zinc-200 transition-colors hover:bg-white/[0.05] hover:text-white"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground"
               >
-                <span className="text-zinc-500">{getPropertyIcon(property.type)}</span>
+                <span className="text-muted-foreground">{getPropertyIcon(property.type)}</span>
                 <span className="min-w-0 flex-1 truncate">{property.name}</span>
-                <span className="text-xs text-zinc-500">{property.type.replace("_", " ")}</span>
+                <span className="text-xs text-muted-foreground">{property.type.replace("_", " ")}</span>
               </button>
             ))}
           </div>
@@ -490,7 +490,7 @@ export function DatabaseQuickFilterBar({
           type="button"
           onClick={onReset}
           disabled={!hasPendingChanges}
-          className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-white disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
+          className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Reset
@@ -499,7 +499,7 @@ export function DatabaseQuickFilterBar({
           type="button"
           onClick={onSave}
           disabled={!hasPendingChanges}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/14 px-3 text-sm font-medium text-amber-100 transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.04] disabled:text-zinc-500"
+          className="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/14 px-3 text-sm font-medium text-amber-100 transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:border-foreground/10 disabled:bg-foreground/[0.04] disabled:text-muted-foreground"
         >
           <Save className="h-3.5 w-3.5" />
           Save view

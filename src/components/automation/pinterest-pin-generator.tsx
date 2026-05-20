@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -225,7 +225,7 @@ export function PinterestPinGenerator() {
                 size="lg"
                 onClick={generate}
                 disabled={loading || !url.trim() || !affiliateTag.trim()}
-                className="h-11 rounded-2xl bg-rose-600 px-5 text-white shadow-sm hover:bg-rose-500"
+                className="h-11 rounded-2xl bg-rose-600 px-5 text-foreground shadow-sm hover:bg-rose-500"
               >
                 {loading ? (
                   <>

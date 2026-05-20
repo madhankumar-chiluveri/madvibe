@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -33,7 +33,7 @@ function PinDots({ value }: { value: string }) {
               "flex h-14 items-center justify-center rounded-2xl border text-xl font-semibold transition-colors",
               filled
                 ? "border-sky-500/30 bg-sky-500/10 text-sky-300"
-                : "border-white/10 bg-white/[0.03] text-zinc-600"
+                : "border-foreground/10 bg-foreground/[0.03] text-muted-foreground/70"
             )}
           >
             {filled ? (
@@ -212,7 +212,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
       <div className="min-h-full bg-background">
         <WorkspaceTopBar moduleTitle="Ledger" />
         <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-xl items-center justify-center px-4 py-10">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#151412] px-5 py-4 text-sm text-zinc-300">
+          <div className="flex items-center gap-3 rounded-2xl border border-foreground/10 bg-card px-5 py-4 text-sm text-foreground/80">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading Ledger security...
           </div>
@@ -237,7 +237,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            "w-full rounded-[28px] border border-white/10 bg-[#141311] text-zinc-100 shadow-[0_24px_80px_rgba(0,0,0,0.35)]",
+            "w-full rounded-[28px] border border-foreground/10 bg-card text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.35)]",
             status.hasPin ? "p-5 sm:p-6" : "p-6"
           )}
         >
@@ -264,7 +264,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
               </h1>
               <p
                 className={cn(
-                  "text-sm text-zinc-400",
+                  "text-sm text-muted-foreground",
                   status.hasPin ? "mt-2 leading-5" : "mt-2 leading-6"
                 )}
               >
@@ -276,7 +276,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
 
             <div
               className={cn(
-                "rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-400",
+                "rounded-2xl border border-foreground/10 bg-foreground/[0.03] text-muted-foreground",
                 status.hasPin ? "p-2.5" : "p-3"
               )}
             >
@@ -295,7 +295,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
                     type="button"
                     onClick={() => appendDigit(digit)}
                     disabled={submitting}
-                    className="h-12 rounded-2xl border border-white/10 bg-white/[0.03] text-base font-semibold text-zinc-100 transition-colors hover:bg-white/[0.07] disabled:opacity-50"
+                    className="h-12 rounded-2xl border border-foreground/10 bg-foreground/[0.03] text-base font-semibold text-foreground transition-colors hover:bg-foreground/[0.07] disabled:opacity-50"
                   >
                     {digit}
                   </button>
@@ -304,7 +304,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={() => setPinDigits("")}
                   disabled={submitting}
-                  className="h-12 rounded-2xl border border-white/10 bg-white/[0.03] text-sm font-medium text-zinc-400 transition-colors hover:bg-white/[0.07] hover:text-zinc-100 disabled:opacity-50"
+                  className="h-12 rounded-2xl border border-foreground/10 bg-foreground/[0.03] text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground disabled:opacity-50"
                 >
                   Clear
                 </button>
@@ -312,7 +312,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={() => appendDigit("0")}
                   disabled={submitting}
-                  className="h-12 rounded-2xl border border-white/10 bg-white/[0.03] text-base font-semibold text-zinc-100 transition-colors hover:bg-white/[0.07] disabled:opacity-50"
+                  className="h-12 rounded-2xl border border-foreground/10 bg-foreground/[0.03] text-base font-semibold text-foreground transition-colors hover:bg-foreground/[0.07] disabled:opacity-50"
                 >
                   0
                 </button>
@@ -320,7 +320,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={removeDigit}
                   disabled={submitting}
-                  className="flex h-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-zinc-400 transition-colors hover:bg-white/[0.07] hover:text-zinc-100 disabled:opacity-50"
+                  className="flex h-12 items-center justify-center rounded-2xl border border-foreground/10 bg-foreground/[0.03] text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground disabled:opacity-50"
                 >
                   <Delete className="h-5 w-5" />
                 </button>
@@ -330,7 +330,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                     New PIN
                   </label>
                   <Input
@@ -342,11 +342,11 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
                       setSetupPin(event.target.value.replace(/\D/g, "").slice(0, LEDGER_PIN_LENGTH))
                     }
                     placeholder="4 digits"
-                    className="h-12 rounded-2xl border-white/10 bg-[#181715] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                    className="h-12 rounded-2xl border-foreground/10 bg-input text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                     Confirm PIN
                   </label>
                   <Input
@@ -358,14 +358,14 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
                       setConfirmPin(event.target.value.replace(/\D/g, "").slice(0, LEDGER_PIN_LENGTH))
                     }
                     placeholder="Repeat PIN"
-                    className="h-12 rounded-2xl border-white/10 bg-[#181715] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                    className="h-12 rounded-2xl border-foreground/10 bg-input text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                   />
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-zinc-400">
+              <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.02] px-4 py-3 text-sm text-muted-foreground">
                 Reset emails will go to{" "}
-                <span className="font-medium text-zinc-200">
+                <span className="font-medium text-foreground">
                   {status.maskedEmail ?? status.email ?? "your account email"}
                 </span>
                 .
@@ -373,7 +373,7 @@ export function LedgerSecurityGate({ children }: { children: ReactNode }) {
 
               <Button
                 type="button"
-                className="h-12 w-full rounded-2xl bg-white text-black hover:bg-zinc-200"
+                className="h-12 w-full rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => void handleCreatePin()}
                 disabled={submitting}
               >

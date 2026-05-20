@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(xargs ls:*)",
-      "Bash(grep -A 5 \"const.*useQuery\" /d/Madhan_Projects/madvibe/src/app/workspace/[pageId]/page.tsx)"
-    ]
-  }
-}

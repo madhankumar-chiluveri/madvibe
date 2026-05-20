@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
@@ -172,14 +172,14 @@ export function ReminderCenter() {
   const renderSection = (title: string, sectionReminders: Reminder[], emptyText: string) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+        <h3 className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
           {title}
         </h3>
-        <span className="text-xs text-zinc-600">{sectionReminders.length}</span>
+        <span className="text-xs text-muted-foreground/70">{sectionReminders.length}</span>
       </div>
 
       {sectionReminders.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-6 text-sm text-zinc-500">
+        <div className="rounded-2xl border border-dashed border-foreground/10 bg-foreground/[0.02] px-4 py-6 text-sm text-muted-foreground">
           {emptyText}
         </div>
       ) : (
@@ -187,13 +187,13 @@ export function ReminderCenter() {
           {sectionReminders.map((reminder) => (
             <div
               key={reminder._id}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-3"
+              className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3"
             >
               <div className="flex items-start gap-3">
                 <button
                   type="button"
                   onClick={() => void handleToggleComplete(reminder)}
-                  className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-black/20 text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+                  className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/20 text-muted-foreground transition hover:bg-foreground/[0.06] hover:text-foreground"
                   aria-label={reminder.status === "completed" ? "Mark scheduled" : "Mark complete"}
                 >
                   {reminder.status === "completed" ? (
@@ -209,20 +209,20 @@ export function ReminderCenter() {
                     onClick={() => setEditingReminder(reminder)}
                     className="block text-left"
                   >
-                    <div className="text-sm font-medium text-zinc-100">{reminder.title}</div>
+                    <div className="text-sm font-medium text-foreground">{reminder.title}</div>
                     {reminder.note && (
-                      <div className="mt-1 text-sm leading-6 text-zinc-400">{reminder.note}</div>
+                      <div className="mt-1 text-sm leading-6 text-muted-foreground">{reminder.note}</div>
                     )}
                   </button>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-2.5 py-1">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-foreground/10 bg-foreground/20 px-2.5 py-1">
                       <Clock3 className="h-3.5 w-3.5" />
                       {formatReminderDate(reminder.remindAt)}
                     </span>
                     <span>{formatReminderRelative(reminder.remindAt)}</span>
                     {reminder.sourceLabel && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-2.5 py-1">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-foreground/10 bg-foreground/20 px-2.5 py-1">
                         <Bell className="h-3.5 w-3.5" />
                         {reminder.sourceLabel}
                       </span>
@@ -235,7 +235,7 @@ export function ReminderCenter() {
                     <button
                       type="button"
                       onClick={() => void handleSnooze(reminder, 60 * 60 * 1000)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/[0.06] hover:text-white"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-foreground/[0.06] hover:text-foreground"
                       title="Snooze 1 hour"
                     >
                       <Clock3 className="h-4 w-4" />
@@ -248,7 +248,7 @@ export function ReminderCenter() {
                         router.push(reminder.sourceUrl!);
                         setReminderCenterOpen(false);
                       }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/[0.06] hover:text-white"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-foreground/[0.06] hover:text-foreground"
                       title="Open source"
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -257,7 +257,7 @@ export function ReminderCenter() {
                   <button
                     type="button"
                     onClick={() => setEditingReminder(reminder)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/[0.06] hover:text-white"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-foreground/[0.06] hover:text-foreground"
                     title="Edit reminder"
                   >
                     <Pencil className="h-4 w-4" />
@@ -265,7 +265,7 @@ export function ReminderCenter() {
                   <button
                     type="button"
                     onClick={() => void handleRemove(reminder)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-red-500/12 hover:text-red-300"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-red-500/12 hover:text-red-300"
                     title="Delete reminder"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -284,18 +284,18 @@ export function ReminderCenter() {
       <Dialog open={reminderCenterOpen} onOpenChange={setReminderCenterOpen}>
         <DialogContent
           title="Reminders"
-          className="max-w-4xl border-white/10 bg-[#141311] text-zinc-100 sm:rounded-2xl"
+          className="max-w-4xl border-foreground/10 bg-card text-foreground sm:rounded-2xl"
         >
           <DialogHeader>
-            <DialogTitle className="text-zinc-100">Reminders</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogTitle className="text-foreground">Reminders</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Capture standalone reminders and linked follow-ups from tasks, pages, and databases.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-sm text-zinc-300">
-              <BellRing className="h-4 w-4 text-zinc-500" />
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-foreground/10 bg-foreground/20 px-3 py-1 text-sm text-foreground/80">
+              <BellRing className="h-4 w-4 text-muted-foreground" />
               {summary?.total ?? grouped.overdue.length + grouped.today.length + grouped.upcoming.length} scheduled
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-red-500/15 bg-red-500/10 px-3 py-1 text-sm text-red-200">
@@ -331,14 +331,14 @@ export function ReminderCenter() {
                 </span>
               )}
               {!isSupported && notificationPermission !== "unsupported" && notificationPermission !== "granted" && (
-                <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-zinc-500">
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-foreground/10 bg-foreground/[0.03] px-3 py-2 text-xs text-muted-foreground">
                   <BellOff className="h-3.5 w-3.5" />
                   Notifications not supported
                 </span>
               )}
               <Button
                 type="button"
-                className="rounded-xl bg-white text-black hover:bg-zinc-200"
+                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => setComposerOpen(true)}
                 disabled={!resolvedWorkspaceId}
               >

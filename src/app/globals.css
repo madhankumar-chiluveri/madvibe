@@ -71,47 +71,47 @@
   }
 
   .dark {
-    --background: #191918;
-    --foreground: #e5e4e1;
-    --card: #1e1e1c;
-    --card-foreground: #e5e4e1;
-    --popover: #1e1e1c;
-    --popover-foreground: #e5e4e1;
-    --sidebar: #141413;
-    --primary: #fffffe;
-    --primary-foreground: #191918;
-    --secondary: #2a2926;
-    --secondary-foreground: #e5e4e1;
-    --muted: #2a2926;
-    --muted-foreground: #6b6a68;
-    --accent: #2a2926;
-    --accent-foreground: #e5e4e1;
+    --background: #191919;
+    --foreground: #ededed;
+    --card: #202020;
+    --card-foreground: #ededed;
+    --popover: #252525;
+    --popover-foreground: #ededed;
+    --sidebar: #161616;
+    --primary: #ffffff;
+    --primary-foreground: #191919;
+    --secondary: #252525;
+    --secondary-foreground: #ededed;
+    --muted: #252525;
+    --muted-foreground: #9b9b9b;
+    --accent: #2f2f2f;
+    --accent-foreground: #ededed;
     --destructive: #ff7369;
-    --destructive-foreground: #191918;
-    --border: #2a2926;
-    --input: #2a2926;
-    --ring: #e5e4e1;
+    --destructive-foreground: #191919;
+    --border: #2e2e2e;
+    --input: #2e2e2e;
+    --ring: #ededed;
 
-    --background-rgb: 25 25 24;
-    --foreground-rgb: 229 228 225;
-    --card-rgb: 30 30 28;
-    --card-foreground-rgb: 229 228 225;
-    --popover-rgb: 30 30 28;
-    --popover-foreground-rgb: 229 228 225;
-    --sidebar-rgb: 20 20 19;
-    --primary-rgb: 255 255 254;
-    --primary-foreground-rgb: 25 25 24;
-    --secondary-rgb: 42 41 38;
-    --secondary-foreground-rgb: 229 228 225;
-    --muted-rgb: 42 41 38;
-    --muted-foreground-rgb: 107 106 104;
-    --accent-rgb: 42 41 38;
-    --accent-foreground-rgb: 229 228 225;
+    --background-rgb: 25 25 25;
+    --foreground-rgb: 237 237 237;
+    --card-rgb: 32 32 32;
+    --card-foreground-rgb: 237 237 237;
+    --popover-rgb: 37 37 37;
+    --popover-foreground-rgb: 237 237 237;
+    --sidebar-rgb: 22 22 22;
+    --primary-rgb: 255 255 255;
+    --primary-foreground-rgb: 25 25 25;
+    --secondary-rgb: 37 37 37;
+    --secondary-foreground-rgb: 237 237 237;
+    --muted-rgb: 37 37 37;
+    --muted-foreground-rgb: 155 155 155;
+    --accent-rgb: 47 47 47;
+    --accent-foreground-rgb: 237 237 237;
     --destructive-rgb: 255 115 105;
-    --destructive-foreground-rgb: 25 25 24;
-    --border-rgb: 42 41 38;
-    --input-rgb: 42 41 38;
-    --ring-rgb: 229 228 225;
+    --destructive-foreground-rgb: 25 25 25;
+    --border-rgb: 46 46 46;
+    --input-rgb: 46 46 46;
+    --ring-rgb: 237 237 237;
 
     --notion-gray-text: #9ea0a2;
     --notion-gray-bg: #454b4e;
@@ -468,14 +468,4 @@
 
 .database-shell {
   position: relative;
-}
-
-.database-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at top left, rgb(var(--card-rgb) / 0.7), transparent 24%),
-    linear-gradient(180deg, rgb(var(--foreground-rgb) / 0.04), transparent 12%);
 }

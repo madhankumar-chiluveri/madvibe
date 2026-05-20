@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
@@ -263,33 +263,33 @@ export default function ShareCapturePage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(98,148,255,0.16),_transparent_38%),linear-gradient(180deg,_rgba(10,10,12,0.98),_rgba(7,7,9,1))] text-white">
+    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(98,148,255,0.16),_transparent_38%),linear-gradient(180deg,_rgba(10,10,12,0.98),_rgba(7,7,9,1))] text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-6 flex items-start gap-3 sm:items-center">
-          <AppIcon className="h-11 w-11 rounded-3xl border border-white/10 bg-white/5 p-1.5" />
+          <AppIcon className="h-11 w-11 rounded-3xl border border-foreground/10 bg-foreground/5 p-1.5" />
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.22em] text-white/45">Android Share Target</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-foreground/45">Android Share Target</p>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Save into MadVibe</h1>
           </div>
         </div>
 
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-5 text-sm text-white/72">
+            <div className="rounded-3xl border border-foreground/10 bg-foreground/[0.04] px-6 py-5 text-sm text-foreground/72">
               <Loader2 className="mb-3 h-5 w-5 animate-spin" />
               Loading your workspaces...
             </div>
           </div>
         ) : !isAuthenticated ? (
           <div className="flex flex-1 items-center justify-center">
-            <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-white/[0.05] p-5 shadow-[0_32px_80px_rgba(0,0,0,0.35)] sm:p-6">
+            <div className="w-full max-w-md rounded-[28px] border border-foreground/10 bg-foreground/[0.05] p-5 shadow-[0_32px_80px_rgba(0,0,0,0.35)] sm:p-6">
               <div className="mb-4 flex items-center gap-3">
-                <div className="rounded-2xl bg-white/10 p-3">
+                <div className="rounded-2xl bg-foreground/10 p-3">
                   <LogIn className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-lg font-semibold">Sign in to finish saving</h2>
-                  <p className="text-sm text-white/60">We will bring this shared link back after login.</p>
+                  <p className="text-sm text-foreground/60">We will bring this shared link back after login.</p>
                 </div>
               </div>
               <Button
@@ -306,7 +306,7 @@ export default function ShareCapturePage() {
           </div>
         ) : (
           <div className="grid flex-1 gap-4 sm:gap-5 lg:grid-cols-[1.12fr_0.88fr]">
-            <section className="overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.05] p-4 shadow-[0_32px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:rounded-[30px] sm:p-5">
+            <section className="overflow-hidden rounded-[26px] border border-foreground/10 bg-foreground/[0.05] p-4 shadow-[0_32px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:rounded-[30px] sm:p-5">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/65">Incoming Share</p>
@@ -319,7 +319,7 @@ export default function ShareCapturePage() {
                     href={sharePayload.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-xs text-white/70 transition hover:bg-white/[0.08] sm:w-auto sm:justify-start sm:py-1.5"
+                    className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full border border-foreground/10 bg-foreground/[0.05] px-3 py-2 text-xs text-foreground/70 transition hover:bg-foreground/[0.08] sm:w-auto sm:justify-start sm:py-1.5"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     Open source
@@ -332,11 +332,11 @@ export default function ShareCapturePage() {
                   <Link2 className="h-4 w-4" />
                   <span className="break-words">{sharePayload.host || "Shared content"}</span>
                 </div>
-                <p className="break-words text-sm leading-6 text-white/88">
+                <p className="break-words text-sm leading-6 text-foreground/88">
                   {sharePayload.note || sharePayload.text || "MadVibe is ready to save this share into a checklist item."}
                 </p>
                 {sharePayload.url ? (
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-3 py-3 text-xs text-cyan-100/85 break-all">
+                  <div className="mt-4 rounded-2xl border border-foreground/10 bg-foreground/20 px-3 py-3 text-xs text-cyan-100/85 break-all">
                     {sharePayload.url}
                   </div>
                 ) : null}
@@ -348,12 +348,12 @@ export default function ShareCapturePage() {
               </div>
 
               <div className="mt-5">
-                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-white/82">
+                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground/82">
                   <Users className="h-4 w-4" />
                   Choose a workspace
                 </div>
                 {editableWorkspaces.length === 0 ? (
-                  <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-white/65">
+                  <div className="rounded-2xl border border-foreground/10 bg-foreground/20 px-4 py-4 text-sm text-foreground/65">
                     You do not have any editable workspaces yet. Open MadVibe and create or join one first.
                   </div>
                 ) : (
@@ -370,11 +370,11 @@ export default function ShareCapturePage() {
                           "w-full rounded-2xl border px-4 py-3 text-left transition sm:min-w-[180px] sm:w-auto",
                           workspace._id === selectedWorkspaceId
                             ? "border-cyan-300/40 bg-cyan-400/12"
-                            : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+                            : "border-foreground/10 bg-foreground/[0.03] hover:bg-foreground/[0.06]"
                         )}
                       >
-                        <div className="break-words text-sm font-semibold text-white">{workspace.name}</div>
-                        <div className="mt-1 break-words text-xs text-white/55">
+                        <div className="break-words text-sm font-semibold text-foreground">{workspace.name}</div>
+                        <div className="mt-1 break-words text-xs text-foreground/55">
                           {workspace.role === "owner" ? "Owner access" : "Editor access"}
                           {workspace.memberCount ? ` | ${workspace.memberCount} members` : ""}
                         </div>
@@ -385,30 +385,30 @@ export default function ShareCapturePage() {
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_32px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:rounded-[30px] sm:p-5">
+            <section className="overflow-hidden rounded-[26px] border border-foreground/10 bg-foreground/[0.04] p-4 shadow-[0_32px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:rounded-[30px] sm:p-5">
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/42">Checklist Destination</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-foreground/42">Checklist Destination</p>
                   <h2 className="mt-1 text-lg font-semibold sm:text-xl">Pick the page</h2>
                 </div>
-                <div className="max-w-full break-words rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/60 sm:rounded-full sm:py-1.5">
+                <div className="max-w-full break-words rounded-2xl border border-foreground/10 bg-foreground/[0.04] px-3 py-2 text-xs text-foreground/60 sm:rounded-full sm:py-1.5">
                   {selectedWorkspace?.name ?? "No workspace selected"}
                 </div>
               </div>
 
               <div className="relative mb-4">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/35" />
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search pages in the selected workspace"
-                  className="h-11 rounded-2xl border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/35"
+                  className="h-11 rounded-2xl border-foreground/10 bg-foreground/20 pl-10 text-foreground placeholder:text-foreground/35"
                 />
               </div>
 
               <div className="space-y-2">
                 {visiblePages.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 py-8 text-center text-sm text-white/55">
+                  <div className="rounded-2xl border border-dashed border-foreground/12 bg-foreground/20 px-4 py-8 text-center text-sm text-foreground/55">
                     {selectedWorkspaceId
                       ? "No pages match this search yet."
                       : "Choose a workspace to load pages."}
@@ -427,22 +427,22 @@ export default function ShareCapturePage() {
                           "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition",
                           isActive
                             ? "border-emerald-300/40 bg-emerald-400/12"
-                            : "border-white/10 bg-white/[0.025] hover:bg-white/[0.05]"
+                            : "border-foreground/10 bg-foreground/[0.025] hover:bg-foreground/[0.05]"
                         )}
                       >
                         <div
                           className={cn(
                             "shrink-0 rounded-2xl p-2.5",
-                            isActive ? "bg-emerald-300/15 text-emerald-100" : "bg-white/8 text-white/70"
+                            isActive ? "bg-emerald-300/15 text-emerald-100" : "bg-foreground/8 text-foreground/70"
                           )}
                         >
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="break-words text-sm font-medium leading-5 text-white">
+                          <div className="break-words text-sm font-medium leading-5 text-foreground">
                             {page.title || "Untitled"}
                           </div>
-                          <div className="mt-1 text-xs text-white/50">
+                          <div className="mt-1 text-xs text-foreground/50">
                             {page.type === "dashboard" ? "Space home" : "Document page"}
                           </div>
                         </div>
@@ -453,8 +453,8 @@ export default function ShareCapturePage() {
                 )}
               </div>
 
-              <div className="mt-5 rounded-[24px] border border-white/10 bg-black/20 p-4">
-                <p className="text-sm text-white/72">
+              <div className="mt-5 rounded-[24px] border border-foreground/10 bg-foreground/20 p-4">
+                <p className="text-sm text-foreground/72">
                   MadVibe will append one unchecked checklist item to the selected page with the shared link embedded as text.
                 </p>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -467,7 +467,7 @@ export default function ShareCapturePage() {
                       !editableWorkspaces.length ||
                       !hasIncomingShare
                     }
-                    className="w-full rounded-2xl bg-emerald-500 text-black hover:bg-emerald-400 sm:flex-1"
+                    className="w-full rounded-2xl bg-emerald-500 text-primary-foreground hover:bg-emerald-400 sm:flex-1"
                   >
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Save checklist item
@@ -476,14 +476,14 @@ export default function ShareCapturePage() {
                     type="button"
                     variant="outline"
                     onClick={handleOpenWorkspace}
-                    className="w-full rounded-2xl border-white/12 bg-white/[0.03] text-white hover:bg-white/[0.06] sm:w-auto"
+                    className="w-full rounded-2xl border-foreground/12 bg-foreground/[0.03] text-foreground hover:bg-foreground/[0.06] sm:w-auto"
                   >
                     Open app
                   </Button>
                 </div>
                 {selectedPage ? (
-                  <p className="mt-3 break-words text-xs text-white/45">
-                    Saving into <span className="text-white/72">{selectedPage.title || "Untitled"}</span>
+                  <p className="mt-3 break-words text-xs text-foreground/45">
+                    Saving into <span className="text-foreground/72">{selectedPage.title || "Untitled"}</span>
                   </p>
                 ) : null}
               </div>

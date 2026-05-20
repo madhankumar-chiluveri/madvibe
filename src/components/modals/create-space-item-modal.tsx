@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useAction, useMutation } from "convex/react";
@@ -317,16 +317,16 @@ export function CreateSpaceItemModal({
       <DialogContent
         title="Add item"
         hideTitleVisually
-        className="max-w-5xl border-white/10 bg-[#161513] p-0 text-zinc-100 sm:rounded-[28px]"
+        className="max-w-5xl border-foreground/10 bg-card p-0 text-foreground sm:rounded-[28px]"
       >
         <div className="max-h-[85vh] overflow-y-auto p-6">
           <DialogHeader className="mb-5 gap-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <DialogTitle className="text-left text-2xl text-zinc-100">
+                <DialogTitle className="text-left text-2xl text-foreground">
                   {mode === "catalog" ? `Add to ${spaceLabel}` : `Build with Maddy for ${spaceLabel}`}
                 </DialogTitle>
-                <DialogDescription className="mt-1 text-left text-zinc-400">
+                <DialogDescription className="mt-1 text-left text-muted-foreground">
                   {mode === "catalog"
                     ? "Choose an empty item or a ready-made project template."
                     : "Describe the project and Maddy will create a starter page."}
@@ -337,7 +337,7 @@ export function CreateSpaceItemModal({
                 <Button
                   type="button"
                   variant="ghost"
-                  className="rounded-xl text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                  className="rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
                   onClick={() => setMode("catalog")}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -350,17 +350,17 @@ export function CreateSpaceItemModal({
           {mode === "catalog" ? (
             <div className="space-y-8">
               <div className="relative max-w-xl">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search templates"
-                  className="h-11 rounded-2xl border-white/10 bg-white/[0.03] pl-10 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                  className="h-11 rounded-2xl border-foreground/10 bg-foreground/[0.03] pl-10 text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                 />
               </div>
 
               <section>
-                <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-zinc-500">
+                <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
                   Quick start
                 </h3>
                 <div className="grid gap-4 md:grid-cols-3">
@@ -378,7 +378,7 @@ export function CreateSpaceItemModal({
               </section>
 
               <section>
-                <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-zinc-500">
+                <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
                   Templates
                 </h3>
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -402,23 +402,23 @@ export function CreateSpaceItemModal({
                   value={maddyProjectName}
                   onChange={(event) => setMaddyProjectName(event.target.value)}
                   placeholder="Starter page title"
-                  className="h-11 rounded-2xl border-white/10 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                  className="h-11 rounded-2xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                 />
                 <Textarea
                   value={maddyBrief}
                   onChange={(event) => setMaddyBrief(event.target.value)}
                   placeholder="Describe the project, what you're building, the main deliverables, timeline, and anything Maddy should keep in mind."
-                  className="min-h-[220px] rounded-2xl border-white/10 bg-white/[0.03] text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-white/15"
+                  className="min-h-[220px] rounded-2xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
                 />
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm text-zinc-500">
+                  <p className="text-sm text-muted-foreground">
                     Maddy will create a structured starter page with scope, milestones, risks, and first tasks.
                   </p>
                   <Button
                     type="button"
                     onClick={handleCreateWithMaddy}
                     disabled={loadingId === "maddy"}
-                    className="rounded-xl bg-white text-black hover:bg-zinc-200"
+                    className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     {loadingId === "maddy" ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -430,12 +430,12 @@ export function CreateSpaceItemModal({
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5">
-                <div className="mb-3 flex items-center gap-2 text-zinc-200">
+              <div className="rounded-[24px] border border-foreground/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5">
+                <div className="mb-3 flex items-center gap-2 text-foreground">
                   <Sparkles className="h-4 w-4 text-amber-300" />
                   <span className="text-sm font-medium">What Maddy will generate</span>
                 </div>
-                <ul className="space-y-3 text-sm text-zinc-400">
+                <ul className="space-y-3 text-sm text-muted-foreground">
                   <li>Mission and success criteria</li>
                   <li>Suggested milestones and early risks</li>
                   <li>First tasks to get momentum</li>
@@ -468,26 +468,26 @@ function TemplateCard({
       onClick={onClick}
       disabled={option.disabled || loading}
       className={cn(
-        "group rounded-[24px] border border-white/10 bg-[#1d1c1a] p-5 text-left transition",
-        "hover:border-white/20 hover:bg-[#22211f]",
+        "group rounded-[24px] border border-foreground/10 bg-accent p-5 text-left transition",
+        "hover:border-foreground/20 hover:bg-accent",
         (option.disabled || loading) && "cursor-not-allowed opacity-60"
       )}
     >
       <div
         className={cn(
-          "mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br",
+          "mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-foreground/10 bg-gradient-to-br",
           option.accent
         )}
       >
         {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-white" />
+          <Loader2 className="h-5 w-5 animate-spin text-foreground" />
         ) : (
-          <Icon className="h-5 w-5 text-white" />
+          <Icon className="h-5 w-5 text-foreground" />
         )}
       </div>
 
-      <div className="text-lg font-semibold text-zinc-100">{option.title}</div>
-      <p className="mt-1 text-sm text-zinc-400">{option.description}</p>
+      <div className="text-lg font-semibold text-foreground">{option.title}</div>
+      <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
 
       {option.disabled && (
         <p className="mt-3 text-xs text-amber-300">Add your Gemini key in Settings to use this.</p>

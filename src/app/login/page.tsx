@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -168,34 +168,34 @@ export default function LoginPage() {
     <>
       <div className="flex min-h-screen bg-background">
         <div className="relative hidden overflow-hidden lg:flex lg:w-1/2 items-center justify-center p-12 maddy-gradient-bg">
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-white/5 blur-2xl" />
-          <div className="absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-white/5 blur-2xl" />
+          <div className="absolute inset-0 bg-foreground/20" />
+          <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-foreground/5 blur-2xl" />
+          <div className="absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-foreground/5 blur-2xl" />
 
-          <div className="relative z-10 max-w-lg text-center text-white">
+          <div className="relative z-10 max-w-lg text-center text-foreground">
             <div className="mb-6 flex items-center justify-center gap-3">
               <img src="/app-icon.svg" alt="MadVibe" className="h-12 w-12 rounded-2xl" />
               <h1 className="text-4xl font-bold tracking-tight">MadVibe</h1>
             </div>
 
-            <p className="mb-8 text-xl font-medium text-white/82">
+            <p className="mb-8 text-xl font-medium text-foreground/82">
               AI-powered personal BRAIN OS
             </p>
 
-            <div className="mx-auto max-w-sm space-y-4 text-left text-sm text-white/78">
-              <div className="flex items-center gap-3 rounded-2xl bg-white/12 px-4 py-3 backdrop-blur-md">
+            <div className="mx-auto max-w-sm space-y-4 text-left text-sm text-foreground/78">
+              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
                 <Sparkles className="h-4 w-4 shrink-0" />
                 <span>Maddy AI organizes your thoughts, tasks, and notes automatically.</span>
               </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-white/12 px-4 py-3 backdrop-blur-md">
+              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
                 <Zap className="h-4 w-4 shrink-0" />
                 <span>Real-time sync keeps your workspaces ready on every device.</span>
               </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-white/12 px-4 py-3 backdrop-blur-md">
+              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
                 <Cloud className="h-4 w-4 shrink-0" />
                 <span>Unlimited pages, databases, and projects in one calm workspace.</span>
               </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-white/12 px-4 py-3 backdrop-blur-md">
+              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
                 <span>Your data stays under your control with zero vendor lock-in.</span>
               </div>
