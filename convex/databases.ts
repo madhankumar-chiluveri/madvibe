@@ -106,22 +106,27 @@ export const addRow = mutation({
     databaseId: v.id("databases"),
     data: v.any(),
     pageId: v.optional(v.union(v.id("pages"), v.null())),
+    sortOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await requireDatabaseAccess(ctx, args.databaseId, "editor");
 
-    const siblings = await ctx.db
-      .query("rows")
-      .withIndex("by_databaseId", (q) => q.eq("databaseId", args.databaseId))
-      .collect();
+    let nextSortOrder = args.sortOrder;
+    if (nextSortOrder === undefined) {
+      const siblings = await ctx.db
+        .query("rows")
+        .withIndex("by_databaseId", (q) => q.eq("databaseId", args.databaseId))
+        .collect();
 
-    const maxOrder = siblings.reduce((max, r) => Math.max(max, r.sortOrder), 0);
+      const maxOrder = siblings.reduce((max, r) => Math.max(max, r.sortOrder), 0);
+      nextSortOrder = maxOrder + 1000;
+    }
 
     return await ctx.db.insert("rows", {
       databaseId: args.databaseId,
       pageId: args.pageId ?? null,
       data: args.data,
-      sortOrder: maxOrder + 1000,
+      sortOrder: nextSortOrder,
       isArchived: false,
     });
   },

@@ -8,10 +8,17 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ArrowDownToLine, ArrowUpToLine, MoreVertical, Plus, Trash2 } from "lucide-react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
 import { ReminderTriggerButton } from "@/components/reminders/reminder-trigger-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { FormulaConfig, PropertySchema, PropertyType, SelectOption } from "@/types/database";
 import { DatabaseRowSelectionBar } from "./database-row-selection-bar";
@@ -44,6 +51,7 @@ interface TableViewProps {
   now?: number;
   editable?: boolean;
   onAddRow: () => Promise<void>;
+  onInsertRow?: (referenceRowId: Id<"rows">, position: "above" | "below") => Promise<void>;
   onUpdateRow: (rowId: Id<"rows">, data: Record<string, unknown>) => Promise<void>;
   onBatchUpdateRows: (updates: Array<{ rowId: Id<"rows">; data: Record<string, unknown> }>) => Promise<void>;
   onDeleteRow: (rowId: Id<"rows">) => Promise<void>;
@@ -62,6 +70,7 @@ export function TableView({
   now,
   editable = true,
   onAddRow,
+  onInsertRow,
   onUpdateRow,
   onBatchUpdateRows,
   onDeleteRow,
@@ -373,7 +382,7 @@ export function TableView({
   };
 
   return (
-    <div className="database-shell overflow-hidden bg-card">
+    <div className="database-shell overflow-clip bg-card">
       {editable && selectedCount > 0 ? (
         <div className="border-b border-foreground/8 bg-foreground/[0.03] px-4 py-3">
           <DatabaseRowSelectionBar
@@ -386,7 +395,7 @@ export function TableView({
         </div>
       ) : null}
 
-      <div className="notion-table-scroll min-h-[420px] w-full overflow-x-auto">
+      <div className="notion-table-scroll min-h-[420px] w-full">
         <table
           className="notion-database-table w-full table-fixed border-collapse text-[13px] text-foreground"
           style={{ minWidth: tableMinWidth }}
@@ -399,7 +408,7 @@ export function TableView({
             <col style={{ width: ACTION_COLUMN_WIDTH }} />
           </colgroup>
 
-          <thead className="sticky top-0 z-30 bg-card/95 backdrop-blur-md">
+          <thead className="sticky top-[52px] z-30 bg-card/95 backdrop-blur-md">
             <tr className="h-11 border-b border-foreground/8">
               <th className="sticky left-0 z-50 border-r border-foreground/6 bg-secondary px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]">
                 {editable ? (
@@ -515,6 +524,15 @@ export function TableView({
                             current.map((candidate) =>
                               candidate.id === property.id
                                 ? updateProperty(candidate, { config: { formula } })
+                                : candidate
+                            )
+                          )
+                        }
+                        onSetDefaultValue={(value) =>
+                          persistProperties((current) =>
+                            current.map((candidate) =>
+                              candidate.id === property.id
+                                ? updateProperty(candidate, { config: { defaultValue: value } })
                                 : candidate
                             )
                           )
@@ -676,15 +694,49 @@ export function TableView({
                         }}
                       />
                       {editable ? (
-                        <button
-                          type="button"
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-red-500/12 hover:text-red-300 group-hover:opacity-100"
-                          onClick={() => onDeleteRow(row._id)}
-                          title="Delete row"
-                          aria-label="Delete row"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-foreground/[0.06] hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
+                              title="Row actions"
+                              aria-label="Row actions"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-[180px] border-foreground/10 bg-popover text-foreground"
+                          >
+                            {onInsertRow ? (
+                              <>
+                                <DropdownMenuItem
+                                  className="focus:bg-foreground/[0.06]"
+                                  onSelect={() => void onInsertRow(row._id, "above")}
+                                >
+                                  <ArrowUpToLine className="mr-2 h-3.5 w-3.5" />
+                                  Insert row above
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="focus:bg-foreground/[0.06]"
+                                  onSelect={() => void onInsertRow(row._id, "below")}
+                                >
+                                  <ArrowDownToLine className="mr-2 h-3.5 w-3.5" />
+                                  Insert row below
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            ) : null}
+                            <DropdownMenuItem
+                              className="text-red-300 focus:bg-red-500/12 focus:text-red-200"
+                              onSelect={() => void onDeleteRow(row._id)}
+                            >
+                              <Trash2 className="mr-2 h-3.5 w-3.5" />
+                              Delete row
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       ) : null}
                     </div>
                   </td>
@@ -693,21 +745,23 @@ export function TableView({
             )}
           </tbody>
 
-          <tfoot>
+          <tfoot className="sticky bottom-0 z-30 bg-background">
             <tr className="h-11 border-t border-foreground/8 bg-background">
               <td colSpan={properties.length + 2} className="px-2 py-0">
                 {editable ? (
-                  <button
-                    type="button"
-                    className="flex h-9 w-full items-center gap-2 rounded-xl px-3 text-left text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.05] hover:text-foreground"
-                    onClick={() => void handleAddRow()}
-                    disabled={newRowLoading}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    {newRowLoading ? "Adding row..." : "New row"}
-                  </button>
+                  <div className="sticky left-2 z-10 w-fit">
+                    <button
+                      type="button"
+                      className="flex h-9 items-center gap-2 rounded-xl border border-foreground/10 bg-card/95 px-3 text-left text-[13px] text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
+                      onClick={() => void handleAddRow()}
+                      disabled={newRowLoading}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      {newRowLoading ? "Adding row..." : "New row"}
+                    </button>
+                  </div>
                 ) : (
-                  <div className="flex h-9 items-center px-3 text-[13px] text-muted-foreground">
+                  <div className="sticky left-2 z-10 flex h-9 w-fit items-center px-3 text-[13px] text-muted-foreground">
                     View-only access. Editors can add rows and update properties.
                   </div>
                 )}

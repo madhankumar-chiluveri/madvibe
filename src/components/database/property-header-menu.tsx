@@ -54,6 +54,24 @@ import {
   getSelectColorDotClass,
   supportsOptions,
 } from "./database-utils";
+import { PropertyCell } from "./property-cell";
+
+const DEFAULT_VALUE_SUPPORTED_TYPES: PropertyType[] = [
+  "title",
+  "text",
+  "email",
+  "phone",
+  "url",
+  "number",
+  "select",
+  "multi_select",
+  "checkbox",
+  "date",
+];
+
+function supportsDefaultValue(type: PropertyType) {
+  return DEFAULT_VALUE_SUPPORTED_TYPES.includes(type);
+}
 
 interface PropertyHeaderMenuProps {
   property: PropertySchema;
@@ -71,6 +89,7 @@ interface PropertyHeaderMenuProps {
   onToggleShowPageIcon: (enabled: boolean) => void;
   onSaveOptions: (options: SelectOption[]) => void;
   onSaveFormula: (formula: FormulaConfig) => void;
+  onSetDefaultValue: (value: unknown) => void;
 }
 
 export function PropertyHeaderMenu({
@@ -89,10 +108,12 @@ export function PropertyHeaderMenu({
   onToggleShowPageIcon,
   onSaveOptions,
   onSaveFormula,
+  onSetDefaultValue,
 }: PropertyHeaderMenuProps) {
   const [open, setOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [formulaOpen, setFormulaOpen] = useState(false);
+  const [defaultOpen, setDefaultOpen] = useState(false);
   const [name, setName] = useState(property.name);
 
   useEffect(() => {
@@ -214,6 +235,19 @@ export function PropertyHeaderMenu({
             </DropdownMenuItem>
           )}
 
+          {supportsDefaultValue(property.type) && (
+            <DropdownMenuItem
+              className="focus:bg-foreground/[0.06]"
+              onSelect={() => {
+                setDefaultOpen(true);
+                setOpen(false);
+              }}
+            >
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              Set default value
+            </DropdownMenuItem>
+          )}
+
           {property.type === "title" && (
             <DropdownMenuCheckboxItem
               checked={Boolean(property.config?.showPageIcon)}
@@ -299,7 +333,87 @@ export function PropertyHeaderMenu({
         onOpenChange={setFormulaOpen}
         onSave={onSaveFormula}
       />
+
+      <PropertyDefaultValueDialog
+        property={property}
+        open={defaultOpen}
+        onOpenChange={setDefaultOpen}
+        onSave={onSetDefaultValue}
+      />
     </>
+  );
+}
+
+interface PropertyDefaultValueDialogProps {
+  property: PropertySchema;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (value: unknown) => void;
+}
+
+function PropertyDefaultValueDialog({
+  property,
+  open,
+  onOpenChange,
+  onSave,
+}: PropertyDefaultValueDialogProps) {
+  const [value, setValue] = useState<unknown>(property.config?.defaultValue ?? null);
+
+  useEffect(() => {
+    setValue(property.config?.defaultValue ?? null);
+  }, [property, open]);
+
+  const handleSave = () => {
+    onSave(value);
+    onOpenChange(false);
+  };
+
+  const handleClear = () => {
+    onSave(null);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title="Set default value"
+        className="max-w-md border-foreground/10 bg-card text-foreground shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:rounded-2xl"
+      >
+        <DialogHeader>
+          <DialogTitle className="text-foreground">Set default value</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            New rows auto-populate this value for {property.name || "this property"}. Leave empty for no default.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="rounded-2xl border border-foreground/10 bg-background/50 p-2">
+          <PropertyCell
+            property={property}
+            value={value}
+            onChange={(nextValue) => setValue(nextValue)}
+            fullWidth
+          />
+        </div>
+
+        <DialogFooter className="flex items-center justify-between gap-2 sm:justify-between">
+          <Button
+            type="button"
+            variant="ghost"
+            className="rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
+            onClick={handleClear}
+          >
+            Clear default
+          </Button>
+          <Button
+            type="button"
+            className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleSave}
+          >
+            Save default
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

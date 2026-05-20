@@ -422,8 +422,21 @@ export function buildInitialRowData(properties: PropertySchema[], now = Date.now
   const initialData: Record<string, unknown> = {};
 
   for (const property of properties) {
-    initialData[property.id] =
-      property.type === "created_time" ? now : getDefaultValueForProperty(property);
+    if (property.type === "created_time") {
+      initialData[property.id] = now;
+      continue;
+    }
+
+    const configuredDefault = property.config?.defaultValue;
+    if (configuredDefault !== undefined && configuredDefault !== null) {
+      initialData[property.id] = normalizeValueForProperty(
+        property,
+        cloneDatabaseValue(configuredDefault)
+      );
+      continue;
+    }
+
+    initialData[property.id] = getDefaultValueForProperty(property);
   }
 
   return initialData;

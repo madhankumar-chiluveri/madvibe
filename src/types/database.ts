@@ -46,6 +46,7 @@ export interface PropertyConfig {
   nextId?: number;
   relation?: { databaseId: Id<"databases"> };
   formula?: FormulaConfig;
+  defaultValue?: unknown;
 }
 
 export interface PropertySchema {

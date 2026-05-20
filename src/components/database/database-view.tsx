@@ -483,15 +483,87 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   const canEditWorkspace = (currentWorkspace?.role ?? "owner") !== "viewer";
 
   const updatePage = useMutation(api.pages.update);
-  const addRowMutation = useMutation(api.databases.addRow);
-  const updateRowMutation = useMutation(api.databases.updateRow);
-  const deleteRowMutation = useMutation(api.databases.deleteRow);
-  const updatePropertiesMutation = useMutation(api.databases.updateProperties);
+  const addRowMutationBase = useMutation(api.databases.addRow);
+  const updateRowMutationBase = useMutation(api.databases.updateRow);
+  const deleteRowMutationBase = useMutation(api.databases.deleteRow);
+  const updatePropertiesMutationBase = useMutation(api.databases.updateProperties);
   const replaceRowsMutation = useMutation(api.databases.replaceRows);
   const ensureDefaultViewMutation = useMutation(api.databases.ensureDefaultView);
   const updateViewMutation = useMutation(api.databases.updateView);
 
   const database = useQuery(api.databases.getByPage, { pageId: page._id });
+
+  const databaseIdForOptimistic = database?._id ?? null;
+
+  const updateRowMutation = useMemo(
+    () =>
+      updateRowMutationBase.withOptimisticUpdate((localStore, args) => {
+        if (!databaseIdForOptimistic) return;
+        const queryArgs = { databaseId: databaseIdForOptimistic };
+        const current = localStore.getQuery(api.databases.listRows, queryArgs);
+        if (!current) return;
+        const next = current.map((row) =>
+          row._id === args.id ? { ...row, data: args.data } : row
+        );
+        localStore.setQuery(api.databases.listRows, queryArgs, next);
+      }),
+    [databaseIdForOptimistic, updateRowMutationBase]
+  );
+
+  const deleteRowMutation = useMemo(
+    () =>
+      deleteRowMutationBase.withOptimisticUpdate((localStore, args) => {
+        if (!databaseIdForOptimistic) return;
+        const queryArgs = { databaseId: databaseIdForOptimistic };
+        const current = localStore.getQuery(api.databases.listRows, queryArgs);
+        if (!current) return;
+        const next = current.filter((row) => row._id !== args.id);
+        if (next.length === current.length) return;
+        localStore.setQuery(api.databases.listRows, queryArgs, next);
+      }),
+    [databaseIdForOptimistic, deleteRowMutationBase]
+  );
+
+  const addRowMutation = useMemo(
+    () =>
+      addRowMutationBase.withOptimisticUpdate((localStore, args) => {
+        const queryArgs = { databaseId: args.databaseId };
+        const current = localStore.getQuery(api.databases.listRows, queryArgs);
+        if (!current) return;
+        const maxOrder = current.reduce((max, row) => Math.max(max, row.sortOrder), 0);
+        const tempId = `optimistic_row_${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2)}` as unknown as Id<"rows">;
+        const optimisticRow = {
+          _id: tempId,
+          _creationTime: Date.now(),
+          databaseId: args.databaseId,
+          pageId: args.pageId ?? null,
+          data: args.data,
+          sortOrder: args.sortOrder ?? maxOrder + 1000,
+          isArchived: false,
+        } as (typeof current)[number];
+        const nextRows = [...current, optimisticRow].sort(
+          (a, b) => a.sortOrder - b.sortOrder
+        );
+        localStore.setQuery(api.databases.listRows, queryArgs, nextRows);
+      }),
+    [addRowMutationBase]
+  );
+
+  const updatePropertiesMutation = useMemo(
+    () =>
+      updatePropertiesMutationBase.withOptimisticUpdate((localStore, args) => {
+        const current = localStore.getQuery(api.databases.getByPage, { pageId: page._id });
+        if (!current || current._id !== args.id) return;
+        localStore.setQuery(
+          api.databases.getByPage,
+          { pageId: page._id },
+          { ...current, properties: args.properties }
+        );
+      }),
+    [updatePropertiesMutationBase, page._id]
+  );
   const views = useQuery(
     api.databases.listViews,
     database ? { databaseId: database._id } : "skip"
@@ -788,22 +860,22 @@ export function DatabaseView({ page }: DatabaseViewProps) {
       if (!canEditWorkspace) return;
       if (!database || rows === undefined) return;
 
-      const before = createSnapshot();
-      if (!before) return;
+      const beforeRows = rows;
+      const beforeProperties = properties;
 
       const baseData = {
-        ...buildInitialRowData(properties, formulaNow),
+        ...buildInitialRowData(beforeProperties, formulaNow),
         ...(cloneDatabaseValue(initialData) ?? {}),
       };
       const { data: nextData, properties: nextProperties } = allocateIdValuesForNewRow(
-        properties,
+        beforeProperties,
         baseData
       );
-      const didAdvanceIdCounters = properties.some(
+      const didAdvanceIdCounters = beforeProperties.some(
         (property, index) => nextProperties[index] !== property
       );
-      const nextSortOrder = before.rows.reduce(
-        (max, row) => Math.max(max, row.sortOrder),
+      const nextSortOrder = beforeRows.reduce(
+        (max, row: any) => Math.max(max, row.sortOrder),
         0
       ) + 1000;
 
@@ -819,9 +891,12 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         });
       }
 
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
+
       const after = createSnapshot(
         [
-          ...rows,
+          ...beforeRows,
           {
             _creationTime: formulaNow,
             pageId: null,
@@ -854,22 +929,110 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     ]
   );
 
+  const handleInsertRow = useCallback(
+    async (referenceRowId: Id<"rows">, position: "above" | "below") => {
+      if (!canEditWorkspace) return;
+      if (!database || rows === undefined) return;
+
+      const beforeRows = rows;
+      const beforeProperties = properties;
+      const sortedRows = [...beforeRows].sort(
+        (a: any, b: any) => a.sortOrder - b.sortOrder
+      );
+      const refIndex = sortedRows.findIndex((row: any) => row._id === referenceRowId);
+      if (refIndex === -1) return;
+
+      const refRow: any = sortedRows[refIndex];
+      const neighborRow: any =
+        position === "above" ? sortedRows[refIndex - 1] : sortedRows[refIndex + 1];
+
+      let nextSortOrder: number;
+      if (!neighborRow) {
+        nextSortOrder =
+          position === "above" ? refRow.sortOrder - 1000 : refRow.sortOrder + 1000;
+      } else {
+        nextSortOrder = (refRow.sortOrder + neighborRow.sortOrder) / 2;
+      }
+
+      const baseData = buildInitialRowData(beforeProperties, formulaNow);
+      const { data: nextData, properties: nextProperties } = allocateIdValuesForNewRow(
+        beforeProperties,
+        baseData
+      );
+      const didAdvanceIdCounters = beforeProperties.some(
+        (property, index) => nextProperties[index] !== property
+      );
+
+      await addRowMutation({
+        databaseId: database._id,
+        data: nextData,
+        sortOrder: nextSortOrder,
+      });
+
+      if (didAdvanceIdCounters) {
+        await updatePropertiesMutation({
+          id: database._id,
+          properties: nextProperties,
+        });
+      }
+
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
+
+      const after = createSnapshot(
+        [
+          ...beforeRows,
+          {
+            _creationTime: formulaNow,
+            pageId: null,
+            data: nextData,
+            sortOrder: nextSortOrder,
+            isArchived: false,
+          },
+        ],
+        nextProperties
+      );
+
+      if (after) {
+        pushHistoryEntry({
+          before,
+          after,
+          label: position === "above" ? "Insert row above" : "Insert row below",
+        });
+      }
+    },
+    [
+      addRowMutation,
+      createSnapshot,
+      canEditWorkspace,
+      database,
+      formulaNow,
+      properties,
+      pushHistoryEntry,
+      rows,
+      updatePropertiesMutation,
+    ]
+  );
+
   const handleUpdateRow = useCallback(
     async (rowId: Id<"rows">, data: Record<string, unknown>) => {
       if (!canEditWorkspace) return;
       if (rows === undefined) return;
 
-      const before = createSnapshot();
-      if (!before) return;
-
+      const beforeRows = rows;
+      const beforeProperties = properties;
       const nextData = cloneDatabaseValue(data) ?? {};
+
       await updateRowMutation({
         id: rowId,
         data: nextData,
       });
 
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
+
       const after = createSnapshot(
-        rows.map((row: any) =>
+        beforeRows.map((row: any) =>
           row._id === rowId
             ? {
                 ...row,
@@ -877,7 +1040,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               }
             : row
         ),
-        properties
+        beforeProperties
       );
 
       if (after) {
@@ -896,14 +1059,17 @@ export function DatabaseView({ page }: DatabaseViewProps) {
       if (!canEditWorkspace) return;
       if (rows === undefined) return;
 
-      const before = createSnapshot();
-      if (!before) return;
+      const beforeRows = rows;
+      const beforeProperties = properties;
 
       await deleteRowMutation({ id: rowId });
 
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
+
       const after = createSnapshot(
-        rows.filter((row: any) => row._id !== rowId),
-        properties
+        beforeRows.filter((row: any) => row._id !== rowId),
+        beforeProperties
       );
 
       if (after) {
@@ -922,8 +1088,8 @@ export function DatabaseView({ page }: DatabaseViewProps) {
       if (!canEditWorkspace) return;
       if (rows === undefined || updates.length === 0) return;
 
-      const before = createSnapshot();
-      if (!before) return;
+      const beforeRows = rows;
+      const beforeProperties = properties;
 
       const normalizedUpdates = updates.map((update) => ({
         rowId: update.rowId,
@@ -942,8 +1108,11 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         )
       );
 
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
+
       const after = createSnapshot(
-        rows.map((row: any) =>
+        beforeRows.map((row: any) =>
           updatesById.has(String(row._id))
             ? {
                 ...row,
@@ -951,7 +1120,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               }
             : row
         ),
-        properties
+        beforeProperties
       );
 
       if (after) {
@@ -970,10 +1139,10 @@ export function DatabaseView({ page }: DatabaseViewProps) {
       if (!canEditWorkspace) return;
       if (rows === undefined || rowIds.length === 0) return;
 
-      const before = createSnapshot();
-      if (!before) return;
-
+      const beforeRows = rows;
+      const beforeProperties = properties;
       const rowIdSet = new Set(rowIds.map((rowId) => String(rowId)));
+
       await Promise.all(
         rowIds.map((rowId) =>
           deleteRowMutation({
@@ -982,9 +1151,12 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         )
       );
 
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
+
       const after = createSnapshot(
-        rows.filter((row: any) => !rowIdSet.has(String(row._id))),
-        properties
+        beforeRows.filter((row: any) => !rowIdSet.has(String(row._id))),
+        beforeProperties
       );
 
       if (after) {
@@ -1003,14 +1175,14 @@ export function DatabaseView({ page }: DatabaseViewProps) {
       if (!canEditWorkspace) return;
       if (!database || rows === undefined) return;
 
-      const before = createSnapshot();
-      if (!before) return;
+      const beforeRows = rows;
+      const beforeProperties = properties;
 
-      const baseNextProperties = normalizeProperties(updater(properties));
+      const baseNextProperties = normalizeProperties(updater(beforeProperties));
       const syncedState = assignIdValuesToExistingRows(
-        rows as DatabaseRowRecord[],
+        beforeRows as DatabaseRowRecord[],
         baseNextProperties,
-        properties
+        beforeProperties
       );
       const nextProperties = syncedState.properties;
       await updatePropertiesMutation({
@@ -1028,6 +1200,9 @@ export function DatabaseView({ page }: DatabaseViewProps) {
           )
         );
       }
+
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
 
       const after = createSnapshot(syncedState.rows, nextProperties);
 
@@ -1620,7 +1795,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         }
       />
 
-      <div className="max-w-full px-6 pb-3 pt-9 md:px-10">
+      <div className="max-w-full px-3 pb-3 pt-9 md:px-6">
         <div className="mx-auto max-w-[1440px]">
           {editingTitle ? (
             <Input
@@ -1667,14 +1842,14 @@ export function DatabaseView({ page }: DatabaseViewProps) {
         </div>
       </div>
 
-      <div className="px-6 pb-14 md:px-10">
+      <div className="px-3 pb-14 md:px-6">
         <div className="mx-auto max-w-[1440px]">
           {database === undefined ? (
             <div className="py-8 text-sm text-muted-foreground">Loading database...</div>
           ) : database === null ? (
             <CreateDatabase pageId={page._id} editable={canEditWorkspace} />
           ) : (
-            <div className="overflow-hidden rounded-[22px] border border-foreground/10 bg-card shadow-[0_18px_52px_rgba(0,0,0,0.18)]">
+            <div className="rounded-[22px] border border-foreground/10 bg-card shadow-[0_18px_52px_rgba(0,0,0,0.18)]">
               {renderDatabaseToolbar()}
 
               <div className={cn("bg-card", viewType !== "table" && "p-3")}>
@@ -1689,6 +1864,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                     now={formulaNow}
                     editable={canEditWorkspace}
                     onAddRow={() => handleAddRow()}
+                    onInsertRow={handleInsertRow}
                     onUpdateRow={handleUpdateRow}
                     onBatchUpdateRows={handleBatchUpdateRows}
                     onDeleteRow={handleDeleteRow}
