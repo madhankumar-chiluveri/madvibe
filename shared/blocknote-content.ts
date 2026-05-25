@@ -285,18 +285,21 @@ function sanitizeTableCellProps(props: unknown) {
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+function generateBlockId(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 10; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 function sanitizeTableCell(cell: unknown): unknown {
   if (typeof cell === "string") return sanitizeInlineContent(cell);
   if (Array.isArray(cell)) return sanitizeInlineContent(cell);
 
   if (isRecord(cell) && cell.type === "tableCell") {
-    const sanitizedCell: JsonRecord = {
-      type: "tableCell",
-      content: sanitizeInlineContent(cell.content),
-    };
-    const props = sanitizeTableCellProps(cell.props);
-    if (props) sanitizedCell.props = props;
-    return sanitizedCell;
+    return sanitizeInlineContent(cell.content);
   }
 
   return sanitizeInlineContent(extractPlainText(cell));
@@ -344,11 +347,12 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
   let props = sanitizeProps(type, normalized.props);
   const next: SanitizedBlockNoteBlock = { type, children: [] };
 
-  const id = asValidId(block.id);
-  if (id && !seenIds.has(id)) {
-    next.id = id;
-    seenIds.add(id);
+  let id = asValidId(block.id);
+  if (!id || seenIds.has(id)) {
+    id = generateBlockId();
   }
+  next.id = id;
+  seenIds.add(id);
 
   if (Array.isArray(block.children)) {
     next.children = sanitizeBlockNoteDocument(block.children, seenIds);

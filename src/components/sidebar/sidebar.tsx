@@ -292,7 +292,7 @@ function ModuleRail() {
             href="/workspace/overview"
             prefetch
             aria-label="Open workspace overview"
-            title="Open workspace overview"
+            
             onClick={() => {
               setActiveModule("overview");
               setContextPaneCollapsed(false);
@@ -316,11 +316,7 @@ function ModuleRail() {
               MadVibe
             </span>
           </Link>
-          {!showExpandedRail ? (
-            <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/60 bg-card px-2 py-1 text-[11px] text-foreground opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
-              Workspace overview
-            </span>
-          ) : null}
+          
         </div>
       </div>
 
