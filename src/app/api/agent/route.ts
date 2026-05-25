@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 
-// Allow up to 60 s for the Railway agent to respond (cold starts can be slow)
-export const maxDuration = 60;
+// Allow up to 300 s for the OCI VM agent to respond
+export const maxDuration = 300;
 
 const AGENT_URL = process.env.MADVIBE_AGENT_URL ?? "http://localhost:8000";
 const AGENT_KEY = process.env.MADVIBE_AGENT_KEY ?? "";
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${AGENT_KEY}`,
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(55_000), // 55 s — just under Vercel's 60 s limit
+      signal: AbortSignal.timeout(290_000), // 290 s — just under 300 s limit
     });
 
     if (!agentRes.ok) {
@@ -29,6 +29,16 @@ export async function POST(request: NextRequest) {
         { error: "Agent error", detail: text },
         { status: agentRes.status }
       );
+    }
+
+    if (body.stream && agentRes.body) {
+      return new Response(agentRes.body, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
     }
 
     const data = await agentRes.json();

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   CalendarDays,
@@ -31,7 +31,7 @@ import type {
 
 export const TITLE_COLUMN_WIDTH = 360;
 export const DEFAULT_COLUMN_WIDTH = 220;
-export const ACTION_COLUMN_WIDTH = 80;
+export const ACTION_COLUMN_WIDTH = 48;
 export const MIN_TABLE_WIDTH = 920;
 
 export const SELECT_OPTION_COLORS = [

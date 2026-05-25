@@ -438,6 +438,8 @@
 
 .notion-table-scroll {
   scrollbar-gutter: stable;
+  overflow-x: auto;
+  overflow-y: clip;
 }
 
 .database-page .notion-table-scroll::-webkit-scrollbar {

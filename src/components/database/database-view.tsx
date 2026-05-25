@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   type ReactNode,
@@ -1849,7 +1849,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
           ) : database === null ? (
             <CreateDatabase pageId={page._id} editable={canEditWorkspace} />
           ) : (
-            <div className="rounded-[22px] border border-foreground/10 bg-card shadow-[0_18px_52px_rgba(0,0,0,0.18)]">
+            <div className="rounded-[22px] overflow-clip border border-foreground/10 bg-card shadow-[0_18px_52px_rgba(0,0,0,0.18)]">
               {renderDatabaseToolbar()}
 
               <div className={cn("bg-card", viewType !== "table" && "p-3")}>

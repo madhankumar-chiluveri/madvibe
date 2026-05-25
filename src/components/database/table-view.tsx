@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   useCallback,
@@ -8,10 +8,10 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { ArrowDownToLine, ArrowUpToLine, MoreVertical, Plus, Trash2 } from "lucide-react";
+import { ArrowDownToLine, ArrowUpToLine, Bell, MoreVertical, Plus, Trash2 } from "lucide-react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
-import { ReminderTriggerButton } from "@/components/reminders/reminder-trigger-button";
+import { ReminderDialog } from "@/components/reminders/reminder-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,6 +83,7 @@ export function TableView({
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [resizingPropertyId, setResizingPropertyId] = useState<string | null>(null);
   const [columnWidthDrafts, setColumnWidthDrafts] = useState<Record<string, number>>({});
+  const [reminderRow, setReminderRow] = useState<any | null>(null);
   const titleProperty = properties.find((property) => property.type === "title");
   const selectAllRef = useRef<HTMLInputElement | null>(null);
   const resizeDragRef = useRef<{
@@ -112,7 +113,7 @@ export function TableView({
   }, [getColumnWidth, properties]);
 
   const frozenState = useMemo(() => {
-    let currentOffset = SELECTION_COLUMN_WIDTH;
+    let currentOffset = SELECTION_COLUMN_WIDTH - 1;
     const offsets: Record<string, number> = {};
     const frozenIds: string[] = [];
 
@@ -395,7 +396,7 @@ export function TableView({
         </div>
       ) : null}
 
-      <div className="notion-table-scroll min-h-[420px] w-full">
+      <div className="notion-table-scroll min-h-[420px] w-full overflow-x-auto">
         <table
           className="notion-database-table w-full table-fixed border-collapse text-[13px] text-foreground"
           style={{ minWidth: tableMinWidth }}
@@ -408,9 +409,9 @@ export function TableView({
             <col style={{ width: ACTION_COLUMN_WIDTH }} />
           </colgroup>
 
-          <thead className="sticky top-[52px] z-30 bg-card/95 backdrop-blur-md">
+          <thead className="sticky top-0 z-30 bg-card/95 backdrop-blur-md">
             <tr className="h-11 border-b border-foreground/8">
-              <th className="sticky left-0 z-50 border-r border-foreground/6 bg-secondary px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]">
+              <th className="sticky left-0 z-50 overflow-hidden border-r border-foreground/6 bg-secondary px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]">
                 {editable ? (
                   <label className="flex h-11 items-center justify-center">
                     <input
@@ -613,7 +614,7 @@ export function TableView({
                 >
                   <td
                     className={cn(
-                      "sticky left-0 z-30 border-r border-foreground/6 px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]",
+                      "sticky left-0 z-30 overflow-hidden border-r border-foreground/6 px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]",
                       isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
                     )}
                   >
@@ -674,70 +675,66 @@ export function TableView({
                     "sticky right-0 z-20 border-l border-foreground/6 px-0 py-0 align-middle shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]",
                     isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
                   )}>
-                    <div className="flex items-center justify-center gap-1">
-                      <ReminderTriggerButton
-                        workspaceId={workspaceId}
-                        iconOnly
-                        title="Create reminder from row"
-                        className="opacity-0 group-hover:opacity-100"
-                        initialValues={{
-                          title: `Follow up: ${
-                            titleProperty ? String(row.data?.[titleProperty.id] ?? "Untitled row") : "Untitled row"
-                          }`,
-                          pageId,
-                          databaseId,
-                          rowId: row._id,
-                          sourceLabel: `${databaseName} / ${
-                            titleProperty ? String(row.data?.[titleProperty.id] ?? "Untitled row") : "Untitled row"
-                          }`,
-                          sourceUrl: `/workspace/${pageId}`,
-                        }}
-                      />
-                      {editable ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-foreground/[0.06] hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
-                              title="Row actions"
-                              aria-label="Row actions"
-                            >
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="w-[180px] border-foreground/10 bg-popover text-foreground"
+                    <div className="flex items-center justify-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-foreground/[0.06] hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
+                            title="Row actions"
+                            aria-label="Row actions"
                           >
-                            {onInsertRow ? (
-                              <>
-                                <DropdownMenuItem
-                                  className="focus:bg-foreground/[0.06]"
-                                  onSelect={() => void onInsertRow(row._id, "above")}
-                                >
-                                  <ArrowUpToLine className="mr-2 h-3.5 w-3.5" />
-                                  Insert row above
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="focus:bg-foreground/[0.06]"
-                                  onSelect={() => void onInsertRow(row._id, "below")}
-                                >
-                                  <ArrowDownToLine className="mr-2 h-3.5 w-3.5" />
-                                  Insert row below
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                              </>
-                            ) : null}
-                            <DropdownMenuItem
-                              className="text-red-300 focus:bg-red-500/12 focus:text-red-200"
-                              onSelect={() => void onDeleteRow(row._id)}
-                            >
-                              <Trash2 className="mr-2 h-3.5 w-3.5" />
-                              Delete row
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : null}
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-[180px] border-foreground/10 bg-popover text-foreground"
+                        >
+                          <DropdownMenuItem
+                            className="focus:bg-foreground/[0.06]"
+                            onSelect={(e: Event) => {
+                              e.preventDefault();
+                              setReminderRow(row);
+                            }}
+                          >
+                            <Bell className="mr-2 h-3.5 w-3.5" />
+                            Remind me
+                          </DropdownMenuItem>
+
+                          {editable && (
+                            <>
+                              <DropdownMenuSeparator />
+                              {onInsertRow ? (
+                                <>
+                                  <DropdownMenuItem
+                                    className="focus:bg-foreground/[0.06]"
+                                    onSelect={() => void onInsertRow(row._id, "above")}
+                                  >
+                                    <ArrowUpToLine className="mr-2 h-3.5 w-3.5" />
+                                    Insert row above
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="focus:bg-foreground/[0.06]"
+                                    onSelect={() => void onInsertRow(row._id, "below")}
+                                  >
+                                    <ArrowDownToLine className="mr-2 h-3.5 w-3.5" />
+                                    Insert row below
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                </>
+                              ) : null}
+                              <DropdownMenuItem
+                                className="text-red-300 focus:bg-red-500/12 focus:text-red-200"
+                                onSelect={() => void onDeleteRow(row._id)}
+                              >
+                                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                Delete row
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </td>
                 </tr>
@@ -770,6 +767,28 @@ export function TableView({
           </tfoot>
         </table>
       </div>
+
+      {reminderRow && (
+        <ReminderDialog
+          open={Boolean(reminderRow)}
+          onOpenChange={(open) => {
+            if (!open) setReminderRow(null);
+          }}
+          workspaceId={workspaceId}
+          initialValues={{
+            title: `Follow up: ${
+              titleProperty ? String(reminderRow.data?.[titleProperty.id] ?? "Untitled row") : "Untitled row"
+            }`,
+            pageId,
+            databaseId,
+            rowId: reminderRow._id,
+            sourceLabel: `${databaseName} / ${
+              titleProperty ? String(reminderRow.data?.[titleProperty.id] ?? "Untitled row") : "Untitled row"
+            }`,
+            sourceUrl: `/workspace/${pageId}`,
+          }}
+        />
+      )}
     </div>
   );
 }
