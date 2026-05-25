@@ -190,6 +190,10 @@ export function BlockNoteEditor({
     const previousRemoteSnapshot = lastRemoteSnapshot.current;
     lastRemoteSnapshot.current = remoteSnapshot;
 
+    if (typeof window !== "undefined") {
+      (window as any).__bn_failed_incoming_doc__ = nextRemoteContent;
+    }
+
     if (!isInitialized.current) {
       isInitialized.current = true;
       if (nextRemoteContent.length > 0) {
