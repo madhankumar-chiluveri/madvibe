@@ -193,7 +193,15 @@ export function BlockNoteEditor({
     if (!isInitialized.current) {
       isInitialized.current = true;
       if (nextRemoteContent.length > 0) {
-        editor.replaceBlocks(editor.document, nextRemoteContent as any);
+        try {
+          editor.replaceBlocks(editor.document, nextRemoteContent as any);
+        } catch (err) {
+          console.error("[BlockNote] Initial replaceBlocks failed for nextRemoteContent:", nextRemoteContent, err);
+          if (typeof window !== "undefined") {
+            (window as any).__bn_failed_incoming_doc__ = nextRemoteContent;
+          }
+          throw err;
+        }
       }
 
       const t = setTimeout(() => setIsLoadingContent(false), 60);
@@ -217,7 +225,15 @@ export function BlockNoteEditor({
       return;
     }
 
-    editor.replaceBlocks(editor.document, nextRemoteContent as any);
+    try {
+      editor.replaceBlocks(editor.document, nextRemoteContent as any);
+    } catch (err) {
+      console.error("[BlockNote] Subsequent replaceBlocks failed for nextRemoteContent:", nextRemoteContent, err);
+      if (typeof window !== "undefined") {
+        (window as any).__bn_failed_incoming_doc__ = nextRemoteContent;
+      }
+      throw err;
+    }
   }, [blocks, editor, editable, setDirty, setSaveStatus]);
 
   // ── beforeunload guard ────────────────────────────────────────────────────
