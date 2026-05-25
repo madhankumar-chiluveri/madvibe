@@ -345,7 +345,7 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
   const normalized = normalizeBlockType(block);
   let type = normalized.type;
   let props = sanitizeProps(type, normalized.props);
-  const next: SanitizedBlockNoteBlock = { type, children: [] };
+  const next: SanitizedBlockNoteBlock = { type, props, children: [] };
 
   let id = asValidId(block.id);
   if (!id || seenIds.has(id)) {
@@ -364,6 +364,7 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
     next.children.length > 0
   ) {
     props = { ...props, isToggleable: true };
+    next.props = props;
   }
 
   if (MEDIA_BLOCK_TYPES.has(type)) {
@@ -372,11 +373,8 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
       type = "paragraph";
       next.type = type;
       props = {};
+      next.props = props;
     }
-  }
-
-  if (Object.keys(props).length > 0) {
-    next.props = props;
   }
 
   if (type === "table") {
@@ -387,7 +385,7 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
       type = "paragraph";
       next.type = type;
       next.content = sanitizeInlineContent(extractPlainText(block.content));
-      delete next.props;
+      next.props = {};
     }
   } else if (INLINE_BLOCK_TYPES.has(type)) {
     next.content = sanitizeInlineContent(block.content);
