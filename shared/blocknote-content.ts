@@ -199,9 +199,9 @@ function addDefaultTextProps(result: JsonRecord, props: JsonRecord) {
   const backgroundColor = asString(props.backgroundColor);
   const textAlignment = asString(props.textAlignment);
 
-  if (textColor) result.textColor = textColor;
-  if (backgroundColor) result.backgroundColor = backgroundColor;
-  if (textAlignment && TEXT_ALIGNMENTS.has(textAlignment)) {
+  if (textColor && textColor !== "default") result.textColor = textColor;
+  if (backgroundColor && backgroundColor !== "default") result.backgroundColor = backgroundColor;
+  if (textAlignment && textAlignment !== "left" && TEXT_ALIGNMENTS.has(textAlignment)) {
     result.textAlignment = textAlignment;
   }
 }
@@ -254,8 +254,8 @@ function sanitizeProps(type: string, props: JsonRecord) {
     if (previewWidth !== undefined && previewWidth > 0) {
       result.previewWidth = Math.floor(previewWidth);
     }
-    if (backgroundColor) result.backgroundColor = backgroundColor;
-    if (textAlignment && TEXT_ALIGNMENTS.has(textAlignment)) {
+    if (backgroundColor && backgroundColor !== "default") result.backgroundColor = backgroundColor;
+    if (textAlignment && textAlignment !== "left" && TEXT_ALIGNMENTS.has(textAlignment)) {
       result.textAlignment = textAlignment;
     }
   }
