@@ -12,7 +12,10 @@ import { cn, sanitizeForConvex } from "@/lib/utils";
 import { useEditorStore } from "@/store/editor.store";
 import { toast } from "sonner";
 import { NotionSideMenu } from "./notion-block-side-menu";
-import { sanitizeBlockNoteDocument } from "../../../shared/blocknote-content";
+import {
+  sanitizeBlockNoteDocument,
+  sanitizeBlockNoteDocumentForRenderRecovery,
+} from "../../../shared/blocknote-content";
 
 interface EditorBoundaryProps {
   pageId: Id<"pages">;
@@ -23,10 +26,11 @@ interface EditorBoundaryProps {
 
 interface EditorBoundaryState {
   error: Error | null;
+  recovered: boolean;
 }
 
 class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBoundaryState> {
-  state: EditorBoundaryState = { error: null };
+  state: EditorBoundaryState = { error: null, recovered: false };
 
   static getDerivedStateFromError(error: Error) {
     return { error };
@@ -50,11 +54,23 @@ class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBound
       componentStack: info.componentStack,
       doc,
     });
+
+    const message = error instanceof Error ? error.message : String(error);
+    if (!this.state.recovered && message.includes("renderSpec")) {
+      try {
+        this.props.onRecover();
+        this.setState({ error: null, recovered: true });
+      } catch (recoverError) {
+        console.error("[BlockNote] automatic render recovery failed", recoverError);
+      }
+    }
   }
 
   componentDidUpdate(prevProps: EditorBoundaryProps) {
     if (this.state.error && prevProps.pageId !== this.props.pageId) {
-      this.setState({ error: null });
+      this.setState({ error: null, recovered: false });
+    } else if (this.state.recovered && prevProps.pageId !== this.props.pageId) {
+      this.setState({ recovered: false });
     }
   }
 
@@ -133,9 +149,11 @@ export function BlockNoteEditor({
   const mountedPageId = useRef<string>(pageId);
   const lastRemoteSnapshot = useRef<string | null>(null);
   const lastSavedSnapshot = useRef<string | null>(null);
+  const lastIncomingContent = useRef<unknown[]>([]);
 
   // true = show shimmer, false = show editor
   const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [renderBoundaryKey, setRenderBoundaryKey] = useState(0);
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const editor = useCreateBlockNote({
@@ -157,6 +175,8 @@ export function BlockNoteEditor({
     hasPendingSave.current = false;
     lastRemoteSnapshot.current = null;
     lastSavedSnapshot.current = null;
+    lastIncomingContent.current = [];
+    setRenderBoundaryKey((value) => value + 1);
     setSaveStatus("idle");
     setDirty(false);
     // Show shimmer while new page's blocks load
@@ -164,6 +184,46 @@ export function BlockNoteEditor({
   }, [pageId, setDirty, setSaveStatus]);
 
   // ── Load content once blocks arrive ──────────────────────────────────────
+  const replaceBlocksWithRenderRecovery = useCallback(
+    (content: unknown[], source: unknown, label: string) => {
+      try {
+        editor.replaceBlocks(editor.document, content as any);
+        return content;
+      } catch (error) {
+        const fallbackContent = sanitizeBlockNoteDocumentForRenderRecovery(source);
+        try {
+          editor.replaceBlocks(editor.document, fallbackContent as any);
+          console.warn(`[BlockNote] ${label} recovered with plain-text-safe content`, {
+            error,
+            fallbackContent,
+          });
+          return fallbackContent;
+        } catch (recoveryError) {
+          console.error(`[BlockNote] ${label} recovery failed`, {
+            error,
+            recoveryError,
+            fallbackContent,
+          });
+          throw error;
+        }
+      }
+    },
+    [editor],
+  );
+
+  const recoverFromRenderCrash = useCallback(() => {
+    const source =
+      lastIncomingContent.current.length > 0
+        ? lastIncomingContent.current
+        : editor.document;
+    const fallbackContent = sanitizeBlockNoteDocumentForRenderRecovery(source);
+
+    editor.replaceBlocks(editor.document, fallbackContent as any);
+    lastIncomingContent.current = fallbackContent;
+    lastRemoteSnapshot.current = JSON.stringify(sanitizeForConvex(fallbackContent));
+    setRenderBoundaryKey((value) => value + 1);
+  }, [editor]);
+
   useEffect(() => {
     if (!blocks) return;
 
@@ -171,12 +231,14 @@ export function BlockNoteEditor({
     blockId.current = primaryBlock?._id ?? null;
 
     let nextRemoteContent: unknown[] = [];
+    let rawRemoteContent: unknown = [];
     try {
       let blockContent = primaryBlock?.content;
       if (typeof blockContent === "string") {
         blockContent = JSON.parse(blockContent);
       }
       if (Array.isArray(blockContent)) {
+        rawRemoteContent = blockContent;
         // Guard against legacy/corrupted blocks that would crash BlockNote's
         // ProseMirror renderSpec ("Invalid array passed to renderSpec").
         // Drop null/undefined entries and anything without a string `type`.
@@ -186,9 +248,9 @@ export function BlockNoteEditor({
       nextRemoteContent = [];
     }
 
-    const remoteSnapshot = JSON.stringify(sanitizeForConvex(nextRemoteContent));
+    let remoteSnapshot = JSON.stringify(sanitizeForConvex(nextRemoteContent));
     const previousRemoteSnapshot = lastRemoteSnapshot.current;
-    lastRemoteSnapshot.current = remoteSnapshot;
+    lastIncomingContent.current = nextRemoteContent;
 
     if (typeof window !== "undefined") {
       (window as any).__bn_failed_incoming_doc__ = nextRemoteContent;
@@ -197,16 +259,15 @@ export function BlockNoteEditor({
     if (!isInitialized.current) {
       isInitialized.current = true;
       if (nextRemoteContent.length > 0) {
-        try {
-          editor.replaceBlocks(editor.document, nextRemoteContent as any);
-        } catch (err) {
-          console.error("[BlockNote] Initial replaceBlocks failed for nextRemoteContent:", nextRemoteContent, err);
-          if (typeof window !== "undefined") {
-            (window as any).__bn_failed_incoming_doc__ = nextRemoteContent;
-          }
-          throw err;
-        }
+        nextRemoteContent = replaceBlocksWithRenderRecovery(
+          nextRemoteContent,
+          rawRemoteContent,
+          "Initial replaceBlocks",
+        );
+        lastIncomingContent.current = nextRemoteContent;
+        remoteSnapshot = JSON.stringify(sanitizeForConvex(nextRemoteContent));
       }
+      lastRemoteSnapshot.current = remoteSnapshot;
 
       const t = setTimeout(() => setIsLoadingContent(false), 60);
       return () => clearTimeout(t);
@@ -217,28 +278,29 @@ export function BlockNoteEditor({
     // cannot seamlessly merge document states — calling replaceBlocks() steals 
     // cursor focus and forces empty new lines.
     if (editable) {
+      lastRemoteSnapshot.current = remoteSnapshot;
       return;
     }
 
     if (remoteSnapshot === previousRemoteSnapshot) {
+      lastRemoteSnapshot.current = remoteSnapshot;
       return;
     }
 
     const editorSnapshot = JSON.stringify(sanitizeForConvex(editor.document));
     if (editorSnapshot === remoteSnapshot) {
+      lastRemoteSnapshot.current = remoteSnapshot;
       return;
     }
 
-    try {
-      editor.replaceBlocks(editor.document, nextRemoteContent as any);
-    } catch (err) {
-      console.error("[BlockNote] Subsequent replaceBlocks failed for nextRemoteContent:", nextRemoteContent, err);
-      if (typeof window !== "undefined") {
-        (window as any).__bn_failed_incoming_doc__ = nextRemoteContent;
-      }
-      throw err;
-    }
-  }, [blocks, editor, editable, setDirty, setSaveStatus]);
+    nextRemoteContent = replaceBlocksWithRenderRecovery(
+      nextRemoteContent,
+      rawRemoteContent,
+      "Subsequent replaceBlocks",
+    );
+    lastIncomingContent.current = nextRemoteContent;
+    lastRemoteSnapshot.current = JSON.stringify(sanitizeForConvex(nextRemoteContent));
+  }, [blocks, editor, editable, replaceBlocksWithRenderRecovery, setDirty, setSaveStatus]);
 
   // ── beforeunload guard ────────────────────────────────────────────────────
   useEffect(() => {
@@ -350,6 +412,7 @@ export function BlockNoteEditor({
         isLoadingContent ? "opacity-0 h-0 overflow-hidden" : "opacity-100"
       )}>
         <BlockNoteRenderBoundary
+          key={`${pageId}:${renderBoundaryKey}`}
           pageId={pageId}
           getDoc={() => {
             try {
@@ -358,13 +421,7 @@ export function BlockNoteEditor({
               return null;
             }
           }}
-          onRecover={() => {
-            try {
-              editor.replaceBlocks(editor.document, [] as any);
-            } catch (recoverError) {
-              console.error("[BlockNote] recovery failed", recoverError);
-            }
-          }}
+          onRecover={recoverFromRenderCrash}
         >
           <BlockNoteView
             editor={editor}

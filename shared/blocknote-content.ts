@@ -14,6 +14,16 @@ type SanitizedStyledText = {
   styles: JsonRecord;
 };
 
+type SanitizeOptions = {
+  preserveLinks: boolean;
+  tablesAsText: boolean;
+};
+
+const DEFAULT_SANITIZE_OPTIONS: SanitizeOptions = {
+  preserveLinks: true,
+  tablesAsText: false,
+};
+
 const INLINE_BLOCK_TYPES = new Set([
   "paragraph",
   "heading",
@@ -76,7 +86,12 @@ function sanitizeStyles(styles: unknown) {
       continue;
     }
 
-    if (STRING_STYLES.has(key) && typeof value === "string" && value.length > 0) {
+    if (
+      STRING_STYLES.has(key) &&
+      typeof value === "string" &&
+      value.length > 0 &&
+      value !== "default"
+    ) {
       result[key] = value;
     }
   }
@@ -100,7 +115,7 @@ function extractPlainText(value: unknown): string {
     .join(" ");
 }
 
-function sanitizeStyledTextContent(content: unknown) {
+function sanitizeStyledTextContent(content: unknown, options: SanitizeOptions) {
   if (typeof content === "string") {
     return compactTextNode(content);
   }
@@ -124,7 +139,7 @@ function sanitizeStyledTextContent(content: unknown) {
     }
 
     if (item.type === "link") {
-      result.push(...sanitizeStyledTextContent(item.content));
+      result.push(...sanitizeLinkAsText(item, options));
       continue;
     }
 
@@ -133,7 +148,23 @@ function sanitizeStyledTextContent(content: unknown) {
   return result;
 }
 
-function sanitizeInlineContent(content: unknown) {
+function linkTextContainsHref(text: string, href: string) {
+  return text.includes(href);
+}
+
+function sanitizeLinkAsText(link: JsonRecord, options: SanitizeOptions) {
+  const href = asString(link.href);
+  const linkContent = sanitizeStyledTextContent(link.content, options);
+  if (!href) return linkContent;
+
+  const visibleText = linkContent.map((item) => item.text).join("");
+  if (!visibleText) return compactTextNode(href);
+  if (linkTextContainsHref(visibleText, href)) return linkContent;
+
+  return [...linkContent, ...compactTextNode(` (${href})`)];
+}
+
+function sanitizeInlineContent(content: unknown, options: SanitizeOptions) {
   if (typeof content === "string") {
     return compactTextNode(content);
   }
@@ -158,11 +189,11 @@ function sanitizeInlineContent(content: unknown) {
 
     if (item.type === "link") {
       const href = asString(item.href);
-      const linkContent = sanitizeStyledTextContent(item.content);
-      if (href && linkContent.length > 0) {
+      const linkContent = sanitizeStyledTextContent(item.content, options);
+      if (options.preserveLinks && href && linkContent.length > 0) {
         result.push({ type: "link", href, content: linkContent });
       } else {
-        result.push(...linkContent);
+        result.push(...sanitizeLinkAsText(item, options));
       }
       continue;
     }
@@ -294,18 +325,18 @@ function generateBlockId(): string {
   return result;
 }
 
-function sanitizeTableCell(cell: unknown): unknown {
-  if (typeof cell === "string") return sanitizeInlineContent(cell);
-  if (Array.isArray(cell)) return sanitizeInlineContent(cell);
+function sanitizeTableCell(cell: unknown, options: SanitizeOptions): unknown {
+  if (typeof cell === "string") return sanitizeInlineContent(cell, options);
+  if (Array.isArray(cell)) return sanitizeInlineContent(cell, options);
 
   if (isRecord(cell) && cell.type === "tableCell") {
-    return sanitizeInlineContent(cell.content);
+    return sanitizeInlineContent(cell.content, options);
   }
 
-  return sanitizeInlineContent(extractPlainText(cell));
+  return sanitizeInlineContent(extractPlainText(cell), options);
 }
 
-function sanitizeTableContent(content: unknown) {
+function sanitizeTableContent(content: unknown, options: SanitizeOptions) {
   if (!isRecord(content) || content.type !== "tableContent" || !Array.isArray(content.rows)) {
     return undefined;
   }
@@ -313,7 +344,7 @@ function sanitizeTableContent(content: unknown) {
   const rows = content.rows
     .map((row) => {
       if (!isRecord(row) || !Array.isArray(row.cells)) return null;
-      return { cells: row.cells.map(sanitizeTableCell) };
+      return { cells: row.cells.map((cell) => sanitizeTableCell(cell, options)) };
     })
     .filter((row): row is { cells: unknown[] } => Boolean(row && row.cells.length > 0));
 
@@ -339,7 +370,7 @@ function sanitizeTableContent(content: unknown) {
   return tableContent;
 }
 
-function sanitizeBlock(block: unknown, seenIds: Set<string>) {
+function sanitizeBlock(block: unknown, seenIds: Set<string>, options: SanitizeOptions) {
   if (!isRecord(block)) return null;
 
   const normalized = normalizeBlockType(block);
@@ -355,7 +386,7 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
   seenIds.add(id);
 
   if (Array.isArray(block.children)) {
-    next.children = sanitizeBlockNoteDocument(block.children, seenIds);
+    next.children = sanitizeBlockNoteDocument(block.children, seenIds, options);
   }
 
   if (
@@ -377,18 +408,23 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
     }
   }
 
-  if (type === "table") {
-    const tableContent = sanitizeTableContent(block.content);
+  if (type === "table" && options.tablesAsText) {
+    type = "paragraph";
+    next.type = type;
+    next.content = sanitizeInlineContent(extractPlainText(block.content), options);
+    next.props = {};
+  } else if (type === "table") {
+    const tableContent = sanitizeTableContent(block.content, options);
     if (tableContent) {
       next.content = tableContent;
     } else {
       type = "paragraph";
       next.type = type;
-      next.content = sanitizeInlineContent(extractPlainText(block.content));
+      next.content = sanitizeInlineContent(extractPlainText(block.content), options);
       next.props = {};
     }
   } else if (INLINE_BLOCK_TYPES.has(type)) {
-    next.content = sanitizeInlineContent(block.content);
+    next.content = sanitizeInlineContent(block.content, options);
   }
 
   return next;
@@ -397,6 +433,7 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>) {
 export function sanitizeBlockNoteDocument(
   blocks: unknown,
   seenIds = new Set<string>(),
+  options = DEFAULT_SANITIZE_OPTIONS,
 ): SanitizedBlockNoteBlock[] {
   const source = Array.isArray(blocks)
     ? blocks
@@ -406,8 +443,15 @@ export function sanitizeBlockNoteDocument(
 
   const result: SanitizedBlockNoteBlock[] = [];
   for (const block of source) {
-    const sanitized = sanitizeBlock(block, seenIds);
+    const sanitized = sanitizeBlock(block, seenIds, options);
     if (sanitized) result.push(sanitized);
   }
   return result;
+}
+
+export function sanitizeBlockNoteDocumentForRenderRecovery(blocks: unknown) {
+  return sanitizeBlockNoteDocument(blocks, new Set<string>(), {
+    preserveLinks: false,
+    tablesAsText: true,
+  });
 }
