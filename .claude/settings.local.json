@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -o \"createViewAlternative.\\\\{0,500\\\\}\" node_modules/@blocknote/core/dist/blocknote.cjs)",
+      "Bash(node -e ':*)",
+      "Bash(node -e \"const j=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\);const p=JSON.parse\\(j\\);console.log\\('BlockNote core peerDeps:',JSON.stringify\\(p.peerDependencies||{},null,2\\)\\);console.log\\('BlockNote core deps:',JSON.stringify\\(p.dependencies||{},null,2\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/@blocknote/core/package.json'\\); console.log\\('peerDeps:', JSON.stringify\\(p.peerDependencies,null,2\\)\\); console.log\\('deps:', JSON.stringify\\(p.dependencies,null,2\\)\\)\")",
+      "Bash(node -e \"try{const d=require\\('@blocknote/core'\\);const pm=require\\('prosemirror-model'\\);console.log\\('DOMSerializer:', typeof pm.DOMSerializer\\);console.log\\('renderSpec:', typeof pm.DOMSerializer.renderSpec\\)}catch\\(e\\){console.log\\(e.message\\)}\")"
+    ]
+  }
+}

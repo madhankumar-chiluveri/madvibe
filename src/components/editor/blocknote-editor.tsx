@@ -17,6 +17,52 @@ import {
   sanitizeBlockNoteDocumentForRenderRecovery,
 } from "../../../shared/blocknote-content";
 
+// ─── renderSpec diagnostic patch ──────────────────────────────────────────
+// Intercepts ProseMirror's DOMSerializer.renderSpec to catch and log the
+// exact invalid DOMOutputSpec before it crashes. This runs once on module load.
+// Uses dynamic import to avoid direct prosemirror-model dependency.
+if (typeof window !== "undefined" && !(window as any).__bn_renderSpec_patched__) {
+  (window as any).__bn_renderSpec_patched__ = true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DOMSerializer } = require("prosemirror-model");
+    const origRenderSpec = DOMSerializer.renderSpec;
+    DOMSerializer.renderSpec = function patchedRenderSpec(
+      doc: Document,
+      structure: any,
+      xmlNS?: string | null,
+      blockArraysIn?: any,
+    ) {
+      try {
+        return origRenderSpec.call(DOMSerializer, doc, structure, xmlNS, blockArraysIn);
+      } catch (err: any) {
+        if (err?.message?.includes("Invalid array") || err?.message?.includes("renderSpec")) {
+          // Deep-serialize the full spec to find the broken nested element
+          const specJson = (() => {
+            try { return JSON.stringify(structure).slice(0, 2000); } catch { return "[unserializable]"; }
+          })();
+          console.error(
+            "[BlockNote:renderSpec] Caught invalid DOMOutputSpec — rendering fallback <span>:",
+            {
+              error: err.message,
+              specPreview: specJson,
+              specType: typeof structure,
+              specFirstElement: Array.isArray(structure) ? structure[0] : "N/A",
+            },
+          );
+          // Replace with a safe fallback <span> so the view can still render
+          return origRenderSpec.call(
+            DOMSerializer, doc, ["span", { "data-bn-invalid": "true" }], xmlNS, blockArraysIn,
+          );
+        }
+        throw err;
+      }
+    };
+  } catch {
+    // prosemirror-model not resolvable at runtime — skip patch
+  }
+}
+
 // ─── Error boundary ────────────────────────────────────────────────────────
 // Catches ProseMirror renderSpec crashes during React render.
 // Does NOT attempt in-place recovery (that causes infinite loops).
@@ -342,6 +388,63 @@ function BlockNoteEditorInner({
     setIdAttribute: true,
     tabBehavior: "prefer-indent",
   });
+
+  // ── Schema diagnostic — log all node toDOM specs on first mount ────────
+  useEffect(() => {
+    try {
+      const tiptap = (editor as any)._tiptapEditor;
+      const schema = tiptap?.schema;
+      if (!schema) return;
+
+      const issues: string[] = [];
+      for (const [name, nodeType] of Object.entries<any>(schema.nodes)) {
+        const spec = nodeType.spec;
+        if (!spec.toDOM) continue;
+        try {
+          const testNode = nodeType.createAndFill();
+          if (!testNode) {
+            issues.push(`${name}: createAndFill returned null`);
+            continue;
+          }
+          const result = spec.toDOM(testNode);
+          if (Array.isArray(result)) {
+            if (typeof result[0] !== "string") {
+              issues.push(
+                `${name}: toDOM[0] is ${typeof result[0]} (${JSON.stringify(result[0])}) — NOT a string tag`,
+              );
+            }
+          }
+        } catch (err: any) {
+          issues.push(`${name}: toDOM threw — ${err?.message}`);
+        }
+      }
+      for (const [name, markType] of Object.entries<any>(schema.marks)) {
+        const spec = markType.spec;
+        if (!spec.toDOM) continue;
+        try {
+          const mark = markType.create();
+          const result = spec.toDOM(mark, true);
+          if (Array.isArray(result)) {
+            if (typeof result[0] !== "string") {
+              issues.push(
+                `mark:${name}: toDOM[0] is ${typeof result[0]} — NOT a string tag`,
+              );
+            }
+          }
+        } catch (err: any) {
+          issues.push(`mark:${name}: toDOM threw — ${err?.message}`);
+        }
+      }
+      if (issues.length > 0) {
+        console.error("[BlockNote] Schema toDOM issues found:", issues);
+      } else {
+        console.log("[BlockNote] All schema node/mark toDOM specs valid");
+      }
+    } catch {
+      // Diagnostic only — don't break anything
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // If we mounted with recovery content, mark as already initialized so the
   // first Convex data arrival doesn't overwrite the safe content.
