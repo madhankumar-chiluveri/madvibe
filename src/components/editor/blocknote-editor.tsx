@@ -17,52 +17,6 @@ import {
   sanitizeBlockNoteDocumentForRenderRecovery,
 } from "../../../shared/blocknote-content";
 
-// ─── renderSpec diagnostic patch ──────────────────────────────────────────
-// Intercepts ProseMirror's DOMSerializer.renderSpec to catch and log the
-// exact invalid DOMOutputSpec before it crashes. This runs once on module load.
-// Uses dynamic import to avoid direct prosemirror-model dependency.
-if (typeof window !== "undefined" && !(window as any).__bn_renderSpec_patched__) {
-  (window as any).__bn_renderSpec_patched__ = true;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { DOMSerializer } = require("prosemirror-model");
-    const origRenderSpec = DOMSerializer.renderSpec;
-    DOMSerializer.renderSpec = function patchedRenderSpec(
-      doc: Document,
-      structure: any,
-      xmlNS?: string | null,
-      blockArraysIn?: any,
-    ) {
-      try {
-        return origRenderSpec.call(DOMSerializer, doc, structure, xmlNS, blockArraysIn);
-      } catch (err: any) {
-        if (err?.message?.includes("Invalid array") || err?.message?.includes("renderSpec")) {
-          // Deep-serialize the full spec to find the broken nested element
-          const specJson = (() => {
-            try { return JSON.stringify(structure).slice(0, 2000); } catch { return "[unserializable]"; }
-          })();
-          console.error(
-            "[BlockNote:renderSpec] Caught invalid DOMOutputSpec — rendering fallback <span>:",
-            {
-              error: err.message,
-              specPreview: specJson,
-              specType: typeof structure,
-              specFirstElement: Array.isArray(structure) ? structure[0] : "N/A",
-            },
-          );
-          // Replace with a safe fallback <span> so the view can still render
-          return origRenderSpec.call(
-            DOMSerializer, doc, ["span", { "data-bn-invalid": "true" }], xmlNS, blockArraysIn,
-          );
-        }
-        throw err;
-      }
-    };
-  } catch {
-    // prosemirror-model not resolvable at runtime — skip patch
-  }
-}
-
 // ─── Error boundary ────────────────────────────────────────────────────────
 // Catches ProseMirror renderSpec crashes during React render.
 // Does NOT attempt in-place recovery (that causes infinite loops).
