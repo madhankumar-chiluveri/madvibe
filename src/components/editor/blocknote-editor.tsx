@@ -17,20 +17,26 @@ import {
   sanitizeBlockNoteDocumentForRenderRecovery,
 } from "../../../shared/blocknote-content";
 
+// ─── Error boundary ────────────────────────────────────────────────────────
+// Catches ProseMirror renderSpec crashes during React render.
+// Does NOT attempt in-place recovery (that causes infinite loops).
+// Instead signals the outer wrapper via onFatalCrash so it can remount
+// a fresh editor instance with safe content.
+
 interface EditorBoundaryProps {
   pageId: Id<"pages">;
   getDoc: () => unknown;
-  onRecover: () => void;
+  onFatalCrash: (rawContent: unknown) => void;
   children: ReactNode;
 }
 
 interface EditorBoundaryState {
   error: Error | null;
-  recovered: boolean;
 }
 
 class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBoundaryState> {
-  state: EditorBoundaryState = { error: null, recovered: false };
+  state: EditorBoundaryState = { error: null };
+  private hasFiredCrash = false;
 
   static getDerivedStateFromError(error: Error) {
     return { error };
@@ -55,22 +61,19 @@ class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBound
       doc,
     });
 
-    const message = error instanceof Error ? error.message : String(error);
-    if (!this.state.recovered && message.includes("renderSpec")) {
-      try {
-        this.props.onRecover();
-        this.setState({ error: null, recovered: true });
-      } catch (recoverError) {
-        console.error("[BlockNote] automatic render recovery failed", recoverError);
-      }
+    // Signal outer wrapper to remount with safe content.
+    // Do NOT call editor.replaceBlocks() here — the ProseMirror view is in a
+    // broken state and any state update triggers another render → infinite loop.
+    if (!this.hasFiredCrash) {
+      this.hasFiredCrash = true;
+      this.props.onFatalCrash(doc);
     }
   }
 
   componentDidUpdate(prevProps: EditorBoundaryProps) {
     if (this.state.error && prevProps.pageId !== this.props.pageId) {
-      this.setState({ error: null, recovered: false });
-    } else if (this.state.recovered && prevProps.pageId !== this.props.pageId) {
-      this.setState({ recovered: false });
+      this.hasFiredCrash = false;
+      this.setState({ error: null });
     }
   }
 
@@ -93,10 +96,7 @@ class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBound
           </pre>
           <button
             type="button"
-            onClick={() => {
-              this.setState({ error: null });
-              this.props.onRecover();
-            }}
+            onClick={() => this.props.onFatalCrash(null)}
             className="mt-4 inline-flex h-9 items-center rounded-xl bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
           >
             Reload editor
@@ -108,13 +108,8 @@ class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBound
   }
 }
 
-interface BlockNoteEditorProps {
-  pageId: Id<"pages">;
-  editable?: boolean;
-  isFullWidth?: boolean;
-}
+// ─── Skeleton ──────────────────────────────────────────────────────────────
 
-// Shimmer lines shown while blocks are loading
 function EditorSkeleton() {
   return (
     <div className="space-y-3 pt-1 animate-fade-in-fast">
@@ -130,11 +125,61 @@ function EditorSkeleton() {
   );
 }
 
+// ─── Outer wrapper ─────────────────────────────────────────────────────────
+// Manages recovery state. When a fatal render crash occurs, it generates safe
+// fallback content and increments a key so the inner component remounts with
+// a brand-new editor instance — no corrupted ProseMirror state carried over.
+
+interface BlockNoteEditorProps {
+  pageId: Id<"pages">;
+  editable?: boolean;
+  isFullWidth?: boolean;
+}
+
 export function BlockNoteEditor({
   pageId,
   editable = true,
   isFullWidth = false,
 }: BlockNoteEditorProps) {
+  const [editorKey, setEditorKey] = useState(0);
+  const [recoveryContent, setRecoveryContent] = useState<unknown[] | null>(null);
+
+  const handleFatalCrash = useCallback((rawContent: unknown) => {
+    const safe = sanitizeBlockNoteDocumentForRenderRecovery(rawContent);
+    setRecoveryContent(safe.length > 0 ? safe : []);
+    setEditorKey((k) => k + 1);
+  }, []);
+
+  return (
+    <BlockNoteEditorInner
+      key={`${pageId}:${editorKey}`}
+      pageId={pageId}
+      editable={editable}
+      isFullWidth={isFullWidth}
+      recoveryContent={recoveryContent}
+      onFatalCrash={handleFatalCrash}
+    />
+  );
+}
+
+// ─── Inner editor ──────────────────────────────────────────────────────────
+// Owns useCreateBlockNote — gets a fresh editor on every mount.
+
+interface BlockNoteEditorInnerProps {
+  pageId: Id<"pages">;
+  editable: boolean;
+  isFullWidth: boolean;
+  recoveryContent: unknown[] | null;
+  onFatalCrash: (rawContent: unknown) => void;
+}
+
+function BlockNoteEditorInner({
+  pageId,
+  editable,
+  isFullWidth,
+  recoveryContent,
+  onFatalCrash,
+}: BlockNoteEditorInnerProps) {
   const { resolvedTheme } = useTheme();
 
   const blocks = useQuery(api.blocks.listByPage, { pageId });
@@ -150,36 +195,51 @@ export function BlockNoteEditor({
   const lastRemoteSnapshot = useRef<string | null>(null);
   const lastSavedSnapshot = useRef<string | null>(null);
   const lastIncomingContent = useRef<unknown[]>([]);
+  const isRecoveryMount = useRef(recoveryContent !== null);
 
-  // true = show shimmer, false = show editor
-  const [isLoadingContent, setIsLoadingContent] = useState(true);
-  const [renderBoundaryKey, setRenderBoundaryKey] = useState(0);
+  const [isLoadingContent, setIsLoadingContent] = useState(!isRecoveryMount.current);
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // If this is a recovery mount, start with safe content; otherwise empty.
+  const safeInitial = isRecoveryMount.current && recoveryContent && recoveryContent.length > 0
+    ? (recoveryContent as any)
+    : undefined;
+
   const editor = useCreateBlockNote({
-    initialContent: undefined,
+    initialContent: safeInitial,
     setIdAttribute: true,
     tabBehavior: "prefer-indent",
   });
+
+  // If we mounted with recovery content, mark as already initialized so the
+  // first Convex data arrival doesn't overwrite the safe content.
+  useEffect(() => {
+    if (isRecoveryMount.current) {
+      isInitialized.current = true;
+      const content = recoveryContent ?? [];
+      lastIncomingContent.current = content;
+      lastRemoteSnapshot.current = JSON.stringify(sanitizeForConvex(content));
+    }
+    // Only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Reset state when navigating to a different page ──────────────────────
   useEffect(() => {
     if (mountedPageId.current === pageId) return;
     mountedPageId.current = pageId;
 
-    // Flush any pending save timer for the previous page
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
 
     isInitialized.current = false;
+    isRecoveryMount.current = false;
     blockId.current = null;
     hasPendingSave.current = false;
     lastRemoteSnapshot.current = null;
     lastSavedSnapshot.current = null;
     lastIncomingContent.current = [];
-    setRenderBoundaryKey((value) => value + 1);
     setSaveStatus("idle");
     setDirty(false);
-    // Show shimmer while new page's blocks load
     setIsLoadingContent(true);
   }, [pageId, setDirty, setSaveStatus]);
 
@@ -211,19 +271,6 @@ export function BlockNoteEditor({
     [editor],
   );
 
-  const recoverFromRenderCrash = useCallback(() => {
-    const source =
-      lastIncomingContent.current.length > 0
-        ? lastIncomingContent.current
-        : editor.document;
-    const fallbackContent = sanitizeBlockNoteDocumentForRenderRecovery(source);
-
-    editor.replaceBlocks(editor.document, fallbackContent as any);
-    lastIncomingContent.current = fallbackContent;
-    lastRemoteSnapshot.current = JSON.stringify(sanitizeForConvex(fallbackContent));
-    setRenderBoundaryKey((value) => value + 1);
-  }, [editor]);
-
   useEffect(() => {
     if (!blocks) return;
 
@@ -239,9 +286,6 @@ export function BlockNoteEditor({
       }
       if (Array.isArray(blockContent)) {
         rawRemoteContent = blockContent;
-        // Guard against legacy/corrupted blocks that would crash BlockNote's
-        // ProseMirror renderSpec ("Invalid array passed to renderSpec").
-        // Drop null/undefined entries and anything without a string `type`.
         nextRemoteContent = sanitizeBlockNoteDocument(blockContent);
       }
     } catch {
@@ -251,10 +295,6 @@ export function BlockNoteEditor({
     let remoteSnapshot = JSON.stringify(sanitizeForConvex(nextRemoteContent));
     const previousRemoteSnapshot = lastRemoteSnapshot.current;
     lastIncomingContent.current = nextRemoteContent;
-
-    if (typeof window !== "undefined") {
-      (window as any).__bn_failed_incoming_doc__ = nextRemoteContent;
-    }
 
     if (!isInitialized.current) {
       isInitialized.current = true;
@@ -273,10 +313,8 @@ export function BlockNoteEditor({
       return () => clearTimeout(t);
     }
 
-    // CRITICAL FIX: If we are the active editor, never pull content from the 
-    // network after the initial load. BlockNote (without a true Yjs provider)
-    // cannot seamlessly merge document states — calling replaceBlocks() steals 
-    // cursor focus and forces empty new lines.
+    // If we are the active editor, never pull content from the network after
+    // the initial load — replaceBlocks steals cursor focus.
     if (editable) {
       lastRemoteSnapshot.current = remoteSnapshot;
       return;
@@ -325,10 +363,10 @@ export function BlockNoteEditor({
   const scrollToHashTarget = useCallback(() => {
     if (typeof window === "undefined") return;
 
-    const blockId = decodeURIComponent(window.location.hash.replace(/^#/, ""));
-    if (!blockId) return;
+    const anchorId = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+    if (!anchorId) return;
 
-    const target = document.getElementById(blockId);
+    const target = document.getElementById(anchorId);
     if (!target) return;
 
     window.requestAnimationFrame(() => {
@@ -399,7 +437,7 @@ export function BlockNoteEditor({
   return (
     <div className={cn("blocknote-wrapper w-full min-h-[calc(100vh-200px)]", isFullWidth && "full-width-editor")}>
 
-      {/* Shimmer overlay while content loads — covers editor without unmounting it */}
+      {/* Shimmer overlay while content loads */}
       <div className={cn(
         "transition-opacity duration-200",
         isLoadingContent ? "block" : "hidden"
@@ -412,7 +450,6 @@ export function BlockNoteEditor({
         isLoadingContent ? "opacity-0 h-0 overflow-hidden" : "opacity-100"
       )}>
         <BlockNoteRenderBoundary
-          key={`${pageId}:${renderBoundaryKey}`}
           pageId={pageId}
           getDoc={() => {
             try {
@@ -421,7 +458,7 @@ export function BlockNoteEditor({
               return null;
             }
           }}
-          onRecover={recoverFromRenderCrash}
+          onFatalCrash={onFatalCrash}
         >
           <BlockNoteView
             editor={editor}

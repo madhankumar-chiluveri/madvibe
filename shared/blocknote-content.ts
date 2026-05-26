@@ -302,20 +302,6 @@ function asValidId(value: unknown) {
   return id;
 }
 
-function sanitizeTableCellProps(props: unknown) {
-  if (!isRecord(props)) return undefined;
-
-  const result: JsonRecord = {};
-  addDefaultTextProps(result, props);
-
-  const colspan = asFiniteNumber(props.colspan);
-  const rowspan = asFiniteNumber(props.rowspan);
-  if (colspan !== undefined) result.colspan = Math.max(1, Math.floor(colspan));
-  if (rowspan !== undefined) result.rowspan = Math.max(1, Math.floor(rowspan));
-
-  return Object.keys(result).length > 0 ? result : undefined;
-}
-
 function generateBlockId(): string {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
@@ -430,6 +416,109 @@ function sanitizeBlock(block: unknown, seenIds: Set<string>, options: SanitizeOp
   return next;
 }
 
+// ── Final deep-clean pass ──────────────────────────────────────────────────
+// Belt-and-suspenders: recursively strip null/undefined from every array and
+// validate inline content items have the exact shape ProseMirror expects.
+// This catches edge cases the semantic sanitizer can't anticipate — e.g.
+// values introduced by JSON round-tripping (undefined → null) or by Convex
+// data transport quirks.
+
+function deepCleanInlineContent(content: unknown): unknown[] {
+  if (!Array.isArray(content)) return [];
+  const result: unknown[] = [];
+  for (const item of content) {
+    if (item == null) continue;
+    if (!isRecord(item)) continue;
+
+    if (item.type === "text") {
+      if (typeof item.text === "string" && item.text.length > 0) {
+        result.push({
+          type: "text",
+          text: item.text,
+          styles: isRecord(item.styles) ? item.styles : {},
+        });
+      }
+      continue;
+    }
+
+    if (item.type === "link") {
+      const href = asString(item.href);
+      const linkContent = deepCleanInlineContent(item.content);
+      if (href && linkContent.length > 0) {
+        result.push({ type: "link", href, content: linkContent });
+      } else if (href) {
+        // Link lost its visible text — keep the URL as plain text
+        result.push({ type: "text", text: href, styles: {} });
+      }
+      continue;
+    }
+
+    // Unknown inline type — extract whatever text we can
+    const text = extractPlainText(item);
+    if (text.length > 0) {
+      result.push({ type: "text", text, styles: {} });
+    }
+  }
+  return result;
+}
+
+function deepCleanTableContent(content: unknown): unknown {
+  if (!isRecord(content) || content.type !== "tableContent" || !Array.isArray(content.rows)) {
+    return undefined;
+  }
+
+  const rows: unknown[] = [];
+  for (const row of content.rows) {
+    if (row == null || !isRecord(row) || !Array.isArray(row.cells)) continue;
+    const cells = row.cells
+      .filter((cell) => cell != null)
+      .map((cell) => {
+        if (Array.isArray(cell)) return deepCleanInlineContent(cell);
+        return deepCleanInlineContent([cell]);
+      });
+    if (cells.length > 0) rows.push({ cells });
+  }
+
+  if (rows.length === 0) return undefined;
+
+  const cleaned: JsonRecord = { type: "tableContent", rows };
+  if (Array.isArray(content.columnWidths)) {
+    const cw = content.columnWidths.filter(
+      (w) => typeof w === "number" && Number.isFinite(w as number),
+    );
+    if (cw.length > 0) cleaned.columnWidths = cw;
+  }
+  const hr = asFiniteNumber(content.headerRows);
+  const hc = asFiniteNumber(content.headerCols);
+  if (hr !== undefined) cleaned.headerRows = hr;
+  if (hc !== undefined) cleaned.headerCols = hc;
+  return cleaned;
+}
+
+function deepCleanBlock(block: SanitizedBlockNoteBlock): SanitizedBlockNoteBlock {
+  const cleaned = { ...block };
+
+  if (block.type === "table" && block.content != null) {
+    const tc = deepCleanTableContent(block.content);
+    if (tc) {
+      cleaned.content = tc;
+    } else {
+      // Table content is broken — demote to paragraph
+      cleaned.type = "paragraph";
+      cleaned.props = {};
+      cleaned.content = deepCleanInlineContent(extractPlainText(block.content));
+    }
+  } else if (Array.isArray(block.content)) {
+    cleaned.content = deepCleanInlineContent(block.content);
+  }
+
+  if (block.children.length > 0) {
+    cleaned.children = block.children.map(deepCleanBlock);
+  }
+
+  return cleaned;
+}
+
 export function sanitizeBlockNoteDocument(
   blocks: unknown,
   seenIds = new Set<string>(),
@@ -444,7 +533,7 @@ export function sanitizeBlockNoteDocument(
   const result: SanitizedBlockNoteBlock[] = [];
   for (const block of source) {
     const sanitized = sanitizeBlock(block, seenIds, options);
-    if (sanitized) result.push(sanitized);
+    if (sanitized) result.push(deepCleanBlock(sanitized));
   }
   return result;
 }
