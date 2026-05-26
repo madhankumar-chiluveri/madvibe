@@ -55,7 +55,17 @@ class BlockNoteRenderBoundary extends Component<EditorBoundaryProps, EditorBound
       (window as any).__bn_failed_doc__ = doc;
       (window as any).__bn_failed_pageId__ = this.props.pageId;
     }
-    console.error("[BlockNote] renderSpec crash for page", this.props.pageId, {
+    // Structured diagnostic log
+    const docJson = (() => {
+      try { return JSON.stringify(doc)?.slice(0, 3000); } catch { return "[serialize failed]"; }
+    })();
+    console.error(
+      `[BlockNote] Render crash for page ${this.props.pageId}\n` +
+      `  Error: ${error?.message}\n` +
+      `  Doc blocks: ${Array.isArray(doc) ? doc.length : "N/A"}\n` +
+      `  Doc preview: ${docJson}`,
+    );
+    console.error("[BlockNote] Full crash details:", {
       error,
       componentStack: info.componentStack,
       doc,
@@ -125,6 +135,73 @@ function EditorSkeleton() {
   );
 }
 
+// ─── Fatal error display ──────────────────────────────────────────────────
+// Shown when recovery is exhausted. Displays the raw document JSON so the
+// user (or developer) can diagnose what data is causing the crash.
+
+function EditorFatalError({
+  pageId,
+  error,
+}: {
+  pageId: Id<"pages">;
+  error: { message: string; rawDoc: unknown; sanitizedDoc: unknown };
+}) {
+  const [showRaw, setShowRaw] = useState(false);
+
+  const docPreview = (() => {
+    try {
+      const target = showRaw ? error.rawDoc : error.sanitizedDoc;
+      return JSON.stringify(target, null, 2)?.slice(0, 4000) ?? "null";
+    } catch {
+      return "[Could not serialize document]";
+    }
+  })();
+
+  return (
+    <div className="rounded-2xl border border-red-500/30 bg-red-500/[0.06] p-6 text-foreground">
+      <div className="text-base font-semibold">Editor failed to load</div>
+      <div className="mt-1 text-sm text-muted-foreground">
+        {error.message}
+      </div>
+      <div className="mt-1 text-xs text-muted-foreground">
+        Page ID: <code className="rounded bg-foreground/[0.06] px-1.5 py-0.5">{pageId}</code>
+        {" · "}
+        Debug data saved to{" "}
+        <code className="rounded bg-foreground/[0.06] px-1.5 py-0.5">window.__bn_fatal_doc__</code>
+        {" and "}
+        <code className="rounded bg-foreground/[0.06] px-1.5 py-0.5">window.__bn_fatal_sanitized__</code>
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setShowRaw((v) => !v)}
+          className="inline-flex h-8 items-center rounded-lg border px-3 text-xs font-medium text-muted-foreground hover:bg-accent/50 transition-colors"
+        >
+          {showRaw ? "Show sanitized" : "Show raw data"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              navigator.clipboard.writeText(
+                JSON.stringify({ pageId, raw: error.rawDoc, sanitized: error.sanitizedDoc }, null, 2),
+              );
+            } catch { /* ignore */ }
+          }}
+          className="inline-flex h-8 items-center rounded-lg border px-3 text-xs font-medium text-muted-foreground hover:bg-accent/50 transition-colors"
+        >
+          Copy debug JSON
+        </button>
+      </div>
+
+      <pre className="mt-3 max-h-[300px] overflow-auto rounded-lg border border-red-500/20 bg-background/40 p-3 text-xs text-red-300 whitespace-pre-wrap break-all">
+        {docPreview}
+      </pre>
+    </div>
+  );
+}
+
 // ─── Outer wrapper ─────────────────────────────────────────────────────────
 // Manages recovery state. When a fatal render crash occurs, it generates safe
 // fallback content and increments a key so the inner component remounts with
@@ -136,6 +213,8 @@ interface BlockNoteEditorProps {
   isFullWidth?: boolean;
 }
 
+const MAX_RECOVERY_ATTEMPTS = 1;
+
 export function BlockNoteEditor({
   pageId,
   editable = true,
@@ -143,12 +222,65 @@ export function BlockNoteEditor({
 }: BlockNoteEditorProps) {
   const [editorKey, setEditorKey] = useState(0);
   const [recoveryContent, setRecoveryContent] = useState<unknown[] | null>(null);
+  const recoveryAttempts = useRef(0);
+  const [fatalError, setFatalError] = useState<{
+    message: string;
+    rawDoc: unknown;
+    sanitizedDoc: unknown;
+  } | null>(null);
+
+  // Reset recovery state when navigating to a different page
+  const lastPageId = useRef(pageId);
+  useEffect(() => {
+    if (lastPageId.current !== pageId) {
+      lastPageId.current = pageId;
+      recoveryAttempts.current = 0;
+      setFatalError(null);
+      setRecoveryContent(null);
+      setEditorKey(0);
+    }
+  }, [pageId]);
 
   const handleFatalCrash = useCallback((rawContent: unknown) => {
+    recoveryAttempts.current += 1;
+    const attemptNum = recoveryAttempts.current;
+
     const safe = sanitizeBlockNoteDocumentForRenderRecovery(rawContent);
+
+    console.error(
+      `[BlockNote] Recovery attempt ${attemptNum}/${MAX_RECOVERY_ATTEMPTS} for page ${pageId}`,
+      {
+        rawContent: rawContent != null ? JSON.stringify(rawContent).slice(0, 2000) : null,
+        sanitizedContent: JSON.stringify(safe).slice(0, 2000),
+        blockCount: Array.isArray(rawContent) ? rawContent.length : "N/A",
+      },
+    );
+
+    if (attemptNum > MAX_RECOVERY_ATTEMPTS) {
+      // Recovery exhausted — show permanent inline error instead of looping
+      console.error(
+        `[BlockNote] Recovery exhausted after ${attemptNum - 1} attempt(s) for page ${pageId}. ` +
+        `Showing error UI. Raw doc logged to window.__bn_fatal_doc__`,
+      );
+      if (typeof window !== "undefined") {
+        (window as any).__bn_fatal_doc__ = rawContent;
+        (window as any).__bn_fatal_sanitized__ = safe;
+      }
+      setFatalError({
+        message: `BlockNote crashed ${attemptNum - 1} time(s) and recovery failed. The document data may be corrupted.`,
+        rawDoc: rawContent,
+        sanitizedDoc: safe,
+      });
+      return;
+    }
+
     setRecoveryContent(safe.length > 0 ? safe : []);
     setEditorKey((k) => k + 1);
-  }, []);
+  }, [pageId]);
+
+  if (fatalError) {
+    return <EditorFatalError pageId={pageId} error={fatalError} />;
+  }
 
   return (
     <BlockNoteEditorInner
@@ -298,6 +430,17 @@ function BlockNoteEditorInner({
 
     if (!isInitialized.current) {
       isInitialized.current = true;
+
+      // Log what data is entering the editor for debugging renderSpec crashes
+      if (process.env.NODE_ENV === "development" || nextRemoteContent.length > 0) {
+        console.log(
+          `[BlockNote] Loading page ${pageId}` +
+          ` | blocks: ${nextRemoteContent.length}` +
+          ` | types: ${nextRemoteContent.map((b: any) => b?.type).join(", ") || "(empty)"}` +
+          ` | recovery: ${isRecoveryMount.current}`,
+        );
+      }
+
       if (nextRemoteContent.length > 0) {
         nextRemoteContent = replaceBlocksWithRenderRecovery(
           nextRemoteContent,
