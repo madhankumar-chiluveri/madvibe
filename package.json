@@ -11,9 +11,14 @@
     "convex:deploy": "convex deploy"
   },
   "dependencies": {
-    "@blocknote/core": "^0.37.0",
-    "@blocknote/mantine": "^0.37.0",
-    "@blocknote/react": "^0.37.0",
+    "@blocknote/core": "0.37.0",
+    "@blocknote/mantine": "0.37.0",
+    "@blocknote/react": "0.37.0",
+    "prosemirror-model": "1.25.1",
+    "prosemirror-view": "1.38.1",
+    "prosemirror-state": "1.4.3",
+    "prosemirror-transform": "1.10.4",
+    "prosemirror-tables": "1.6.4",
     "@convex-dev/auth": "^0.0.91",
     "@convex-dev/resend": "^0.2.3",
     "@hello-pangea/dnd": "^17.0.0",
