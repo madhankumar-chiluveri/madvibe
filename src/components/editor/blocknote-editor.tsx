@@ -343,62 +343,106 @@ function BlockNoteEditorInner({
     tabBehavior: "prefer-indent",
   });
 
-  // ── Schema diagnostic — log all node toDOM specs on first mount ────────
-  useEffect(() => {
+  // ── Schema validation + patching — runs synchronously before render ────
+  // Tests every node/mark toDOM spec BEFORE BlockNoteView creates the
+  // ProseMirror view. Patches broken ones with a safe fallback.
+  const schemaPatched = useRef(false);
+  if (!schemaPatched.current) {
+    schemaPatched.current = true;
     try {
-      const tiptap = (editor as any)._tiptapEditor;
-      const schema = tiptap?.schema;
-      if (!schema) return;
+      // Access schema through BlockNote's public API
+      const schema = editor.prosemirrorState?.schema;
 
-      const issues: string[] = [];
-      for (const [name, nodeType] of Object.entries<any>(schema.nodes)) {
-        const spec = nodeType.spec;
-        if (!spec.toDOM) continue;
-        try {
-          const testNode = nodeType.createAndFill();
-          if (!testNode) {
-            issues.push(`${name}: createAndFill returned null`);
+      if (!schema) {
+        console.warn("[BlockNote] Schema not available yet — skipping validation");
+      } else {
+        const nodeNames = Object.keys(schema.nodes);
+        const markNames = Object.keys(schema.marks);
+        console.log(
+          `[BlockNote] Validating schema: ${nodeNames.length} nodes (${nodeNames.join(", ")}), ${markNames.length} marks (${markNames.join(", ")})`,
+        );
+
+        const issues: string[] = [];
+
+        for (const [name, nodeType] of Object.entries<any>(schema.nodes)) {
+          const spec = nodeType.spec;
+          if (!spec.toDOM) {
+            console.log(`[BlockNote]   ${name}: no toDOM`);
             continue;
           }
-          const result = spec.toDOM(testNode);
-          if (Array.isArray(result)) {
-            if (typeof result[0] !== "string") {
-              issues.push(
-                `${name}: toDOM[0] is ${typeof result[0]} (${JSON.stringify(result[0])}) — NOT a string tag`,
-              );
+          try {
+            const testNode = nodeType.createAndFill();
+            if (!testNode) {
+              console.log(`[BlockNote]   ${name}: createAndFill=null`);
+              continue;
             }
+            const result = spec.toDOM(testNode);
+            const isObj = result && typeof result === "object" && !Array.isArray(result);
+            const isArr = Array.isArray(result);
+            const valid = isObj
+              ? !!(result.dom && result.dom.nodeType)
+              : isArr
+                ? typeof result[0] === "string"
+                : typeof result === "string";
+
+            if (!valid) {
+              const preview = JSON.stringify(result)?.slice(0, 200) ?? "null";
+              issues.push(`${name}: invalid toDOM output — ${preview}`);
+              console.error(`[BlockNote]   ${name}: INVALID toDOM →`, result);
+              // Patch with safe fallback
+              const origToDOM = spec.toDOM;
+              spec.toDOM = (node: any) => {
+                try {
+                  const r = origToDOM(node);
+                  // Check all three valid forms
+                  if (typeof r === "string") return r;
+                  if (r && typeof r === "object" && !Array.isArray(r) && r.dom?.nodeType) return r;
+                  if (Array.isArray(r) && typeof r[0] === "string") return r;
+                  return ["div", { "data-bn-patched": name }, 0];
+                } catch {
+                  return ["div", { "data-bn-patched": name }, 0];
+                }
+              };
+            } else {
+              console.log(`[BlockNote]   ${name}: OK (${isObj ? "dom-object" : isArr ? "array" : "string"})`);
+            }
+          } catch (err: any) {
+            issues.push(`${name}: toDOM threw — ${err?.message}`);
+            console.error(`[BlockNote]   ${name}: toDOM THREW:`, err);
+            spec.toDOM = () => ["div", { "data-bn-patched": name }, 0];
           }
-        } catch (err: any) {
-          issues.push(`${name}: toDOM threw — ${err?.message}`);
+        }
+
+        for (const [name, markType] of Object.entries<any>(schema.marks)) {
+          const spec = markType.spec;
+          if (!spec.toDOM) continue;
+          try {
+            const mark = markType.create();
+            const result = spec.toDOM(mark, true);
+            const valid = typeof result === "string"
+              || (result?.dom?.nodeType)
+              || (Array.isArray(result) && typeof result[0] === "string");
+            if (!valid) {
+              issues.push(`mark:${name}: invalid toDOM →  ${JSON.stringify(result)?.slice(0, 200)}`);
+              console.error(`[BlockNote]   mark:${name}: INVALID toDOM →`, result);
+              spec.toDOM = () => ["span", { "data-bn-patched-mark": name }, 0];
+            }
+          } catch (err: any) {
+            issues.push(`mark:${name}: toDOM threw — ${err?.message}`);
+            spec.toDOM = () => ["span", { "data-bn-patched-mark": name }, 0];
+          }
+        }
+
+        if (issues.length > 0) {
+          console.error("[BlockNote] Schema issues found and patched:", issues);
+        } else {
+          console.log("[BlockNote] All schema toDOM specs valid ✓");
         }
       }
-      for (const [name, markType] of Object.entries<any>(schema.marks)) {
-        const spec = markType.spec;
-        if (!spec.toDOM) continue;
-        try {
-          const mark = markType.create();
-          const result = spec.toDOM(mark, true);
-          if (Array.isArray(result)) {
-            if (typeof result[0] !== "string") {
-              issues.push(
-                `mark:${name}: toDOM[0] is ${typeof result[0]} — NOT a string tag`,
-              );
-            }
-          }
-        } catch (err: any) {
-          issues.push(`mark:${name}: toDOM threw — ${err?.message}`);
-        }
-      }
-      if (issues.length > 0) {
-        console.error("[BlockNote] Schema toDOM issues found:", issues);
-      } else {
-        console.log("[BlockNote] All schema node/mark toDOM specs valid");
-      }
-    } catch {
-      // Diagnostic only — don't break anything
+    } catch (e) {
+      console.error("[BlockNote] Schema validation failed:", e);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
 
   // If we mounted with recovery content, mark as already initialized so the
   // first Convex data arrival doesn't overwrite the safe content.
