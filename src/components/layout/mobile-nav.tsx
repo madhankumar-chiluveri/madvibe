@@ -11,7 +11,7 @@ import {
   BookOpen,
   Wallet,
   Sparkles,
-  Zap,
+  Car,
 } from "lucide-react";
 
 const TABS = [
@@ -19,8 +19,8 @@ const TABS = [
   { id: "feed" as const,     label: "FEED",     icon: Newspaper,        href: "/workspace/feed" },
   { id: "brain" as const,    label: "BRAIN",    icon: BookOpen,         href: "/workspace/brain" },
   { id: "ledger" as const,   label: "LEDGER",   icon: Wallet,           href: "/workspace/ledger" },
-  { id: "ai" as const,         label: "Maddy AI",    icon: Sparkles,  href: "/workspace/ai" },
-  { id: "automation" as const, label: "Automation",  icon: Zap,       href: "/workspace/automation" },
+  { id: "ai" as const,       label: "Maddy AI", icon: Sparkles,         href: "/workspace/ai" },
+  { id: "garage" as const,   label: "GARAGE",   icon: Car,              href: "/workspace/garage" },
 ] as const;
 
 export function MobileNav() {
@@ -34,7 +34,7 @@ export function MobileNav() {
       ? null
       : TABS.find((t) => {
     if (t.id === "brain") {
-      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "automation", "ai"].includes(workspaceSegment ?? "");
+      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "garage", "automation", "ai"].includes(workspaceSegment ?? "");
     }
     return workspaceSegment === t.id;
   })?.id ?? "overview";

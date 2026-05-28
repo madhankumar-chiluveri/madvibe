@@ -6,7 +6,8 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Id } from "../../convex/_generated/dataModel";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 
-type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "automation" | "ai";
+type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "garage" | "automation" | "ai";
+export type GarageTab = "overview" | "services" | "expenses" | "checklist" | "documents";
 export type MaddyPanelTab = "chat" | "search" | "page";
 export type MaddyProvider =
   | "gemini"
@@ -92,6 +93,11 @@ interface AppState {
 
   automationTab: AutomationTab;
   setAutomationTab: (t: AutomationTab) => void;
+
+  garageTab: GarageTab;
+  setGarageTab: (t: GarageTab) => void;
+  selectedVehicleId: string | null;
+  setSelectedVehicleId: (id: string | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -188,11 +194,16 @@ export const useAppStore = create<AppState>()(
 
       automationTab: "pinterest-pin-generator",
       setAutomationTab: (t) => set({ automationTab: t }),
+
+      garageTab: "overview",
+      setGarageTab: (t) => set({ garageTab: t }),
+      selectedVehicleId: null,
+      setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
     }),
     {
       name: "madvibe-app-state",
-      version: 3,
-      migrate: (persistedState: any) => {
+      version: 4,
+      migrate: (persistedState: any, version: number) => {
         if (!persistedState || typeof persistedState !== "object") {
           return persistedState;
         }
@@ -215,6 +226,8 @@ export const useAppStore = create<AppState>()(
           feedCategory: state.feedCategory ?? state.newsCategory ?? null,
           ledgerTab: state.ledgerTab ?? state.financeTab ?? "dashboard",
           automationTab: state.automationTab ?? "pinterest-pin-generator",
+          garageTab: state.garageTab ?? "overview",
+          selectedVehicleId: state.selectedVehicleId ?? null,
         };
       },
       storage: createJSONStorage(() =>
@@ -241,6 +254,8 @@ export const useAppStore = create<AppState>()(
         feedCategory: s.feedCategory,
         ledgerTab: s.ledgerTab,
         automationTab: s.automationTab,
+        garageTab: s.garageTab,
+        selectedVehicleId: s.selectedVehicleId,
       }),
     }
   )

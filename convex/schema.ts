@@ -22,6 +22,12 @@ import {
   workspaceInviteStatusValidator,
   workspaceRoleValidator,
 } from "./workspaceShared";
+import {
+  garageVehicleTypeValidator,
+  garageServiceTypeValidator,
+  garageExpenseTypeValidator,
+  garageDocumentTypeValidator,
+} from "./garageShared";
 
 export default defineSchema({
   ...authTables,
@@ -741,4 +747,153 @@ export default defineSchema({
     auth: v.string(),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
+
+  // ── Garage: Vehicles ──────────────────────────────────
+  garageVehicles: defineTable({
+    userId: v.string(),
+    workspaceId: v.id("workspaces"),
+    name: v.string(),                    // "Royal Enfield Himalayan 450"
+    nickname: v.optional(v.string()),    // "Himalayan" — short display name
+    type: garageVehicleTypeValidator,
+    registrationNumber: v.optional(v.string()),
+    chassisNumber: v.optional(v.string()),
+    currentOdometer: v.number(),         // km
+    purchaseDate: v.optional(v.string()),
+    purchasePrice: v.optional(v.number()),
+    modelYear: v.optional(v.number()),
+    color: v.optional(v.string()),       // hex or tailwind name
+    icon: v.optional(v.string()),        // emoji: "🏍️"
+    imageUrl: v.optional(v.string()),    // cover photo via OCI upload
+    specs: v.optional(v.object({
+      engineCc: v.optional(v.string()),
+      fuelType: v.optional(v.string()),  // "petrol" | "diesel" | "electric" | "cng"
+      oilType: v.optional(v.string()),
+      oilCapacity: v.optional(v.string()),
+      frontTireSize: v.optional(v.string()),
+      rearTireSize: v.optional(v.string()),
+      batteryModel: v.optional(v.string()),
+      fuelCapacity: v.optional(v.string()),
+      transmissionType: v.optional(v.string()),
+      notes: v.optional(v.string()),
+    })),
+    insuranceExpiry: v.optional(v.string()),
+    insurancePolicyNumber: v.optional(v.string()),
+    insuranceProvider: v.optional(v.string()),
+    pucExpiry: v.optional(v.string()),
+    warrantyExpiry: v.optional(v.string()),
+    warrantyKmLimit: v.optional(v.number()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_workspaceId", ["workspaceId"])
+    .index("by_userId_active", ["userId", "isActive"]),
+
+  // ── Garage: Odometer History ──────────────────────────
+  garageOdometerLogs: defineTable({
+    userId: v.string(),
+    vehicleId: v.id("garageVehicles"),
+    reading: v.number(),                 // km at this point
+    source: v.union(
+      v.literal("manual"),               // user typed it
+      v.literal("service"),              // auto-logged from service entry
+      v.literal("fuel"),                 // auto-logged from fuel entry
+      v.literal("trip"),                 // auto-logged from trip end
+    ),
+    date: v.string(),                    // YYYY-MM-DD
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_vehicleId", ["vehicleId"])
+    .index("by_vehicleId_date", ["vehicleId", "date"]),
+
+  // ── Garage: Service Logs ──────────────────────────────
+  garageServiceLogs: defineTable({
+    userId: v.string(),
+    vehicleId: v.id("garageVehicles"),
+    serviceType: garageServiceTypeValidator,
+    serviceDate: v.string(),
+    odometer: v.number(),
+    cost: v.number(),
+    title: v.string(),                   // "2nd Paid Service"
+    description: v.optional(v.string()),
+    serviceProvider: v.optional(v.string()),
+    serviceProviderPhone: v.optional(v.string()),
+    itemsReplaced: v.array(v.string()),  // ["Engine Oil", "Air Filter"]
+    laborCost: v.optional(v.number()),
+    partsCost: v.optional(v.number()),
+    receiptUrl: v.optional(v.string()),
+    nextServiceDate: v.optional(v.string()),
+    nextServiceOdometer: v.optional(v.number()),
+    warrantyApplied: v.optional(v.boolean()),
+    linkedTransactionId: v.optional(v.id("financeTransactions")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_vehicleId", ["vehicleId"])
+    .index("by_vehicleId_date", ["vehicleId", "serviceDate"]),
+
+  // ── Garage: Expense Logs ──────────────────────────────
+  garageExpenseLogs: defineTable({
+    userId: v.string(),
+    vehicleId: v.id("garageVehicles"),
+    date: v.string(),
+    type: garageExpenseTypeValidator,
+    amount: v.number(),
+    odometer: v.optional(v.number()),
+    quantity: v.optional(v.number()),     // liters for fuel, kWh for EV
+    pricePerUnit: v.optional(v.number()), // ₹/liter or ₹/kWh
+    fuelType: v.optional(v.string()),     // "petrol", "diesel", "ev"
+    isFullTank: v.optional(v.boolean()),  // for accurate mileage calculation
+    notes: v.optional(v.string()),
+    linkedTransactionId: v.optional(v.id("financeTransactions")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_vehicleId", ["vehicleId"])
+    .index("by_vehicleId_type", ["vehicleId", "type"])
+    .index("by_vehicleId_date", ["vehicleId", "date"]),
+
+  // ── Garage: Maintenance Checklist ─────────────────────
+  garageMaintenanceItems: defineTable({
+    userId: v.string(),
+    vehicleId: v.id("garageVehicles"),
+    item: v.string(),                    // "Clean and lube chain"
+    type: v.union(v.literal("routine"), v.literal("issue"), v.literal("upgrade")),
+    // ── Recurring interval fields ──
+    intervalKm: v.optional(v.number()),  // recur every N km (e.g., 500)
+    intervalDays: v.optional(v.number()),// recur every N days (e.g., 30)
+    // ── Current due threshold ──
+    dueOdometer: v.optional(v.number()), // next due at this km
+    dueDate: v.optional(v.string()),     // next due by this date
+    // ── Completion tracking ──
+    isCompleted: v.boolean(),
+    completedAt: v.optional(v.number()),
+    completedOdometer: v.optional(v.number()),
+    // ── Link to reminders for push ──
+    linkedReminderId: v.optional(v.id("reminders")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_vehicleId", ["vehicleId"])
+    .index("by_vehicleId_completed", ["vehicleId", "isCompleted"]),
+
+  // ── Garage: Document Vault ────────────────────────────
+  garageDocuments: defineTable({
+    userId: v.string(),
+    vehicleId: v.id("garageVehicles"),
+    type: garageDocumentTypeValidator,
+    label: v.string(),                   // "ICICI Lombard 2026-27"
+    fileUrl: v.string(),                 // OCI/uploaded URL
+    expiryDate: v.optional(v.string()),  // track expiry for insurance/PUC docs
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_vehicleId", ["vehicleId"]),
 });

@@ -34,6 +34,7 @@ import {
   Sparkles,
   Wallet,
   Workflow,
+  Car,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -69,6 +70,7 @@ const MODULES = [
   { id: "feed" as const, label: "Feed", icon: Newspaper, href: "/workspace/feed" },
   { id: "brain" as const, label: "Brain", icon: BookOpen, href: "/workspace/brain" },
   { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
+  { id: "garage" as const, label: "Garage", icon: Car, href: "/workspace/garage" },
   { id: "automation" as const, label: "Automation", icon: Workflow, href: "/workspace/automation" },
   { id: "ai" as const, label: "Maddy AI", icon: Sparkles, href: "/workspace/ai" },
 ] as const;
@@ -92,6 +94,14 @@ const LEDGER_PANE_ITEMS = [
   { id: "recurring", label: "Recurring" },
   { id: "reports", label: "Reports" },
   { id: "market", label: "Market" },
+] as const;
+
+const GARAGE_PANE_ITEMS = [
+  { id: "overview", label: "Overview" },
+  { id: "services", label: "Service Logs" },
+  { id: "expenses", label: "Running Costs" },
+  { id: "checklist", label: "Maintenance" },
+  { id: "documents", label: "Documents" },
 ] as const;
 
 const AUTOMATION_PANE_ITEMS = [
@@ -118,6 +128,11 @@ const PANE_DETAILS = {
     eyebrow: "Finance",
     title: "Ledger",
     description: "Switch ledger sections without crowding the page header.",
+  },
+  garage: {
+    eyebrow: "Vehicles",
+    title: "Garage",
+    description: "Your vehicles, services, and running costs in one place.",
   },
   automation: {
     eyebrow: "Automation",
@@ -147,7 +162,7 @@ function getRouteModule(pathname: string) {
 
   if (!pathname.startsWith("/workspace")) return "overview";
   if (!segment) return "overview";
-  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "automation" || segment === "ai") {
+  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "garage" || segment === "automation" || segment === "ai") {
     return segment;
   }
   if (segment === "settings") return "overview";
@@ -1054,7 +1069,7 @@ function OverviewContextPane() {
   const router = useRouter();
   const { openMaddyPanel, setCommandPaletteOpen, setActiveModule } = useAppStore();
 
-  const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger" | "automation") => {
+  const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger" | "garage" | "automation") => {
     setActiveModule(moduleId);
     router.push(href);
   };
@@ -1103,6 +1118,11 @@ function OverviewContextPane() {
             icon={<Wallet className="h-4 w-4" />}
             label="Open Ledger"
             onClick={() => goTo("/workspace/ledger", "ledger")}
+          />
+          <NavItem
+            icon={<Car className="h-4 w-4" />}
+            label="Open Garage"
+            onClick={() => goTo("/workspace/garage", "garage")}
           />
           <NavItem
             icon={<Workflow className="h-4 w-4" />}
@@ -1183,6 +1203,81 @@ function LedgerContextPane() {
   );
 }
 
+function GarageContextPane() {
+  const { garageTab, setGarageTab, selectedVehicleId, setSelectedVehicleId } = useAppStore();
+  const { resolvedWorkspaceId } = useResolvedWorkspace();
+  const vehicles = useQuery(
+    api.garage.listVehicles,
+    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
+  );
+
+  return (
+    <div className="space-y-4 px-2 py-3">
+      {selectedVehicleId && (
+        <>
+          <div className="px-3 py-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              Vehicle Sections
+            </span>
+          </div>
+
+          <div className="space-y-0.5">
+            {GARAGE_PANE_ITEMS.map((item) => (
+              <NavItem
+                key={item.id}
+                icon={<Car className="h-4 w-4" />}
+                label={item.label}
+                active={garageTab === item.id}
+                onClick={() => setGarageTab(item.id)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      <div>
+        <div className="px-3 py-1 flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            Vehicles
+          </span>
+          {selectedVehicleId && (
+            <button
+              onClick={() => setSelectedVehicleId(null)}
+              className="text-[10px] font-semibold text-primary hover:underline"
+            >
+              View Grid
+            </button>
+          )}
+        </div>
+        <div className="space-y-0.5">
+          {vehicles === undefined ? (
+            <div className="space-y-1.5 px-3 py-1">
+              <div className="skeleton-shimmer h-4 w-3/4 rounded" />
+              <div className="skeleton-shimmer h-4 w-2/3 rounded" />
+            </div>
+          ) : vehicles.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-muted-foreground">
+              No vehicles in this garage.
+            </div>
+          ) : (
+            vehicles.map((v: any) => (
+              <NavItem
+                key={v._id}
+                icon={<span className="text-xs">{v.icon || "🏍️"}</span>}
+                label={v.nickname ?? v.name}
+                active={selectedVehicleId === v._id}
+                onClick={() => {
+                  setSelectedVehicleId(v._id);
+                }}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AutomationContextPane() {
   const router = useRouter();
   const { automationTab, setAutomationTab } = useAppStore();
@@ -1240,8 +1335,10 @@ export function Sidebar() {
         ? "brain"
         : routeModule === "ledger"
           ? "ledger"
-          : routeModule === "automation"
-            ? "automation"
+        : routeModule === "garage"
+          ? "garage"
+        : routeModule === "automation"
+          ? "automation"
           : "overview";
 
   useEffect(() => {
@@ -1368,6 +1465,8 @@ export function Sidebar() {
               <FeedContextPane />
             ) : paneModule === "ledger" ? (
               <LedgerContextPane />
+            ) : paneModule === "garage" ? (
+              <GarageContextPane />
             ) : paneModule === "automation" ? (
               <AutomationContextPane />
             ) : (

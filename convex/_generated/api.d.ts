@@ -25,6 +25,8 @@ import type * as feed from "../feed.js";
 import type * as feedSync from "../feedSync.js";
 import type * as files from "../files.js";
 import type * as financeShared from "../financeShared.js";
+import type * as garage from "../garage.js";
+import type * as garageShared from "../garageShared.js";
 import type * as habits from "../habits.js";
 import type * as http from "../http.js";
 import type * as ledger from "../ledger.js";
@@ -68,6 +70,8 @@ declare const fullApi: ApiFromModules<{
   feedSync: typeof feedSync;
   files: typeof files;
   financeShared: typeof financeShared;
+  garage: typeof garage;
+  garageShared: typeof garageShared;
   habits: typeof habits;
   http: typeof http;
   ledger: typeof ledger;
