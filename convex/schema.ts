@@ -387,6 +387,10 @@ export default defineSchema({
     rewardPoints: v.optional(v.number()),
     rewardProgram: v.optional(v.string()),
     autoPayAccountId: v.optional(v.id("financeAccounts")),
+    cardNumber: v.optional(v.string()),
+    expiryMonth: v.optional(v.number()),
+    expiryYear: v.optional(v.number()),
+    cvv: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

@@ -50,18 +50,28 @@ export const createCreditCard = mutation({
     dueDay: v.number(),
     rewardProgram: v.optional(v.string()),
     autoPayAccountId: v.optional(v.id("financeAccounts")),
+    cardNumber: v.optional(v.string()),
+    expiryMonth: v.optional(v.number()),
+    expiryYear: v.optional(v.number()),
+    cvv: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
     const now = Date.now();
+
+    let derivedLastFour = args.lastFour;
+    if (args.cardNumber && args.cardNumber.trim().length >= 4) {
+      derivedLastFour = args.cardNumber.trim().slice(-4);
+    }
+
     return await ctx.db.insert("financeCreditCards", {
       userId,
       accountId: args.accountId,
       issuer: args.issuer,
       network: args.network,
       cardName: args.cardName,
-      lastFour: args.lastFour,
+      lastFour: derivedLastFour,
       creditLimit: args.creditLimit,
       statementBalance: 0,
       currentBalance: 0,
@@ -70,6 +80,10 @@ export const createCreditCard = mutation({
       dueDay: args.dueDay,
       rewardProgram: args.rewardProgram,
       autoPayAccountId: args.autoPayAccountId,
+      cardNumber: args.cardNumber,
+      expiryMonth: args.expiryMonth,
+      expiryYear: args.expiryYear,
+      cvv: args.cvv,
       createdAt: now,
       updatedAt: now,
     });
@@ -196,5 +210,31 @@ export const listCardTransactions = query({
     if (args.startDate) txns = txns.filter((t) => t.date >= args.startDate!);
     if (args.endDate) txns = txns.filter((t) => t.date <= args.endDate!);
     return txns.slice(0, args.limit ?? 50);
+  },
+});
+
+export const deleteCardTransaction = mutation({
+  args: { id: v.id("financeTransactions") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const tx = await ctx.db.get(args.id);
+    if (!tx) return;
+
+    if (tx.linkedCreditCardId) {
+      const card = await ctx.db.get(tx.linkedCreditCardId);
+      if (card) {
+        const newBalance = Math.max(0, card.currentBalance - tx.amount);
+        const newAvailable = Math.min(card.creditLimit, card.creditLimit - newBalance);
+        await ctx.db.patch(tx.linkedCreditCardId, {
+          currentBalance: newBalance,
+          availableCredit: newAvailable,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    await ctx.db.delete(args.id);
   },
 });

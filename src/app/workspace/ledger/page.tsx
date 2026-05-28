@@ -14,9 +14,9 @@ import {
   LayoutDashboard, CreditCard, TrendingUp, TrendingDown,
   Target, BarChart2, Globe, Plus, Wallet, ArrowUpRight, ArrowDownRight,
   PiggyBank, X, Trash2, AlertTriangle, Handshake, CheckCircle,
-  RefreshCw, Repeat, LineChart as LineChartIcon, DollarSign,
+  RefreshCw, Repeat, DollarSign,
   Calendar, Clock, Landmark, Building2, ChevronRight, Edit2,
-  RotateCcw, AlertCircle, Info,
+  RotateCcw, AlertCircle, Info, ArrowLeft,
 } from "lucide-react";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 import {
@@ -188,7 +188,6 @@ const TABS = [
   { id: "budget" as const,       label: "Budget",       icon: BarChart2 },
   { id: "goals" as const,        label: "Goals",        icon: Target },
   { id: "recurring" as const,    label: "Recurring",    icon: Repeat },
-  { id: "reports" as const,      label: "Reports",      icon: LineChartIcon },
   { id: "market" as const,       label: "Market",       icon: Globe },
 ];
 
@@ -533,180 +532,786 @@ function DashboardTab() {
 function CreditCardsTab() {
   const cards = useQuery(api.ledgerCards.listCreditCards);
   const accounts = useQuery(api.ledger.listAccounts);
+  const categories = useQuery(api.ledger.listCategories, { type: "expense" });
   const [showAdd, setShowAdd] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
+  const selectedCardData = cards?.find((c: any) => c._id === selectedCard);
+
   const createCard = useMutation(api.ledgerCards.createCreditCard);
   const deleteCard = useMutation(api.ledgerCards.deleteCreditCard);
+  const createAccount = useMutation(api.ledger.createAccount);
+  const recordSpend = useMutation(api.ledgerCards.recordCardSpend);
+  const deleteCardTxn = useMutation(api.ledgerCards.deleteCardTransaction);
+  const updateCard = useMutation(api.ledgerCards.updateCreditCard);
 
   const cardTxns = useQuery(
     api.ledgerCards.listCardTransactions,
     selectedCard ? { creditCardId: selectedCard as any, limit: 20 } : "skip"
   );
 
+  const [showFullNumber, setShowFullNumber] = useState(false);
+  const [showCvv, setShowCvv] = useState(false);
+  const [cardTab, setCardTab] = useState<"overview" | "spends" | "history">("overview");
+  const [editSpecsOpen, setEditSpecsOpen] = useState(false);
+
   const [form, setForm] = useState({
-    accountId: "", issuer: "", network: "", cardName: "", lastFour: "",
+    issuer: "", network: "", cardName: "", cardNumber: "",
+    expiryMonth: "", expiryYear: "", cvv: "",
     creditLimit: "", billingDay: "1", dueDay: "20", rewardProgram: "",
   });
   const [saving, setSaving] = useState(false);
 
+  const [editForm, setEditForm] = useState({
+    cardName: "",
+    creditLimit: "",
+    billingDay: "1",
+    dueDay: "20",
+    rewardProgram: "",
+  });
+
+  const handleOpenEditSpecs = () => {
+    if (!selectedCardData) return;
+    setEditForm({
+      cardName: selectedCardData.cardName ?? "",
+      creditLimit: String(selectedCardData.creditLimit),
+      billingDay: String(selectedCardData.billingDay),
+      dueDay: String(selectedCardData.dueDay),
+      rewardProgram: selectedCardData.rewardProgram ?? "",
+    });
+    setEditSpecsOpen(true);
+  };
+
+  const [spendForm, setSpendForm] = useState({
+    amount: "",
+    description: "",
+    categoryId: "",
+    merchant: "",
+    date: todayDate(),
+    notes: "",
+    type: "self",
+  });
+  const [spendSaving, setSpendSaving] = useState(false);
+
+  const catMap = useMemo(() => {
+    const m: Record<string, { name: string; icon: string; color: string }> = {};
+    for (const c of categories ?? []) m[c._id] = c;
+    return m;
+  }, [categories]);
+
+  const handleTypeChange = (newType: string) => {
+    let defaultDesc = "";
+    let defaultMerchant = "";
+    
+    if (newType === "lent") {
+      defaultDesc = "Lent to ";
+    } else if (newType === "charge") {
+      defaultDesc = "Card Interest / Fee";
+      defaultMerchant = selectedCardData?.issuer || "";
+    } else if (newType === "renewal") {
+      defaultDesc = "Annual Membership Renewal";
+      defaultMerchant = selectedCardData?.issuer || "";
+    }
+    
+    // Find a suitable category for the type
+    let matchedCategoryId = spendForm.categoryId;
+    if (categories && categories.length > 0) {
+      if (newType === "lent") {
+        const found = categories.find((c: any) => 
+          c.name.toLowerCase().includes("transfer") || 
+          c.name.toLowerCase().includes("lent") || 
+          c.name.toLowerCase().includes("others") ||
+          c.name.toLowerCase().includes("family")
+        );
+        if (found) matchedCategoryId = found._id;
+      } else if (newType === "charge" || newType === "renewal") {
+        const found = categories.find((c: any) => 
+          c.name.toLowerCase().includes("fee") || 
+          c.name.toLowerCase().includes("charge") || 
+          c.name.toLowerCase().includes("bills") ||
+          c.name.toLowerCase().includes("others")
+        );
+        if (found) matchedCategoryId = found._id;
+      }
+    }
+
+    setSpendForm({
+      ...spendForm,
+      type: newType,
+      description: defaultDesc,
+      merchant: defaultMerchant,
+      categoryId: matchedCategoryId,
+    });
+  };
+
+  const handleSpendSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCard || !spendForm.amount || !spendForm.description || !selectedCardData) return;
+    setSpendSaving(true);
+    try {
+      await recordSpend({
+        creditCardId: selectedCard as any,
+        accountId: selectedCardData.accountId,
+        amount: parseFloat(spendForm.amount),
+        description: spendForm.description,
+        merchant: spendForm.merchant || undefined,
+        categoryId: (spendForm.categoryId || categories?.[0]?._id) as any || undefined,
+        date: spendForm.date,
+        notes: spendForm.notes || undefined,
+      });
+      setSpendForm({
+        amount: "",
+        description: "",
+        categoryId: categories?.[0]?._id || "",
+        merchant: "",
+        date: todayDate(),
+        notes: "",
+        type: "self",
+      });
+    } catch (err) {
+      console.error("Error recording card spend:", err);
+      alert("Failed to record card spend. Please try again.");
+    } finally {
+      setSpendSaving(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.accountId || !form.issuer || !form.creditLimit) return;
+    if (!form.issuer || !form.creditLimit) return;
+    if (accounts === undefined) return; // Wait until accounts are loaded
+
     setSaving(true);
     try {
+      let linkedAccountId = accounts?.[0]?._id;
+      if (!linkedAccountId) {
+        // Automatically bootstrap a default "Main Account" under the hood
+        linkedAccountId = await createAccount({
+          name: "Main Account",
+          type: "savings",
+          balance: 0,
+          currency: "INR",
+        });
+      }
+
       await createCard({
-        accountId: form.accountId as any,
+        accountId: linkedAccountId,
         issuer: form.issuer,
         network: form.network as any || undefined,
         cardName: form.cardName || undefined,
-        lastFour: form.lastFour || undefined,
+        cardNumber: form.cardNumber || undefined,
+        expiryMonth: form.expiryMonth ? parseInt(form.expiryMonth) : undefined,
+        expiryYear: form.expiryYear ? parseInt(form.expiryYear) : undefined,
+        cvv: form.cvv || undefined,
         creditLimit: parseFloat(form.creditLimit),
         billingDay: parseInt(form.billingDay),
         dueDay: parseInt(form.dueDay),
         rewardProgram: form.rewardProgram || undefined,
       });
       setShowAdd(false);
-      setForm({ accountId: "", issuer: "", network: "", cardName: "", lastFour: "", creditLimit: "", billingDay: "1", dueDay: "20", rewardProgram: "" });
+      setForm({ issuer: "", network: "", cardName: "", cardNumber: "", expiryMonth: "", expiryYear: "", cvv: "", creditLimit: "", billingDay: "1", dueDay: "20", rewardProgram: "" });
+    } catch (err) {
+      console.error("Error creating credit card:", err);
+      alert("Failed to save credit card. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  const selectedCardData = cards?.find((c: any) => c._id === selectedCard);
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Credit Cards</h3>
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs px-3 py-2 rounded-lg hover:bg-primary/90 transition-colors min-h-[36px]">
-          <Plus className="w-3.5 h-3.5" /> Add Card
-        </button>
-      </div>
+      {!selectedCardData ? (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Credit Cards</h3>
+            <button onClick={() => setShowAdd(true)}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs px-3 py-2 rounded-lg hover:bg-primary/90 transition-colors min-h-[36px]">
+              <Plus className="w-3.5 h-3.5" /> Add Card
+            </button>
+          </div>
 
-      {cards === undefined ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[...Array(2)].map((_: any, i: number) => (
-            <div key={i} className="h-40 bg-muted rounded-2xl animate-pulse" />
-          ))}
-        </div>
-      ) : cards.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-border rounded-2xl">
-          <CreditCard className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No credit cards added yet</p>
-          <button onClick={() => setShowAdd(true)} className="mt-3 text-xs text-primary hover:underline">
-            Add your first card →
-          </button>
-        </div>
+          {cards === undefined ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[...Array(2)].map((_: any, i: number) => (
+                <div key={i} className="h-40 bg-muted rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : cards.length === 0 ? (
+            <div className="text-center py-16 border-2 border-dashed border-border rounded-2xl">
+              <CreditCard className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No credit cards added yet</p>
+              <button onClick={() => setShowAdd(true)} className="mt-3 text-xs text-primary hover:underline">
+                Add your first card →
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {cards.map((card: any) => {
+                const utilPct = card.creditLimit > 0 ? (card.currentBalance / card.creditLimit) * 100 : 0;
+                const network = card.network ?? "other";
+                const gradient = NETWORK_COLORS[network] ?? NETWORK_COLORS.other;
+                return (
+                  <div key={card._id} className={cn("relative overflow-hidden rounded-2xl cursor-pointer transition-all",
+                    `bg-gradient-to-br ${gradient}`)}
+                    onClick={() => setSelectedCard(card._id)}>
+                    {/* Card body */}
+                    <div className="p-5 text-foreground">
+                      <div className="flex items-start justify-between mb-6">
+                        <div>
+                          <p className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{card.issuer}</p>
+                          <p className="font-semibold">{card.cardName ?? "Credit Card"}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              if (!confirmDeleteRecord("credit card")) return;
+                              void deleteCard({ id: card._id });
+                            }}
+                            className="p-1.5 rounded-lg bg-foreground/10 hover:bg-foreground/20 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs tracking-[0.3em] text-foreground/50 mb-4">
+                        •••• •••• •••• {card.lastFour ?? "••••"}
+                      </p>
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-xs text-foreground/60">Balance</p>
+                          <p className="text-lg font-bold">{fmt(card.currentBalance)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-foreground/60">Limit</p>
+                          <p className="text-sm font-medium">{fmt(card.creditLimit)}</p>
+                        </div>
+                      </div>
+                      {/* Utilization bar */}
+                      <div className="mt-3 h-1.5 bg-foreground/20 rounded-full overflow-hidden">
+                        <div className={cn("h-full rounded-full transition-all",
+                          utilPct >= 90 ? "bg-notion-red-text" : utilPct >= 75 ? "bg-notion-yellow-text" : "bg-notion-blue-text")}
+                          style={{ width: `${Math.min(100, utilPct)}%` }} />
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <p className="text-xs text-foreground/50">Used: {utilPct.toFixed(0)}%</p>
+                        <p className="text-xs text-foreground/50">Due day: {card.dueDay}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {cards.map((card: any) => {
-            const utilPct = card.creditLimit > 0 ? (card.currentBalance / card.creditLimit) * 100 : 0;
-            const network = card.network ?? "other";
-            const gradient = NETWORK_COLORS[network] ?? NETWORK_COLORS.other;
-            const isSelected = selectedCard === card._id;
-            return (
-              <div key={card._id} className={cn("relative overflow-hidden rounded-2xl cursor-pointer transition-all",
-                `bg-gradient-to-br ${gradient}`, isSelected && "ring-2 ring-white")}
-                onClick={() => setSelectedCard(isSelected ? null : card._id)}>
-                {/* Card body */}
-                <div className="p-5 text-foreground">
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <p className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{card.issuer}</p>
-                      <p className="font-semibold">{card.cardName ?? "Credit Card"}</p>
+        <div className="space-y-6 mt-6">
+          {/* Selected Card Workspace */}
+          {/* 1. Detail Header Card */}
+          <div className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              {/* Identity & Go Back */}
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  onClick={() => setSelectedCard(null)}
+                  className="h-10 w-10 shrink-0 rounded-xl hover:bg-muted border border-border/40 flex items-center justify-center transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-3xl shrink-0 select-none p-1.5 bg-muted rounded-xl border border-border/40">
+                    💳
+                  </span>
+                  <div className="min-w-0 space-y-0.5">
+                    <h2 className="text-lg font-bold text-foreground leading-tight truncate">
+                      {selectedCardData.issuer} {selectedCardData.cardName ? `— ${selectedCardData.cardName}` : ""}
+                    </h2>
+                    <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground font-medium">
+                      <span className="font-mono tracking-wider">
+                        •••• •••• •••• {selectedCardData.lastFour || "••••"}
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-border/80" />
+                      <span className="capitalize">{selectedCardData.network || "Other"} Card</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-border/80" />
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-[10px] font-bold border",
+                        (selectedCardData.currentBalance / selectedCardData.creditLimit) * 100 >= 90
+                          ? "bg-notion-red-bg text-notion-red-text border-notion-red-text/20"
+                          : (selectedCardData.currentBalance / selectedCardData.creditLimit) * 100 >= 75
+                          ? "bg-notion-yellow-bg text-notion-yellow-text border-notion-yellow-text/20"
+                          : "bg-notion-green-bg text-notion-green-text border-notion-green-text/20"
+                      )}>
+                        {((selectedCardData.currentBalance / selectedCardData.creditLimit) * 100).toFixed(0)}% Utilized
+                      </span>
                     </div>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={(ev) => {
-                          ev.stopPropagation();
-                          if (!confirmDeleteRecord("credit card")) return;
-                          void deleteCard({ id: card._id });
-                        }}
-                        className="p-1.5 rounded-lg bg-foreground/10 hover:bg-foreground/20 transition-colors">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-xs tracking-[0.3em] text-foreground/50 mb-4">
-                    •••• •••• •••• {card.lastFour ?? "••••"}
-                  </p>
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-xs text-foreground/60">Balance</p>
-                      <p className="text-lg font-bold">{fmt(card.currentBalance)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-foreground/60">Limit</p>
-                      <p className="text-sm font-medium">{fmt(card.creditLimit)}</p>
-                    </div>
-                  </div>
-                  {/* Utilization bar */}
-                  <div className="mt-3 h-1.5 bg-foreground/20 rounded-full overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all",
-                      utilPct >= 90 ? "bg-notion-red-text" : utilPct >= 75 ? "bg-notion-yellow-text" : "bg-notion-blue-text")}
-                      style={{ width: `${Math.min(100, utilPct)}%` }} />
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <p className="text-xs text-foreground/50">Used: {utilPct.toFixed(0)}%</p>
-                    <p className="text-xs text-foreground/50">Due day: {card.dueDay}</p>
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
 
-      {/* Selected card transactions */}
-      {selectedCardData && (
-        <div className="bg-card border rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b flex items-center justify-between">
-            <span className="text-sm font-semibold">{selectedCardData.issuer} Transactions</span>
-            <button onClick={() => setSelectedCard(null)} className="text-xs text-muted-foreground hover:text-foreground">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          {cardTxns === undefined ? (
-            <div className="p-4 space-y-2">{[...Array(3)].map((_: any, i: number) => (
-              <div key={i} className="h-10 bg-muted rounded-lg animate-pulse" />
-            ))}</div>
-          ) : cardTxns.length === 0 ? (
-            <p className="text-center py-8 text-sm text-muted-foreground">No transactions for this card</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {cardTxns.map((t: any) => (
-                <div key={t._id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{t.description}</p>
-                    <p className="text-xs text-muted-foreground">{t.merchant ?? t.date}</p>
-                  </div>
-                  <p className="text-sm font-bold text-notion-red-text shrink-0">−{fmt(t.amount)}</p>
-                </div>
-              ))}
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 shrink-0">
+                <button
+                  onClick={() => setCardTab("spends")}
+                  className="h-9 px-3.5 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 shrink-0 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Record Spend
+                </button>
+
+                <button
+                  onClick={handleOpenEditSpecs}
+                  className="h-9 w-9 shrink-0 rounded-xl border border-border/60 hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
+                  title="Edit Card Specs"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (!confirmDeleteRecord("credit card")) return;
+                    void deleteCard({ id: selectedCardData._id });
+                    setSelectedCard(null);
+                  }}
+                  className="h-9 w-9 shrink-0 rounded-xl border border-border/60 text-notion-red-text hover:bg-notion-red-bg flex items-center justify-center transition-colors animate-fade-in"
+                  title="Delete Credit Card"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-          )}
+
+            {/* Bottom mini overview rail */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3 border-t border-border/40 text-xs">
+              <div className="space-y-1">
+                <span className="text-muted-foreground block font-medium">Balance</span>
+                <span className="font-bold text-foreground font-mono text-sm">
+                  {fmt(selectedCardData.currentBalance)}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground block font-medium">Available Limit</span>
+                <span className="font-bold text-notion-green-text font-mono text-sm">
+                  {fmt(selectedCardData.availableCredit)}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground block font-medium">Credit Limit</span>
+                <span className="font-bold text-foreground font-mono text-sm">
+                  {fmt(selectedCardData.creditLimit)}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground block font-medium">Statement Cycle</span>
+                <span className="font-semibold text-foreground text-sm">
+                  Bill: {selectedCardData.billingDay} / Due: {selectedCardData.dueDay}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Scrollable Pill Tabs Rail */}
+          <div className="flex border-b border-border/60 pb-px overflow-x-auto gap-1 scrollbar-none">
+            {[
+              { id: "overview" as const, label: "Overview", icon: LayoutDashboard },
+              { id: "spends" as const, label: "Record Spend", icon: Plus },
+              { id: "history" as const, label: "Spends History", icon: Clock },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = cardTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setCardTab(tab.id)}
+                  className={cn(
+                    "relative flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors shrink-0",
+                    isActive
+                      ? "text-foreground border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 3. Rendered Tab Content Panels */}
+          <div className="mt-4">
+            {/* OVERVIEW TAB */}
+            {cardTab === "overview" && (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 animate-fade-in">
+                {/* Visual mock card & specs */}
+                <div className="md:col-span-6 space-y-4">
+                  <div className="bg-card border border-border/60 rounded-2xl p-5 space-y-4 shadow-sm">
+                    <h3 className="text-sm font-semibold text-foreground">Card Mockup</h3>
+                    
+                    {/* The premium physical styled credit card representation */}
+                    <div className={cn(
+                      "relative overflow-hidden rounded-2xl text-white shadow-lg p-6 bg-gradient-to-br min-h-[180px] flex flex-col justify-between",
+                      NETWORK_COLORS[selectedCardData.network ?? "other"] ?? NETWORK_COLORS.other
+                    )}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{selectedCardData.issuer}</p>
+                          <p className="text-base font-extrabold tracking-wide">{selectedCardData.cardName || "Credit Card"}</p>
+                        </div>
+                        <span className="text-xl font-bold italic opacity-90 capitalize">
+                          {selectedCardData.network || "Other"}
+                        </span>
+                      </div>
+                      
+                      <div className="my-3">
+                        <p className="text-lg font-mono tracking-[0.25em] font-medium">
+                          {showFullNumber && selectedCardData.cardNumber
+                            ? selectedCardData.cardNumber.replace(/(.{4})/g, "$1 ").trim()
+                            : `•••• •••• •••• ${selectedCardData.lastFour || "••••"}`}
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between items-end text-xs">
+                        <div>
+                          <p className="text-[8px] uppercase tracking-wider opacity-60">Card Holder</p>
+                          <p className="font-semibold tracking-wide uppercase">Workspace Member</p>
+                        </div>
+                        <div className="flex gap-4">
+                          <div>
+                            <p className="text-[8px] uppercase tracking-wider opacity-60">Expiry</p>
+                            <p className="font-semibold font-mono">
+                              {selectedCardData.expiryMonth && selectedCardData.expiryYear
+                                ? `${String(selectedCardData.expiryMonth).padStart(2, "0")}/${String(selectedCardData.expiryYear).slice(-2)}`
+                                : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[8px] uppercase tracking-wider opacity-60">CVV</p>
+                            <p className="font-semibold font-mono">{showCvv && selectedCardData.cvv ? selectedCardData.cvv : "•••"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Masked reveal controls */}
+                    <div className="flex items-center gap-3 bg-muted/40 p-3.5 border rounded-xl justify-between text-xs">
+                      <span className="font-medium text-muted-foreground">Sensitive Credentials Control</span>
+                      <div className="flex items-center gap-2">
+                        {selectedCardData.cardNumber && (
+                          <button
+                            onClick={() => setShowFullNumber(!showFullNumber)}
+                            className="px-2.5 py-1.5 border rounded-lg bg-card hover:bg-muted font-semibold transition-all"
+                          >
+                            {showFullNumber ? "Hide Number" : "Reveal Number"}
+                          </button>
+                        )}
+                        {selectedCardData.cvv && (
+                          <button
+                            onClick={() => setShowCvv(!showCvv)}
+                            className="px-2.5 py-1.5 border rounded-lg bg-card hover:bg-muted font-semibold transition-all"
+                          >
+                            {showCvv ? "Hide CVV" : "Reveal CVV"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Technical specs detail cards */}
+                <div className="md:col-span-6 space-y-4">
+                  <div className="bg-card border border-border/60 rounded-2xl p-5 space-y-4 shadow-sm">
+                    <h3 className="text-sm font-semibold text-foreground">Specifications Overview</h3>
+                    <div className="divide-y divide-border/60 text-xs">
+                      <div className="flex justify-between py-2.5">
+                        <span className="text-muted-foreground font-medium">Billing Date</span>
+                        <span className="font-semibold text-foreground">Day {selectedCardData.billingDay} of every month</span>
+                      </div>
+                      <div className="flex justify-between py-2.5">
+                        <span className="text-muted-foreground font-medium">Payment Due Date</span>
+                        <span className="font-semibold text-foreground">Day {selectedCardData.dueDay} of every month</span>
+                      </div>
+                      <div className="flex justify-between py-2.5">
+                        <span className="text-muted-foreground font-medium">Reward Program</span>
+                        <span className="font-semibold text-foreground">{selectedCardData.rewardProgram || "Not configured"}</span>
+                      </div>
+                      <div className="flex justify-between py-2.5">
+                        <span className="text-muted-foreground font-medium">Limit Utilization</span>
+                        <span className="font-semibold font-mono text-foreground">
+                          {((selectedCardData.currentBalance / selectedCardData.creditLimit) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedCardData.rewardProgram && (
+                    <div className="bg-notion-yellow-bg/25 border border-notion-yellow-text/15 rounded-2xl p-4 text-xs">
+                      <p className="font-bold text-notion-yellow-text flex items-center gap-1">🎁 Benefits & Perks</p>
+                      <p className="text-foreground/80 mt-1.5 leading-relaxed">{selectedCardData.rewardProgram}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* RECORD SPENDS TAB */}
+            {cardTab === "spends" && (
+              <div className="max-w-xl mx-auto bg-card border border-border/60 rounded-2xl p-6 shadow-sm animate-fade-in">
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-foreground">Record Card Spend</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">Record purchases, card renewals, annual fees, or amounts lent to others.</p>
+                </div>
+
+                <form onSubmit={handleSpendSubmit} className="space-y-4">
+                  {/* Amount */}
+                  <Field label="Amount (₹)" required>
+                    <input
+                      type="number"
+                      min="1"
+                      step="any"
+                      value={spendForm.amount}
+                      onChange={(e) => setSpendForm({ ...spendForm, amount: e.target.value })}
+                      placeholder="0.00"
+                      className={inputCls}
+                      required
+                    />
+                  </Field>
+
+                  {/* Usage Type selector chips */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Usage Type</span>
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                      {[
+                        { id: "self", label: "👤 Self", color: "bg-notion-blue-bg text-notion-blue-text" },
+                        { id: "lent", label: "🤝 Lent Person", color: "bg-notion-green-bg text-notion-green-text" },
+                        { id: "charge", label: "💳 Charges", color: "bg-notion-red-bg text-notion-red-text" },
+                        { id: "renewal", label: "🔄 Renewal", color: "bg-notion-purple-bg text-notion-purple-text" },
+                      ].map((item) => {
+                        const isActive = spendForm.type === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleTypeChange(item.id)}
+                            className={cn(
+                              "text-xs px-2.5 py-1.5 rounded-lg border font-medium whitespace-nowrap transition-all",
+                              isActive
+                                ? `${item.color} border-current shadow-sm`
+                                : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
+                            )}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <Field label="Description" required>
+                    <input
+                      value={spendForm.description}
+                      onChange={(e) => setSpendForm({ ...spendForm, description: e.target.value })}
+                      placeholder={
+                        spendForm.type === "lent"
+                          ? "Lent to Madhan, Hemanth…"
+                          : spendForm.type === "charge"
+                          ? "Card annual fee, interest…"
+                          : "Amazon, Uber, Groceries…"
+                      }
+                      className={inputCls}
+                      required
+                    />
+                  </Field>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Category Selection */}
+                    <Field label="Category">
+                      <LedgerSelect
+                        value={spendForm.categoryId || (categories?.[0]?._id ?? "")}
+                        onValueChange={(value) => setSpendForm({ ...spendForm, categoryId: value })}
+                      >
+                        {(categories ?? []).map((cat: any) => (
+                          <LedgerSelectOption key={cat._id} value={cat._id}>
+                            <span className="mr-1.5">{cat.icon}</span> {cat.name}
+                          </LedgerSelectOption>
+                        ))}
+                      </LedgerSelect>
+                    </Field>
+
+                    {/* Merchant / Payee */}
+                    <Field label="Merchant / Payee">
+                      <input
+                        value={spendForm.merchant}
+                        onChange={(e) => setSpendForm({ ...spendForm, merchant: e.target.value })}
+                        placeholder="Optional"
+                        className={inputCls}
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Date */}
+                    <Field label="Date">
+                      <input
+                        type="date"
+                        value={spendForm.date}
+                        onChange={(e) => setSpendForm({ ...spendForm, date: e.target.value })}
+                        className={inputCls}
+                      />
+                    </Field>
+
+                    {/* Notes */}
+                    <Field label="Notes">
+                      <input
+                        value={spendForm.notes}
+                        onChange={(e) => setSpendForm({ ...spendForm, notes: e.target.value })}
+                        placeholder="Optional"
+                        className={inputCls}
+                      />
+                    </Field>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={spendSaving}
+                    className="w-full bg-primary text-primary-foreground text-xs font-semibold py-2.5 rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors min-h-[40px] flex items-center justify-center gap-1.5"
+                  >
+                    {spendSaving ? "Recording..." : "Record Transaction"}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* TRANSACTION HISTORY TAB */}
+            {cardTab === "history" && (
+              <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm flex flex-col animate-fade-in">
+                <div className="px-4 py-3 border-b flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transaction Registry</span>
+                  <span className="text-xs text-muted-foreground font-mono font-semibold">({cardTxns?.length ?? 0} Item(s))</span>
+                </div>
+
+                {cardTxns === undefined ? (
+                  <div className="p-4 space-y-2 flex-1">
+                    {[...Array(4)].map((_: any, i: number) => (
+                      <div key={i} className="h-12 bg-muted/50 rounded-xl animate-pulse" />
+                    ))}
+                  </div>
+                ) : cardTxns.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center py-20 text-center">
+                    <CreditCard className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                    <p className="text-xs font-semibold text-muted-foreground">No card transactions logged</p>
+                    <p className="text-[10px] text-muted-foreground/60 max-w-[200px] mt-1 mx-auto">Use the &quot;Record Spend&quot; tab to log purchases or fees.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border overflow-y-auto max-h-[720px] flex-1">
+                    {cardTxns.map((t: any) => {
+                      const cat = catMap[t.categoryId];
+                      return (
+                        <div key={t._id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/10 transition-colors">
+                          <div className="w-8 h-8 rounded-full border bg-muted/20 flex items-center justify-center text-sm shrink-0">
+                            {cat?.icon ?? "💳"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <p className="text-sm font-semibold text-foreground truncate">{t.description}</p>
+                              <p className="text-sm font-black text-notion-red-text shrink-0">−{fmt(t.amount)}</p>
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                              <span className="font-mono">{t.date}</span>
+                              {t.merchant && (
+                                <>
+                                  <span>•</span>
+                                  <span className="truncate">{t.merchant}</span>
+                                </>
+                              )}
+                              {cat && (
+                                <>
+                                  <span>•</span>
+                                  <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-muted/40 font-medium text-foreground/80">
+                                    {cat.name}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (!confirmDeleteRecord("transaction")) return;
+                              void deleteCardTxn({ id: t._id });
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-notion-red-bg hover:text-notion-red-text text-muted-foreground transition-all shrink-0"
+                            title="Delete transaction"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Edit Specifications dialog Modal inside Selected Card Workspace */}
+          <Modal open={editSpecsOpen} onClose={() => setEditSpecsOpen(false)} title="Edit Card Specifications">
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!editForm.creditLimit) return;
+              setSaving(true);
+              try {
+                await updateCard({
+                  id: selectedCardData._id,
+                  cardName: editForm.cardName || undefined,
+                  creditLimit: parseFloat(editForm.creditLimit),
+                  billingDay: parseInt(editForm.billingDay),
+                  dueDay: parseInt(editForm.dueDay),
+                  rewardProgram: editForm.rewardProgram || undefined,
+                });
+                setEditSpecsOpen(false);
+                alert("Specifications saved!");
+              } catch (err) {
+                console.error(err);
+                alert("Failed to save card specs. Please try again.");
+              } finally {
+                setSaving(false);
+              }
+            }} className="space-y-4">
+              <Field label="Card Name">
+                <input value={editForm.cardName} onChange={(e) => setEditForm({ ...editForm, cardName: e.target.value })}
+                  placeholder="Regalia, Coral, Millennia…" className={inputCls} />
+              </Field>
+
+              <Field label="Credit Limit (₹)" required>
+                <input type="number" min="1" value={editForm.creditLimit}
+                  onChange={(e) => setEditForm({ ...editForm, creditLimit: e.target.value })}
+                  placeholder="100000" className={inputCls} required />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Billing Day">
+                  <input type="number" min="1" max="31" value={editForm.billingDay}
+                    onChange={(e) => setEditForm({ ...editForm, billingDay: e.target.value })} className={inputCls} />
+                </Field>
+                <Field label="Due Day">
+                  <input type="number" min="1" max="31" value={editForm.dueDay}
+                    onChange={(e) => setEditForm({ ...editForm, dueDay: e.target.value })} className={inputCls} />
+                </Field>
+              </div>
+
+              <Field label="Reward Program">
+                <input value={editForm.rewardProgram} onChange={(e) => setEditForm({ ...editForm, rewardProgram: e.target.value })}
+                  placeholder="Points, Cashback, Miles…" className={inputCls} />
+              </Field>
+
+              <SaveBtn loading={saving} label="Save Specs" />
+            </form>
+          </Modal>
         </div>
       )}
 
       {/* Add Card Modal */}
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add Credit Card">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Linked Account" required>
-            <LedgerSelect
-              value={form.accountId}
-              onValueChange={(value) => setForm({ ...form, accountId: value })}
-              placeholder="Select account"
-              required
-            >
-              {accounts?.map((a: any) => (
-                <LedgerSelectOption key={a._id} value={a._id}>
-                  {a.name}
-                </LedgerSelectOption>
-              ))}
-            </LedgerSelect>
-          </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Issuer / Bank" required>
               <input value={form.issuer} onChange={(e) => setForm({ ...form, issuer: e.target.value })}
@@ -731,9 +1336,33 @@ function CreditCardsTab() {
               <input value={form.cardName} onChange={(e) => setForm({ ...form, cardName: e.target.value })}
                 placeholder="Regalia, Millennia…" className={inputCls} />
             </Field>
-            <Field label="Last 4 Digits">
-              <input value={form.lastFour} onChange={(e) => setForm({ ...form, lastFour: e.target.value })}
-                placeholder="1234" maxLength={4} className={inputCls} />
+            <Field label="Card Number">
+              <input value={form.cardNumber} onChange={(e) => {
+                const cleanVal = e.target.value.replace(/\D/g, "").slice(0, 16);
+                setForm({ ...form, cardNumber: cleanVal });
+              }} placeholder="16-digit card number" maxLength={16} className={inputCls} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Expiry Month">
+              <input type="number" min="1" max="12" value={form.expiryMonth} onChange={(e) => {
+                let val = e.target.value;
+                if (val.length > 2) val = val.slice(0, 2);
+                setForm({ ...form, expiryMonth: val });
+              }} placeholder="MM" className={inputCls} />
+            </Field>
+            <Field label="Expiry Year">
+              <input type="number" min="2026" max="2099" value={form.expiryYear} onChange={(e) => {
+                let val = e.target.value;
+                if (val.length > 4) val = val.slice(0, 4);
+                setForm({ ...form, expiryYear: val });
+              }} placeholder="YYYY" className={inputCls} />
+            </Field>
+            <Field label="CVV">
+              <input type="password" value={form.cvv} onChange={(e) => {
+                const cleanVal = e.target.value.replace(/\D/g, "").slice(0, 4);
+                setForm({ ...form, cvv: cleanVal });
+              }} placeholder="123" maxLength={4} className={inputCls} />
             </Field>
           </div>
           <Field label="Credit Limit (₹)" required>
@@ -1991,124 +2620,7 @@ function RecurringTab() {
   );
 }
 
-// ── REPORTS TAB ───────────────────────────────────────────────────────────────
 
-function ReportsTab() {
-  const cashflow12 = useQuery(api.ledger.getCashflowHistory, { months: 12 });
-  const allocation = useQuery(api.ledgerInvestments.getPortfolioByAssetClass);
-
-  const savingsData = useMemo(() => {
-    return (cashflow12 ?? []).map((m: any) => ({
-      ...m,
-      savings: Math.max(0, m.income - m.expenses),
-      savingsRate: m.income > 0 ? ((m.income - m.expenses) / m.income) * 100 : 0,
-    }));
-  }, [cashflow12]);
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-semibold">Financial Reports</h3>
-
-      {/* 12-month cash flow */}
-      <div className="bg-card border rounded-2xl p-4">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Income vs Expenses (12 months)</h4>
-        {cashflow12 && cashflow12.length > 0 ? (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={cashflow12}>
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: any) => fmt(v)} />
-              <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} name="Income" />
-              <Bar dataKey="expenses" fill="#f87171" radius={[4, 4, 0, 0]} name="Expenses" />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
-            No data yet — add transactions to see reports
-          </div>
-        )}
-      </div>
-
-      {/* Savings rate */}
-      {savingsData.length > 0 && (
-        <div className="bg-card border rounded-2xl p-4">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Monthly Savings</h4>
-          <ResponsiveContainer width="100%" height={160}>
-            <AreaChart data={savingsData}>
-              <defs>
-                <linearGradient id="savings" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: any) => fmt(v)} />
-              <Area type="monotone" dataKey="savings" stroke="#6366f1" fill="url(#savings)" name="Savings" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* Investment allocation */}
-      {allocation && allocation.length > 0 && (
-        <div className="bg-card border rounded-2xl p-4">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Portfolio Allocation</h4>
-          <div className="space-y-2">
-            {allocation.map((cls: any, i: number) => (
-              <div key={cls.assetType} className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs">{ASSET_ICONS[cls.assetType]} {ASSET_LABELS[cls.assetType] ?? cls.assetType}</span>
-                    <span className="text-xs text-muted-foreground">{cls.allocationPct.toFixed(1)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all"
-                      style={{ width: `${cls.allocationPct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                  </div>
-                </div>
-                <span className={cn("text-xs font-medium w-20 text-right", cls.pnl >= 0 ? "text-notion-green-text" : "text-notion-red-text")}>
-                  {cls.pnl >= 0 ? "+" : ""}{fmtShort(cls.pnl)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Summary table */}
-      {savingsData.length > 0 && (
-        <div className="bg-card border rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/30">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Month</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Income</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Expenses</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Saved</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {savingsData.slice(-6).map((m: any) => (
-                <tr key={m.month} className="hover:bg-muted/20">
-                  <td className="px-4 py-2.5 font-medium">{m.label}</td>
-                  <td className="px-4 py-2.5 text-right text-notion-green-text">{fmtShort(m.income)}</td>
-                  <td className="px-4 py-2.5 text-right text-notion-red-text">{fmtShort(m.expenses)}</td>
-                  <td className={cn("px-4 py-2.5 text-right font-semibold", m.savings >= 0 ? "text-foreground" : "text-notion-red-text")}>
-                    {fmtShort(m.savings)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── MARKET TAB ────────────────────────────────────────────────────────────────
 
@@ -2414,7 +2926,6 @@ export default function LedgerPage() {
           {mounted["budget"] && <div className={ledgerTab !== "budget" ? "hidden" : ""}><BudgetTab /></div>}
           {mounted["goals"] && <div className={ledgerTab !== "goals" ? "hidden" : ""}><GoalsTab /></div>}
           {mounted["recurring"] && <div className={ledgerTab !== "recurring" ? "hidden" : ""}><RecurringTab /></div>}
-          {mounted["reports"] && <div className={ledgerTab !== "reports" ? "hidden" : ""}><ReportsTab /></div>}
           {mounted["market"] && <div className={ledgerTab !== "market" ? "hidden" : ""}><MarketTab /></div>}
         </div>
       </div>

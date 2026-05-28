@@ -91,7 +91,6 @@ const LEDGER_PANE_ITEMS = [
   { id: "budget", label: "Budget" },
   { id: "goals", label: "Goals" },
   { id: "recurring", label: "Recurring" },
-  { id: "reports", label: "Reports" },
   { id: "market", label: "Market" },
 ] as const;
 
