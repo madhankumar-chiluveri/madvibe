@@ -1,57 +1,150 @@
 import { NextRequest } from "next/server";
-import { ConvexHttpClient } from "convex/browser";
-import { TOOL_DEFINITIONS, callTool } from "@/mcp/tools";
+import { createHash } from "crypto";
+import { adminQuery, adminMutation } from "@/mcp/convex-admin";
+import { TOOL_DEFINITIONS } from "@/mcp/tools";
 
 export const maxDuration = 60;
 
-function extractToken(req: NextRequest): string | null {
-  // Claude.ai connectors embed token in URL: /api/mcp?token=<jwt>
-  const queryToken = req.nextUrl.searchParams.get("token");
-  if (queryToken) return queryToken;
-
-  // Fallback: standard Bearer header (curl / direct API use)
+function extractApiKey(req: NextRequest): string | null {
+  const qKey = req.nextUrl.searchParams.get("key");
+  if (qKey) return qKey;
   const auth = req.headers.get("authorization");
   if (auth?.startsWith("Bearer ")) return auth.slice(7).trim() || null;
-
   return null;
 }
 
-function createConvexClient(token: string): ConvexHttpClient {
-  const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-  client.setAuth(token);
-  return client;
+async function resolveUserId(plainKey: string): Promise<string | null> {
+  const keyHash = createHash("sha256").update(plainKey).digest("hex");
+  return await adminQuery("mcpService:resolveApiKey", { keyHash }) as string | null;
 }
 
-function jsonRpcResult(id: unknown, result: unknown) {
+async function dispatch(
+  userId: string,
+  toolName: string,
+  args: Record<string, unknown>
+): Promise<unknown> {
+  const q = (fn: string, a: Record<string, unknown>) =>
+    adminQuery(`mcpService:${fn}`, a);
+  const m = (fn: string, a: Record<string, unknown>) =>
+    adminMutation(`mcpService:${fn}`, a);
+
+  switch (toolName) {
+    case "list_workspaces":
+      return q("listWorkspaces", { userId });
+
+    case "list_pages":
+      return q("listAllPages", { userId, workspaceId: args.workspaceId });
+
+    case "search_pages":
+      return q("searchPages", { userId, workspaceId: args.workspaceId, query: args.query });
+
+    case "get_page_content":
+      return q("getPageContent", { userId, pageId: args.pageId });
+
+    case "create_page":
+      return m("createPage", {
+        userId,
+        workspaceId: args.workspaceId,
+        title: args.title,
+        type: args.type,
+        icon: args.icon,
+      });
+
+    case "get_database_rows":
+      return q("getDatabaseRows", { userId, databaseId: args.databaseId });
+
+    case "get_finance_dashboard":
+      return q("getFinanceDashboard", { userId, month: args.month });
+
+    case "list_accounts":
+      return q("listAccounts", { userId });
+
+    case "list_transactions":
+      return q("listTransactions", {
+        userId,
+        limit: args.limit ?? 20,
+        type: args.type,
+        startDate: args.startDate,
+        endDate: args.endDate,
+      });
+
+    case "list_budgets":
+      return q("listBudgets", { userId });
+
+    case "list_goals":
+      return q("listGoals", { userId });
+
+    case "list_investments":
+      return q("listInvestments", { userId });
+
+    case "list_loans":
+      return q("listLoans", { userId, status: args.status, direction: args.direction });
+
+    case "list_habits":
+      return q("listHabits", { userId });
+
+    case "get_todays_habits":
+      return q("getTodaysHabits", { userId, date: args.date });
+
+    case "list_reminders":
+      return q("listReminders", {
+        userId,
+        workspaceId: args.workspaceId,
+        includeCompleted: args.includeCompleted,
+      });
+
+    case "create_reminder":
+      return m("createReminder", {
+        userId,
+        workspaceId: args.workspaceId,
+        title: args.title,
+        remindAt: args.remindAt,
+        note: args.note,
+      });
+
+    case "push_news_articles":
+      return m("pushNewsArticles", { articles: args.articles });
+
+    case "get_news":
+      return q("getNews", { category: args.category, limit: args.limit ?? 10 });
+
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
+  }
+}
+
+function ok(id: unknown, result: unknown) {
   return Response.json({ jsonrpc: "2.0", result, id });
 }
 
-function jsonRpcError(id: unknown, code: number, message: string) {
+function err(id: unknown, code: number, message: string) {
   return Response.json({ jsonrpc: "2.0", error: { code, message }, id });
 }
 
-// MCP Streamable HTTP — POST handles all JSON-RPC 2.0 messages
 export async function POST(req: NextRequest) {
-  const token = extractToken(req);
-  if (!token) {
-    return jsonRpcError(null, -32001, "Unauthorized. Get your token from /api/mcp/token and add it as Authorization: Bearer <token>");
+  const apiKey = extractApiKey(req);
+  if (!apiKey) {
+    return err(null, -32001, "Unauthorized. Get connector URL from /api/mcp/token while signed in.");
+  }
+
+  const userId = await resolveUserId(apiKey);
+  if (!userId) {
+    return err(null, -32001, "Invalid or revoked API key. Regenerate at /api/mcp/token.");
   }
 
   let body: { method?: string; params?: Record<string, unknown>; id?: unknown };
   try {
     body = await req.json();
   } catch {
-    return jsonRpcError(null, -32700, "Parse error: invalid JSON");
+    return err(null, -32700, "Parse error: invalid JSON");
   }
 
   const { method, params = {}, id } = body;
-  const client = createConvexClient(token);
 
   try {
     switch (method) {
-      // ── Lifecycle ─────────────────────────────────────────────────────────────
       case "initialize":
-        return jsonRpcResult(id, {
+        return ok(id, {
           protocolVersion: "2024-11-05",
           capabilities: { tools: {} },
           serverInfo: { name: "madvibe", version: "1.0.0" },
@@ -61,48 +154,34 @@ export async function POST(req: NextRequest) {
         return new Response(null, { status: 204 });
 
       case "ping":
-        return jsonRpcResult(id, {});
+        return ok(id, {});
 
-      // ── Tools ─────────────────────────────────────────────────────────────────
       case "tools/list":
-        return jsonRpcResult(id, { tools: TOOL_DEFINITIONS });
+        return ok(id, { tools: TOOL_DEFINITIONS });
 
       case "tools/call": {
-        const toolName = (params as { name?: string; arguments?: Record<string, unknown> }).name;
-        const toolArgs = (params as { name?: string; arguments?: Record<string, unknown> }).arguments ?? {};
-
-        if (!toolName) {
-          return jsonRpcError(id, -32602, "Invalid params: missing tool name");
-        }
-
-        const known = TOOL_DEFINITIONS.find((t) => t.name === toolName);
-        if (!known) {
-          return jsonRpcError(id, -32602, `Unknown tool: ${toolName}`);
-        }
-
-        const result = await callTool(toolName, toolArgs, client);
-
-        return jsonRpcResult(id, {
+        const toolName = (params as any).name as string;
+        const toolArgs = (params as any).arguments ?? {};
+        if (!toolName) return err(id, -32602, "Missing tool name");
+        const result = await dispatch(userId, toolName, toolArgs);
+        return ok(id, {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         });
       }
 
       default:
-        return jsonRpcError(id, -32601, `Method not found: ${method}`);
+        return err(id, -32601, `Method not found: ${method}`);
     }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal error";
-    return jsonRpcError(id, -32603, message);
+  } catch (e: unknown) {
+    return err(id, -32603, e instanceof Error ? e.message : "Internal error");
   }
 }
 
-// GET — health check / discovery
 export async function GET() {
   return Response.json({
     name: "MadVibe MCP Server",
     version: "1.0.0",
-    protocol: "MCP Streamable HTTP (2024-11-05)",
+    auth: "Persistent API key — visit /api/mcp/token while signed in",
     tools: TOOL_DEFINITIONS.map((t) => t.name),
-    auth: "Bearer token — visit /api/mcp/token in your browser while signed in to MadVibe",
   });
 }

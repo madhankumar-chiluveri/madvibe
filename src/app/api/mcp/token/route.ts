@@ -1,46 +1,50 @@
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../../../convex/_generated/api";
+import { adminMutation } from "@/mcp/convex-admin";
 
 /**
  * GET /api/mcp/token
- *
- * Visit this URL in your browser while signed in to MadVibe.
- * Copy the returned token and paste it as the Bearer token
- * when configuring the MadVibe MCP server in Claude.ai.
- *
- * The token is your Convex session JWT — valid for up to 400 days
- * of activity (refreshed automatically on each MadVibe visit).
+ * Visit while signed in to MadVibe → generates a persistent API key.
  */
 export async function GET() {
-  const token = await convexAuthNextjsToken();
-
-  if (!token) {
+  const sessionToken = await convexAuthNextjsToken();
+  if (!sessionToken) {
     return Response.json(
-      {
-        error: "Not authenticated",
-        hint: "Sign in to MadVibe first, then revisit this URL.",
-      },
+      { error: "Not authenticated", hint: "Sign in to MadVibe first." },
       { status: 401 }
     );
   }
+
+  // Identify current user using their session JWT
+  const userClient = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  userClient.setAuth(sessionToken);
+  const user = await userClient.query(api.workspaces.getCurrentUser, {});
+  if (!user) {
+    return Response.json({ error: "Could not resolve user" }, { status: 401 });
+  }
+
+  // Generate persistent key via internal mutation (deploy key)
+  const plainKey = await adminMutation("mcpService:generateApiKey", {
+    userId: String(user._id),
+  }) as string;
 
   const baseUrl =
     process.env.SITE_URL ??
     process.env.CUSTOM_AUTH_SITE_URL ??
     "https://your-app.vercel.app";
 
-  const connectorUrl = `${baseUrl}/api/mcp?token=${token}`;
+  const connectorUrl = `${baseUrl}/api/mcp?key=${plainKey}`;
 
   return Response.json({
     connectorUrl,
+    apiKey: plainKey,
+    note: "This key never expires. Visit this URL again to rotate it.",
     instructions: [
-      "1. Copy the 'connectorUrl' value above (the full URL including ?token=...)",
-      "2. In Claude.ai → Settings → Connectors → Add custom connector",
-      "3. Name: MadVibe",
-      "4. URL: <paste connectorUrl here>",
-      "5. Leave OAuth fields blank — token is embedded in the URL",
-      "6. Click Add",
+      "1. Copy connectorUrl (full URL including ?key=...)",
+      "2. Claude.ai → Settings → Connectors → Add custom connector",
+      "3. Name: MadVibe | URL: paste connectorUrl | OAuth fields: leave blank",
+      "4. Click Add",
     ],
-    note: "Revisit this URL to get a fresh connector URL if yours expires.",
-    token,
   });
 }

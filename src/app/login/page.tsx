@@ -1,21 +1,20 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
-import {
-  Cloud,
-  Loader2,
-  ShieldCheck,
-  Sparkles,
-  Zap,
-} from "lucide-react";
+import { ArrowRight, Loader2, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  AuthField,
+  AuthPanel,
+  LoginBackdrop,
+  LoginMotionBlock,
+  MadVibeShowcase,
+} from "@/components/auth/login-visuals";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { DEFAULT_WORKSPACE_ROUTE } from "@/lib/routes";
 
 function getSafeRedirectTarget(value: string | null) {
@@ -166,170 +165,165 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="flex min-h-screen bg-background">
-        <div className="relative hidden overflow-hidden lg:flex lg:w-1/2 items-center justify-center p-12 maddy-gradient-bg">
-          <div className="absolute inset-0 bg-foreground/20" />
-          <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-foreground/5 blur-2xl" />
-          <div className="absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-foreground/5 blur-2xl" />
+      <main className="relative h-[100dvh] overflow-hidden bg-background text-foreground">
+        <LoginBackdrop />
 
-          <div className="relative z-10 max-w-lg text-center text-foreground">
-            <div className="mb-6 flex items-center justify-center gap-3">
-              <img src="/app-icon.svg" alt="MadVibe" className="h-12 w-12 rounded-2xl" />
-              <h1 className="text-4xl font-bold tracking-tight">MadVibe</h1>
-            </div>
+        <div className="relative z-10 grid h-full grid-cols-1 lg:grid-cols-[1fr_500px] xl:grid-cols-[1fr_560px]">
+          <section className="hidden h-full min-h-0 items-center justify-center overflow-hidden px-8 py-[clamp(1rem,3vh,2.5rem)] lg:flex xl:px-14">
+            <MadVibeShowcase />
+          </section>
 
-            <p className="mb-8 text-xl font-medium text-foreground/82">
-              AI-powered personal BRAIN OS
-            </p>
+          <section className="flex h-full min-h-0 items-center justify-center overflow-y-auto scrollbar-hide px-5 py-6 sm:py-8 lg:py-10 [@media(max-height:850px)]:py-6 [@media(max-height:700px)]:py-3 sm:px-8 lg:px-10">
+            <div className="w-full max-w-[460px]">
+              <AuthPanel>
+                <LoginMotionBlock delay={0.08} className="mb-6 sm:mb-7 [@media(max-height:750px)]:mb-3.5 [@media(max-height:650px)]:mb-2">
+                  <div className="mb-5 sm:mb-6 flex items-center justify-between gap-4 [@media(max-height:750px)]:mb-3 [@media(max-height:750px)]:hidden">
+                    <div className="flex items-center gap-3">
+                      <AppIcon className="h-10 w-10 rounded-2xl shadow-sm" />
+                      <div>
+                        <p className="text-sm font-semibold leading-none">MadVibe</p>
+                        <p className="mt-1 text-xs text-muted-foreground">AI workspace</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+                      Private
+                    </span>
+                  </div>
 
-            <div className="mx-auto max-w-sm space-y-4 text-left text-sm text-foreground/78">
-              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
-                <Sparkles className="h-4 w-4 shrink-0" />
-                <span>Maddy AI organizes your thoughts, tasks, and notes automatically.</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
-                <Zap className="h-4 w-4 shrink-0" />
-                <span>Real-time sync keeps your workspaces ready on every device.</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
-                <Cloud className="h-4 w-4 shrink-0" />
-                <span>Unlimited pages, databases, and projects in one calm workspace.</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl bg-foreground/12 px-4 py-3 backdrop-blur-md">
-                <ShieldCheck className="h-4 w-4 shrink-0" />
-                <span>Your data stays under your control with zero vendor lock-in.</span>
-              </div>
-            </div>
-          </div>
-        </div>
+                  <h2 className="text-3xl font-semibold tracking-tight sm:text-[2rem] [@media(max-height:750px)]:text-2xl [@media(max-height:650px)]:text-xl">
+                    {step === "signIn" ? "Welcome back" : "Create your workspace"}
+                  </h2>
+                  <p className="mt-2.5 text-sm leading-6 text-muted-foreground [@media(max-height:750px)]:hidden">
+                    {step === "signIn"
+                      ? "Continue into your notes, tasks, ledger, feeds, and Maddy AI context."
+                      : "Start with one private place for your ideas, routines, money, and daily signal."}
+                  </p>
+                </LoginMotionBlock>
 
-        <div className="flex flex-1 items-center justify-center p-8">
-          <div className="w-full max-w-sm">
-            <div className="mb-8 flex items-center gap-2 lg:hidden">
-              <img src="/app-icon.svg" alt="MadVibe" className="h-8 w-8 rounded-lg" />
-              <span className="text-xl font-bold">MadVibe</span>
-            </div>
-
-            <h2 className="mb-2 text-2xl font-bold">
-              {step === "signIn" ? "Welcome back" : "Create your account"}
-            </h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              {step === "signIn"
-                ? "Sign in to your BRAIN OS"
-                : "Start building your second brain"}
-            </p>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="mb-4 w-full gap-3 touch-manipulation"
-              onClick={() => handleGoogleSignIn({ forceAccountSelection: true })}
-              disabled={googleLoading || loading}
-            >
-              {googleLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <GoogleMark />
-              )}
-              Continue with Google
-            </Button>
-
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">or</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {step === "signUp" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Your name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Alex Johnson"
-                    required
-                    autoComplete="name"
-                  />
-                </div>
-              ) : null}
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  autoComplete="email"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={step === "signUp" ? "Min. 8 characters" : "Enter your password"}
-                  required
-                  autoComplete={step === "signIn" ? "current-password" : "new-password"}
-                  minLength={step === "signUp" ? 8 : undefined}
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading || googleLoading}
-                className="w-full touch-manipulation bg-foreground text-background transition-opacity hover:opacity-90"
-                size="lg"
-              >
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {step === "signIn" ? "Sign in" : "Create account"}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              {step === "signIn" ? (
-                <>
-                  Don&apos;t have an account?{" "}
-                  <button
+                <LoginMotionBlock delay={0.14}>
+                  <Button
                     type="button"
-                    onClick={() => setStep("signUp")}
-                    className="font-medium text-primary hover:underline"
+                    variant="outline"
+                    size="lg"
+                    className="group h-11 sm:h-12 [@media(max-height:750px)]:h-11 [@media(max-height:650px)]:h-10 w-full gap-3 rounded-xl border-border/80 bg-background/72 text-[15px] shadow-[0_1px_0_rgb(var(--card-rgb)/0.9)_inset] backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/25 hover:bg-card hover:shadow-[0_14px_36px_rgb(var(--foreground-rgb)/0.08)]"
+                    onClick={() => handleGoogleSignIn({ forceAccountSelection: true })}
+                    disabled={googleLoading || loading}
                   >
-                    Sign up free
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setStep("signIn")}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </>
-              )}
-            </div>
+                    {googleLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <GoogleMark />
+                    )}
+                    Continue with Google
+                  </Button>
+                </LoginMotionBlock>
 
-            <p className="mt-8 text-center text-xs text-muted-foreground">
-              $0 forever | No credit card | Your data stays yours
-            </p>
-          </div>
+                <LoginMotionBlock delay={0.18} className="relative my-5 sm:my-6 [@media(max-height:750px)]:my-3.5 [@media(max-height:650px)]:my-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border/80" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-card px-3 font-medium text-muted-foreground">
+                      or use email
+                    </span>
+                  </div>
+                </LoginMotionBlock>
+
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-4.5 [@media(max-height:750px)]:space-y-3 [@media(max-height:650px)]:space-y-2">
+                  {step === "signUp" ? (
+                    <LoginMotionBlock delay={0.21}>
+                      <AuthField
+                        id="name"
+                        icon={UserRound}
+                        label="Your name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Alex Johnson"
+                        required
+                        autoComplete="name"
+                      />
+                    </LoginMotionBlock>
+                  ) : null}
+
+                  <LoginMotionBlock delay={step === "signUp" ? 0.24 : 0.21}>
+                    <AuthField
+                      id="email"
+                      icon={Mail}
+                      label="Email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      autoComplete="email"
+                    />
+                  </LoginMotionBlock>
+
+                  <LoginMotionBlock delay={step === "signUp" ? 0.27 : 0.24}>
+                    <AuthField
+                      id="password"
+                      icon={LockKeyhole}
+                      label="Password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={step === "signUp" ? "Min. 8 characters" : "Enter your password"}
+                      required
+                      autoComplete={step === "signIn" ? "current-password" : "new-password"}
+                      minLength={step === "signUp" ? 8 : undefined}
+                    />
+                  </LoginMotionBlock>
+
+                  <LoginMotionBlock delay={step === "signUp" ? 0.3 : 0.27}>
+                    <Button
+                      type="submit"
+                      disabled={loading || googleLoading}
+                      className="group relative h-11 sm:h-12 [@media(max-height:750px)]:h-11 [@media(max-height:650px)]:h-10 w-full overflow-hidden rounded-xl bg-foreground text-[15px] font-semibold text-background shadow-[0_16px_40px_rgb(var(--foreground-rgb)/0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-foreground hover:shadow-[0_22px_48px_rgb(var(--foreground-rgb)/0.2)]"
+                      size="lg"
+                    >
+                      <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-background/20 to-transparent transition-transform duration-700 ease-linear group-hover:translate-x-full" />
+                      <span className="relative z-10 flex items-center gap-2">
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {step === "signIn" ? "Open workspace" : "Create account"}
+                        {!loading ? <ArrowRight className="h-4 w-4" /> : null}
+                      </span>
+                    </Button>
+                  </LoginMotionBlock>
+                </form>
+
+                <LoginMotionBlock delay={step === "signUp" ? 0.34 : 0.31}>
+                  <div className="mt-5 sm:mt-6 [@media(max-height:750px)]:mt-3.5 [@media(max-height:650px)]:mt-2.5 rounded-xl border border-border/60 bg-background/56 px-4 py-2.5 sm:py-3 [@media(max-height:750px)]:py-2 [@media(max-height:650px)]:py-1.5 text-center text-sm [@media(max-height:750px)]:text-[13px] text-muted-foreground">
+                    {step === "signIn" ? (
+                      <>
+                        Need a MadVibe account?{" "}
+                        <button
+                          type="button"
+                          onClick={() => setStep("signUp")}
+                          className="font-semibold text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+                        >
+                          Create account
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        Already have an account?{" "}
+                        <button
+                          type="button"
+                          onClick={() => setStep("signIn")}
+                          className="font-semibold text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+                        >
+                          Sign in
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </LoginMotionBlock>
+              </AuthPanel>
+            </div>
+          </section>
         </div>
-      </div>
+      </main>
 
       {redirecting ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">

@@ -254,6 +254,8 @@ export default defineSchema({
     defaultProvider: v.optional(v.string()),
     aiSystemPrompt: v.optional(v.string()),
     aiTemperature: v.optional(v.number()),
+    // MCP persistent API key (hashed) — used by the MadVibe MCP server for Claude/ChatGPT connectors
+    mcpApiKeyHash: v.optional(v.string()),
     // Oracle OCI Object Storage credentials (used by automation image uploader)
     oci: v.optional(
       v.object({

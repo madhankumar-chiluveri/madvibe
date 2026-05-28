@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
 
@@ -10,6 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallPrompt() {
+  const pathname = usePathname();
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -31,7 +33,7 @@ export function InstallPrompt() {
     }
   };
 
-  if (!prompt || dismissed) return null;
+  if (!prompt || dismissed || pathname === "/login") return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card border shadow-lg rounded-xl px-4 py-3 text-sm animate-fade-in">
