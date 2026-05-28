@@ -53,6 +53,9 @@ async function dispatch(
     case "get_database_rows":
       return q("getDatabaseRows", { userId, databaseId: args.databaseId });
 
+    case "get_database_rows_by_page":
+      return q("getDatabaseRowsByPage", { userId, pageId: args.pageId });
+
     case "get_finance_dashboard":
       return q("getFinanceDashboard", { userId, month: args.month });
 

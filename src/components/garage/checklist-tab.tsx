@@ -21,6 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CheckSquare, Square, Calendar, Bell, Trash2, Plus, Clock } from "lucide-react";
+import { PremiumDateTimePicker } from "@/components/ui/premium-date-time-picker";
 import { cn } from "@/lib/utils";
 
 interface ChecklistTabProps {
@@ -346,13 +347,29 @@ export function ChecklistTab({
                   className="rounded-xl border-border/60"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Due by Date</label>
-                <Input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!dueDate) return null;
+                    const parts = dueDate.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setDueDate("");
+                    } else {
+                      const dateObj = new Date(ms);
+                      const yyyy = dateObj.getFullYear();
+                      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+                      const dd = String(dateObj.getDate()).padStart(2, "0");
+                      setDueDate(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select due date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
             </div>

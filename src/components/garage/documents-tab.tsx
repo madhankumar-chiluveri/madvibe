@@ -21,6 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { FileText, Plus, Eye, Trash2, Calendar, ShieldAlert } from "lucide-react";
+import { PremiumDateTimePicker } from "@/components/ui/premium-date-time-picker";
 import { cn } from "@/lib/utils";
 
 interface DocumentsTabProps {
@@ -256,13 +257,29 @@ export function DocumentsTab({
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 flex flex-col">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expiry Date (Optional)</label>
-              <Input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className="rounded-xl border-border/60"
+              <PremiumDateTimePicker
+                value={(() => {
+                  if (!expiryDate) return null;
+                  const parts = expiryDate.split("-");
+                  if (parts.length !== 3) return null;
+                  return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                })()}
+                onChange={(ms) => {
+                  if (ms === null) {
+                    setExpiryDate("");
+                  } else {
+                    const dateObj = new Date(ms);
+                    const yyyy = dateObj.getFullYear();
+                    const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+                    const dd = String(dateObj.getDate()).padStart(2, "0");
+                    setExpiryDate(`${yyyy}-${mm}-${dd}`);
+                  }
+                }}
+                variant="input"
+                placeholder="Select expiry date"
+                className="w-full rounded-xl border-border/60 h-10"
               />
             </div>
 

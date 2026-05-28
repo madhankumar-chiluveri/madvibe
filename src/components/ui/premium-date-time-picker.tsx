@@ -26,6 +26,13 @@ type TimeDraft = {
   period: "AM" | "PM";
 };
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 80 }, (_, i) => currentYear + 10 - i);
+
 interface PremiumDateTimePickerProps {
   value: number | null | undefined;
   onChange: (value: number | null) => void;
@@ -248,6 +255,18 @@ export function PremiumDateTimePicker({
     }
   };
 
+  const handleMonthSelect = (mIndex: number) => {
+    const nextDate = new Date(month);
+    nextDate.setMonth(mIndex);
+    setMonth(nextDate);
+  };
+
+  const handleYearSelect = (year: number) => {
+    const nextDate = new Date(month);
+    nextDate.setFullYear(year);
+    setMonth(nextDate);
+  };
+
   const setDatePreservingTime = (day: Date) => {
     const localDay = withLocalDate(day);
 
@@ -371,7 +390,7 @@ export function PremiumDateTimePicker({
 
   const triggerClasses =
     variant === "input"
-      ? "flex h-10 w-full items-center gap-3 rounded-xl border border-foreground/10 bg-input px-3 text-left text-sm text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/15"
+      ? "flex h-10 w-full items-center gap-3 rounded-xl border border-border/60 bg-background px-3 text-left text-sm text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
       : "flex min-h-[38px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors hover:bg-foreground/[0.05] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground/10";
 
   return (
@@ -430,9 +449,31 @@ export function PremiumDateTimePicker({
           />
 
           <div className="rounded-md bg-popover">
-            <div className="mb-2 flex items-center justify-between gap-2 px-1">
-              <div className="text-sm font-semibold text-foreground">
-                {formatMonthLabel(month)}
+            <div className="mb-2 flex items-center justify-between gap-1 px-1">
+              <div className="flex items-center gap-1">
+                <select
+                  value={month.getMonth()}
+                  onChange={(e) => handleMonthSelect(parseInt(e.target.value, 10))}
+                  className="bg-transparent hover:bg-foreground/[0.06] rounded px-1.5 py-0.5 text-xs font-semibold outline-none cursor-pointer text-foreground border-0 transition-colors"
+                >
+                  {MONTHS.map((m, idx) => (
+                    <option key={m} value={idx} className="bg-popover text-foreground">
+                      {m.slice(0, 3)}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={month.getFullYear()}
+                  onChange={(e) => handleYearSelect(parseInt(e.target.value, 10))}
+                  className="bg-transparent hover:bg-foreground/[0.06] rounded px-1.5 py-0.5 text-xs font-semibold outline-none cursor-pointer text-foreground border-0 transition-colors"
+                >
+                  {YEARS.map((y) => (
+                    <option key={y} value={y} className="bg-popover text-foreground">
+                      {y}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex items-center gap-1">

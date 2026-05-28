@@ -77,13 +77,24 @@ export const TOOL_DEFINITIONS: McpTool[] = [
   // ── Databases ───────────────────────────────────────────────────────────────
   {
     name: "get_database_rows",
-    description: "Get all rows from a MadVibe database (table/board/list view data)",
+    description: "Get all rows from a MadVibe database using its database ID",
     inputSchema: {
       type: "object",
       properties: {
-        databaseId: { type: "string", description: "Convex database ID" },
+        databaseId: { type: "string", description: "Convex database ID (from databases table)" },
       },
       required: ["databaseId"],
+    },
+  },
+  {
+    name: "get_database_rows_by_page",
+    description: "Get all rows from a database-type page using its page ID. Use this when you have a page ID from list_pages — no need to know the internal database ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        pageId: { type: "string", description: "Convex page ID of a database-type page" },
+      },
+      required: ["pageId"],
     },
   },
 

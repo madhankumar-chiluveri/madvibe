@@ -38,6 +38,7 @@ import type * as ledgerSecurity from "../ledgerSecurity.js";
 import type * as ledgerSecurityNode from "../ledgerSecurityNode.js";
 import type * as maddy from "../maddy.js";
 import type * as marketData from "../marketData.js";
+import type * as mcpService from "../mcpService.js";
 import type * as pages from "../pages.js";
 import type * as push from "../push.js";
 import type * as pushHelpers from "../pushHelpers.js";
@@ -83,6 +84,7 @@ declare const fullApi: ApiFromModules<{
   ledgerSecurityNode: typeof ledgerSecurityNode;
   maddy: typeof maddy;
   marketData: typeof marketData;
+  mcpService: typeof mcpService;
   pages: typeof pages;
   push: typeof push;
   pushHelpers: typeof pushHelpers;

@@ -208,6 +208,27 @@ export const getDatabaseRows = internalQuery({
   },
 });
 
+/** Look up database by page ID, then return its rows + schema in one call. */
+export const getDatabaseRowsByPage = internalQuery({
+  args: { userId: v.string(), pageId: v.id("pages") },
+  handler: async (ctx, args) => {
+    const db = await ctx.db
+      .query("databases")
+      .filter((q) => q.eq(q.field("pageId"), args.pageId))
+      .unique();
+
+    if (!db) return null;
+
+    const rows = await ctx.db
+      .query("rows")
+      .withIndex("by_databaseId", (q) => q.eq("databaseId", db._id))
+      .filter((q) => q.neq(q.field("isArchived"), true))
+      .collect();
+
+    return { databaseId: db._id, name: db.name, properties: db.properties, rows };
+  },
+});
+
 // ── Finance ───────────────────────────────────────────────────────────────────
 
 export const listAccounts = internalQuery({

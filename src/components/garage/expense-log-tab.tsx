@@ -29,6 +29,7 @@ import {
   Tooltip as ChartTooltip,
 } from "recharts";
 import { Calendar, DollarSign, Fuel, Filter, Trash2, ArrowUpRight } from "lucide-react";
+import { PremiumDateTimePicker } from "@/components/ui/premium-date-time-picker";
 import { cn } from "@/lib/utils";
 
 interface ExpenseLogTabProps {
@@ -390,13 +391,29 @@ export function ExpenseLogTab({
             </div>
 
             <div className="grid gap-4 grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date *</label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!date) return null;
+                    const parts = date.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setDate("");
+                    } else {
+                      const dateObj = new Date(ms);
+                      const yyyy = dateObj.getFullYear();
+                      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+                      const dd = String(dateObj.getDate()).padStart(2, "0");
+                      setDate(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select transaction date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
               <div className="space-y-1.5">

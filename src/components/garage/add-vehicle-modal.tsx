@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Car } from "lucide-react";
+import { PremiumDateTimePicker } from "@/components/ui/premium-date-time-picker";
 
 interface AddVehicleModalProps {
   open: boolean;
@@ -291,13 +292,29 @@ export function AddVehicleModal({ open, onClose, workspaceId }: AddVehicleModalP
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Purchase Date</label>
-                <Input
-                  type="date"
-                  value={purchaseDate}
-                  onChange={(e) => setPurchaseDate(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!purchaseDate) return null;
+                    const parts = purchaseDate.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setPurchaseDate("");
+                    } else {
+                      const date = new Date(ms);
+                      const yyyy = date.getFullYear();
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const dd = String(date.getDate()).padStart(2, "0");
+                      setPurchaseDate(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select purchase date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
               <div className="space-y-1.5">
@@ -417,13 +434,29 @@ export function AddVehicleModal({ open, onClose, workspaceId }: AddVehicleModalP
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Insurance Expiry Date</label>
-                <Input
-                  type="date"
-                  value={insuranceExpiry}
-                  onChange={(e) => setInsuranceExpiry(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!insuranceExpiry) return null;
+                    const parts = insuranceExpiry.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setInsuranceExpiry("");
+                    } else {
+                      const date = new Date(ms);
+                      const yyyy = date.getFullYear();
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const dd = String(date.getDate()).padStart(2, "0");
+                      setInsuranceExpiry(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select expiry date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
               <div className="space-y-1.5">
@@ -447,25 +480,57 @@ export function AddVehicleModal({ open, onClose, workspaceId }: AddVehicleModalP
                   className="rounded-xl border-border/60"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">PUC Expiry Date</label>
-                <Input
-                  type="date"
-                  value={pucExpiry}
-                  onChange={(e) => setPucExpiry(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!pucExpiry) return null;
+                    const parts = pucExpiry.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setPucExpiry("");
+                    } else {
+                      const date = new Date(ms);
+                      const yyyy = date.getFullYear();
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const dd = String(date.getDate()).padStart(2, "0");
+                      setPucExpiry(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select PUC expiry date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Warranty Expiry Date</label>
-                <Input
-                  type="date"
-                  value={warrantyExpiry}
-                  onChange={(e) => setWarrantyExpiry(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!warrantyExpiry) return null;
+                    const parts = warrantyExpiry.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setWarrantyExpiry("");
+                    } else {
+                      const date = new Date(ms);
+                      const yyyy = date.getFullYear();
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const dd = String(date.getDate()).padStart(2, "0");
+                      setWarrantyExpiry(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select warranty expiry date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
               <div className="space-y-1.5">

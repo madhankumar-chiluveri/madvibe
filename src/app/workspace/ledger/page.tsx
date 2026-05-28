@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -11,7 +11,7 @@ import {
   PieChart, Pie, Cell, Legend, AreaChart, Area,
 } from "recharts";
 import {
-  LayoutDashboard, ArrowLeftRight, CreditCard, TrendingUp, TrendingDown,
+  LayoutDashboard, CreditCard, TrendingUp, TrendingDown,
   Target, BarChart2, Globe, Plus, Wallet, ArrowUpRight, ArrowDownRight,
   PiggyBank, X, Trash2, AlertTriangle, Handshake, CheckCircle,
   RefreshCw, Repeat, LineChart as LineChartIcon, DollarSign,
@@ -19,7 +19,6 @@ import {
   RotateCcw, AlertCircle, Info,
 } from "lucide-react";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
-import { TransactionsTabV2 } from "@/components/ledger/transactions-tab-v2";
 import {
   Select,
   SelectContent,
@@ -183,7 +182,6 @@ function sortLedgerAccounts(accounts: any[]) {
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "dashboard" as const,    label: "Dashboard",    icon: LayoutDashboard },
-  { id: "transactions" as const, label: "Transactions", icon: ArrowLeftRight },
   { id: "credit_cards" as const, label: "Cards",        icon: CreditCard },
   { id: "loans" as const,        label: "Loans",        icon: Handshake },
   { id: "investments" as const,  label: "Invest",       icon: TrendingUp },
@@ -526,300 +524,6 @@ function DashboardTab() {
               : "Add your income and expenses to get personalized insights from Maddy."}
         </p>
       </div>
-    </div>
-  );
-}
-
-// ── TRANSACTIONS TAB ──────────────────────────────────────────────────────────
-
-function TransactionsTab() {
-  const [filterType, setFilterType] = useState<string>("");
-  const [filterAccount, setFilterAccount] = useState<string>("");
-  const [showAdd, setShowAdd] = useState(false);
-
-  const txns = useQuery(api.ledger.listTransactions, {
-    limit: 50,
-    type: filterType as any || undefined,
-    accountId: filterAccount as any || undefined,
-  });
-  const accounts = useQuery(api.ledger.listAccounts);
-  const categories = useQuery(api.ledger.listCategories, {});
-  const creditCards = useQuery(api.ledgerCards.listCreditCards);
-
-  const createTx = useMutation(api.ledger.createTransaction);
-  const transferFn = useMutation(api.ledger.transferBetweenAccounts);
-  const deleteTx = useMutation(api.ledger.deleteTransaction);
-
-  const [form, setForm] = useState({
-    accountId: "", type: "expense", amount: "", categoryId: "",
-    merchant: "", description: "", notes: "", date: todayDate(), tags: "",
-    toAccountId: "", linkedCreditCardId: "",
-  });
-  const [saving, setSaving] = useState(false);
-
-  const catMap = useMemo(() => {
-    const m: Record<string, any> = {};
-    for (const c of categories ?? []) m[c._id] = c;
-    return m;
-  }, [categories]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.accountId || !form.amount || !form.description) return;
-    setSaving(true);
-    try {
-      if (form.type === "transfer") {
-        await transferFn({
-          fromAccountId: form.accountId as any,
-          toAccountId: form.toAccountId as any,
-          amount: parseFloat(form.amount),
-          description: form.description,
-          date: form.date,
-          notes: form.notes || undefined,
-          linkedCreditCardId: form.linkedCreditCardId as any || undefined,
-        });
-      } else {
-        await createTx({
-          accountId: form.accountId as any,
-          type: form.type as any,
-          amount: parseFloat(form.amount),
-          categoryId: form.categoryId as any || undefined,
-          merchant: form.merchant || undefined,
-          description: form.description,
-          notes: form.notes || undefined,
-          date: form.date,
-          tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
-        });
-      }
-      setShowAdd(false);
-      setForm({ accountId: "", type: "expense", amount: "", categoryId: "", merchant: "", description: "", notes: "", date: todayDate(), tags: "", toAccountId: "", linkedCreditCardId: "" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div>
-      {/* Header + Filters */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <h3 className="text-sm font-semibold mr-auto">Transactions</h3>
-        <LedgerSelect
-          value={filterType}
-          onValueChange={setFilterType}
-          emptyLabel="All types"
-          compact
-          triggerClassName="min-w-[148px]"
-        >
-          <LedgerSelectOption value="income">Income</LedgerSelectOption>
-          <LedgerSelectOption value="expense">Expense</LedgerSelectOption>
-          <LedgerSelectOption value="transfer">Transfer</LedgerSelectOption>
-          <LedgerSelectOption value="investment">Investment</LedgerSelectOption>
-        </LedgerSelect>
-        <LedgerSelect
-          value={filterAccount}
-          onValueChange={setFilterAccount}
-          emptyLabel="All accounts"
-          compact
-          triggerClassName="min-w-[168px]"
-        >
-          {accounts?.map((a: any) => (
-            <LedgerSelectOption key={a._id} value={a._id}>
-              {a.name}
-            </LedgerSelectOption>
-          ))}
-        </LedgerSelect>
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs px-3 py-2 rounded-lg hover:bg-primary/90 transition-colors min-h-[36px]">
-          <Plus className="w-3.5 h-3.5" /> Add
-        </button>
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden md:block bg-card border rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-muted/30">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Description</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Category</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Date</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground">Amount</th>
-              <th className="w-10" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {txns === undefined ? (
-              [...Array(5)].map((_: any, i: number) => (
-                <tr key={i}>{[...Array(5)].map((_: any, j: number) => (
-                  <td key={j} className="px-4 py-3"><div className="h-3 bg-muted rounded animate-pulse" /></td>
-                ))}</tr>
-              ))
-            ) : txns.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                No transactions yet — add your first one!
-              </td></tr>
-            ) : txns.map((t: any) => (
-              <tr key={t._id} className="hover:bg-muted/20 transition-colors group">
-                <td className="px-4 py-3">
-                  <p className="font-medium">{t.description}</p>
-                  {t.merchant && <p className="text-xs text-muted-foreground">{t.merchant}</p>}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">
-                  {t.categoryId && catMap[t.categoryId] ? (
-                    <span>{catMap[t.categoryId].icon} {catMap[t.categoryId].name}</span>
-                  ) : "—"}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">{t.date}</td>
-                <td className={cn("px-4 py-3 text-right font-semibold",
-                  t.type === "income" ? "text-notion-green-text" : t.type === "transfer" ? "text-notion-blue-text" : "text-notion-red-text")}>
-                  {t.type === "income" ? "+" : t.type === "transfer" ? (t.transferDirection === "in" ? "+" : "−") : "−"}{fmt(t.amount)}
-                </td>
-                <td className="px-2 py-3">
-                  <button
-                    onClick={() => {
-                      if (!confirmDeleteRecord("transaction")) return;
-                      void deleteTx({ id: t._id });
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-notion-red-bg text-notion-red-text transition-all">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile list */}
-      <div className="md:hidden space-y-2">
-        {txns?.map((t: any) => (
-          <div key={t._id} className="flex items-center gap-3 bg-card border rounded-xl px-3 py-3">
-            <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0",
-              t.type === "income" ? "bg-notion-green-bg text-notion-green-text" : t.type === "transfer" ? "bg-notion-blue-bg text-notion-blue-text" : "bg-notion-red-bg text-notion-red-text")}>
-              {t.type === "income" ? "↑" : t.type === "transfer" ? "⇆" : "↓"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{t.description}</p>
-              <p className="text-xs text-muted-foreground">{t.date}</p>
-            </div>
-            <p className={cn("text-sm font-bold shrink-0",
-              t.type === "income" ? "text-notion-green-text" : t.type === "transfer" ? "text-notion-blue-text" : "text-notion-red-text")}>
-              {t.type === "income" ? "+" : "−"}{fmt(t.amount)}
-            </p>
-          </div>
-        ))}
-        {txns?.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">No transactions yet</p>}
-      </div>
-
-      {/* Add Transaction Modal */}
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add Transaction">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Type" required>
-            <LedgerSelect value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
-              <LedgerSelectOption value="expense">Expense</LedgerSelectOption>
-              <LedgerSelectOption value="income">Income</LedgerSelectOption>
-              <LedgerSelectOption value="transfer">Transfer</LedgerSelectOption>
-              <LedgerSelectOption value="investment">Investment</LedgerSelectOption>
-            </LedgerSelect>
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Account" required>
-              <LedgerSelect
-                value={form.accountId}
-                onValueChange={(value) => setForm({ ...form, accountId: value })}
-                placeholder="Select account"
-                required
-              >
-                {accounts?.map((a: any) => (
-                  <LedgerSelectOption key={a._id} value={a._id}>
-                    {a.name}
-                  </LedgerSelectOption>
-                ))}
-              </LedgerSelect>
-            </Field>
-            {form.type === "transfer" ? (
-              <Field label="To Account" required>
-                <LedgerSelect
-                  value={form.toAccountId}
-                  onValueChange={(value) => setForm({ ...form, toAccountId: value })}
-                  placeholder="Select account"
-                  required
-                >
-                  {accounts?.map((a: any) => (
-                    <LedgerSelectOption key={a._id} value={a._id}>
-                      {a.name}
-                    </LedgerSelectOption>
-                  ))}
-                </LedgerSelect>
-              </Field>
-            ) : (
-              <Field label="Amount (₹)" required>
-                <input type="number" min="0.01" step="0.01" value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  placeholder="0.00" className={inputCls} required />
-              </Field>
-            )}
-          </div>
-          {form.type === "transfer" && (
-            <Field label="Amount (₹)" required>
-              <input type="number" min="0.01" step="0.01" value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                placeholder="0.00" className={inputCls} required />
-            </Field>
-          )}
-          <Field label="Description" required>
-            <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="What was this for?" className={inputCls} required />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Date" required>
-              <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} required />
-            </Field>
-            {form.type !== "transfer" && (
-              <Field label="Category">
-                <LedgerSelect
-                  value={form.categoryId}
-                  onValueChange={(value) => setForm({ ...form, categoryId: value })}
-                  emptyLabel="No category"
-                >
-                  {(categories ?? [])
-                    .filter((c: any) => form.type === "income" ? c.type === "income" : c.type === "expense")
-                    .map((c: any) => (
-                      <LedgerSelectOption key={c._id} value={c._id}>
-                        {c.icon} {c.name}
-                      </LedgerSelectOption>
-                    ))}
-                </LedgerSelect>
-              </Field>
-            )}
-          </div>
-          {form.type !== "transfer" && (
-            <Field label="Merchant / Payee">
-              <input value={form.merchant} onChange={(e) => setForm({ ...form, merchant: e.target.value })}
-                placeholder="Optional" className={inputCls} />
-            </Field>
-          )}
-          {form.type === "expense" && creditCards && creditCards.length > 0 && (
-            <Field label="Credit Card (if paid via card)">
-              <LedgerSelect
-                value={form.linkedCreditCardId}
-                onValueChange={(value) => setForm({ ...form, linkedCreditCardId: value })}
-                emptyLabel="Not a credit card transaction"
-              >
-                {creditCards.map((c: any) => (
-                  <LedgerSelectOption key={c._id} value={c._id}>
-                    {c.issuer} {c.cardName ?? ""} {c.lastFour ? `••${c.lastFour}` : ""}
-                  </LedgerSelectOption>
-                ))}
-              </LedgerSelect>
-            </Field>
-          )}
-          <Field label="Notes">
-            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="Optional notes" className={inputCls} />
-          </Field>
-          <SaveBtn loading={saving} />
-        </form>
-      </Modal>
     </div>
   );
 }
@@ -2704,7 +2408,6 @@ export default function LedgerPage() {
 
         <div className="max-w-5xl mx-auto px-4 py-4 pb-24 md:py-6 md:pb-6">
           {mounted["dashboard"] && <div className={ledgerTab !== "dashboard" ? "hidden" : ""}><DashboardTab /></div>}
-          {mounted["transactions"] && <div className={ledgerTab !== "transactions" ? "hidden" : ""}><TransactionsTabV2 /></div>}
           {mounted["credit_cards"] && <div className={ledgerTab !== "credit_cards" ? "hidden" : ""}><CreditCardsTab /></div>}
           {mounted["loans"] && <div className={ledgerTab !== "loans" ? "hidden" : ""}><LoansTab /></div>}
           {mounted["investments"] && <div className={ledgerTab !== "investments" ? "hidden" : ""}><InvestmentsTab /></div>}

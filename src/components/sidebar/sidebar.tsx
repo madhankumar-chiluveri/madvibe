@@ -85,7 +85,6 @@ const FEED_PANE_ITEMS = [
 
 const LEDGER_PANE_ITEMS = [
   { id: "dashboard", label: "Dashboard" },
-  { id: "transactions", label: "Transactions" },
   { id: "credit_cards", label: "Credit Cards" },
   { id: "loans", label: "Loans & Lending" },
   { id: "investments", label: "Investments" },

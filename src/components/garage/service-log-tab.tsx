@@ -22,6 +22,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Calendar, Wrench, Trash2, ArrowUpRight, Phone, FileText } from "lucide-react";
+import { PremiumDateTimePicker } from "@/components/ui/premium-date-time-picker";
 
 interface ServiceLogTabProps {
   vehicleId: Id<"garageVehicles">;
@@ -337,13 +338,29 @@ export function ServiceLogTab({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date *</label>
-                <Input
-                  type="date"
-                  value={serviceDate}
-                  onChange={(e) => setServiceDate(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!serviceDate) return null;
+                    const parts = serviceDate.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setServiceDate("");
+                    } else {
+                      const date = new Date(ms);
+                      const yyyy = date.getFullYear();
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const dd = String(date.getDate()).padStart(2, "0");
+                      setServiceDate(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select service date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
               <div className="space-y-1.5">
@@ -437,13 +454,29 @@ export function ServiceLogTab({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Next Service Date Target</label>
-                <Input
-                  type="date"
-                  value={nextServiceDate}
-                  onChange={(e) => setNextServiceDate(e.target.value)}
-                  className="rounded-xl border-border/60"
+                <PremiumDateTimePicker
+                  value={(() => {
+                    if (!nextServiceDate) return null;
+                    const parts = nextServiceDate.split("-");
+                    if (parts.length !== 3) return null;
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                  })()}
+                  onChange={(ms) => {
+                    if (ms === null) {
+                      setNextServiceDate("");
+                    } else {
+                      const date = new Date(ms);
+                      const yyyy = date.getFullYear();
+                      const mm = String(date.getMonth() + 1).padStart(2, "0");
+                      const dd = String(date.getDate()).padStart(2, "0");
+                      setNextServiceDate(`${yyyy}-${mm}-${dd}`);
+                    }
+                  }}
+                  variant="input"
+                  placeholder="Select target date"
+                  className="w-full rounded-xl border-border/60 h-10"
                 />
               </div>
               <div className="space-y-1.5">

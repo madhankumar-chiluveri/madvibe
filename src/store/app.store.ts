@@ -15,7 +15,7 @@ export type MaddyProvider =
   | "anthropic"
   | "groq"
   | "openrouter";
-export type LedgerTab = "dashboard" | "transactions" | "credit_cards" | "loans" | "investments" | "budget" | "goals" | "recurring" | "reports" | "market";
+export type LedgerTab = "dashboard" | "credit_cards" | "loans" | "investments" | "budget" | "goals" | "recurring" | "reports" | "market";
 export type AutomationTab = "pinterest-pin-generator";
 type FeedCategory = "for_you" | "ai_ml" | "tech_it" | "productivity" | "must_know" | "general" | null;
 
