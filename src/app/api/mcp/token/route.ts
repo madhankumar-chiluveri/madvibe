@@ -23,15 +23,24 @@ export async function GET() {
     );
   }
 
+  const baseUrl =
+    process.env.SITE_URL ??
+    process.env.CUSTOM_AUTH_SITE_URL ??
+    "https://your-app.vercel.app";
+
+  const connectorUrl = `${baseUrl}/api/mcp?token=${token}`;
+
   return Response.json({
-    token,
+    connectorUrl,
     instructions: [
-      "1. Copy the token value above",
-      "2. In Claude.ai → Settings → Integrations → Add MCP Server",
-      "3. URL: https://<your-domain>/api/mcp",
-      "4. Auth: Bearer <paste token here>",
-      "5. Save and start chatting with your MadVibe data",
+      "1. Copy the 'connectorUrl' value above (the full URL including ?token=...)",
+      "2. In Claude.ai → Settings → Connectors → Add custom connector",
+      "3. Name: MadVibe",
+      "4. URL: <paste connectorUrl here>",
+      "5. Leave OAuth fields blank — token is embedded in the URL",
+      "6. Click Add",
     ],
-    note: "Revisit this URL to get a fresh token if the old one expires.",
+    note: "Revisit this URL to get a fresh connector URL if yours expires.",
+    token,
   });
 }

@@ -5,9 +5,15 @@ import { TOOL_DEFINITIONS, callTool } from "@/mcp/tools";
 export const maxDuration = 60;
 
 function extractToken(req: NextRequest): string | null {
+  // Claude.ai connectors embed token in URL: /api/mcp?token=<jwt>
+  const queryToken = req.nextUrl.searchParams.get("token");
+  if (queryToken) return queryToken;
+
+  // Fallback: standard Bearer header (curl / direct API use)
   const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Bearer ")) return null;
-  return auth.slice(7).trim() || null;
+  if (auth?.startsWith("Bearer ")) return auth.slice(7).trim() || null;
+
+  return null;
 }
 
 function createConvexClient(token: string): ConvexHttpClient {
