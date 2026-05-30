@@ -5,6 +5,17 @@ import { TOOL_DEFINITIONS } from "@/mcp/tools";
 
 export const maxDuration = 60;
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id",
+};
+
+// CORS preflight — required for Perplexity and browser-based MCP clients
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS });
+}
+
 function extractApiKey(req: NextRequest): string | null {
   const qKey = req.nextUrl.searchParams.get("key");
   if (qKey) return qKey;
@@ -117,11 +128,11 @@ async function dispatch(
 }
 
 function ok(id: unknown, result: unknown) {
-  return Response.json({ jsonrpc: "2.0", result, id });
+  return Response.json({ jsonrpc: "2.0", result, id }, { headers: CORS });
 }
 
 function err(id: unknown, code: number, message: string) {
-  return Response.json({ jsonrpc: "2.0", error: { code, message }, id });
+  return Response.json({ jsonrpc: "2.0", error: { code, message }, id }, { headers: CORS });
 }
 
 export async function POST(req: NextRequest) {
@@ -154,7 +165,10 @@ export async function POST(req: NextRequest) {
         });
 
       case "notifications/initialized":
-        return new Response(null, { status: 204 });
+      case "notifications/cancelled":
+        // Notifications have no id — return 200 + application/json (not 204)
+        // Some clients (Perplexity) reject responses with missing Content-Type
+        return Response.json({}, { headers: CORS });
 
       case "ping":
         return ok(id, {});
@@ -180,11 +194,64 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
-  return Response.json({
-    name: "MadVibe MCP Server",
-    version: "1.0.0",
-    auth: "Persistent API key — visit /api/mcp/token while signed in",
-    tools: TOOL_DEFINITIONS.map((t) => t.name),
-  });
+export async function GET(req: NextRequest) {
+  // SSE transport — Perplexity and other SSE-based MCP clients
+  if (req.headers.get("accept")?.includes("text/event-stream")) {
+    const apiKey = extractApiKey(req);
+    if (!apiKey) {
+      return new Response("Unauthorized", { status: 401, headers: CORS });
+    }
+    const userId = await resolveUserId(apiKey);
+    if (!userId) {
+      return new Response("Invalid API key. Regenerate at /api/mcp/token.", {
+        status: 401,
+        headers: CORS,
+      });
+    }
+
+    const encoder = new TextEncoder();
+    const postUrl = req.url; // same URL handles POST messages
+
+    const stream = new ReadableStream({
+      start(controller) {
+        // Tell client where to POST JSON-RPC messages
+        controller.enqueue(encoder.encode(`event: endpoint\ndata: ${postUrl}\n\n`));
+
+        // Keepalive ping every 25s — prevents Vercel/proxy timeout before maxDuration
+        const ping = setInterval(() => {
+          try {
+            controller.enqueue(encoder.encode(`: ping\n\n`));
+          } catch {
+            clearInterval(ping);
+          }
+        }, 25_000);
+
+        // Close just before Vercel's 60s limit
+        setTimeout(() => {
+          clearInterval(ping);
+          try { controller.close(); } catch {}
+        }, 55_000);
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...CORS,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
+
+  // Plain health check
+  return Response.json(
+    {
+      name: "MadVibe MCP Server",
+      version: "1.0.0",
+      auth: "Persistent API key — visit /api/mcp/token while signed in",
+      tools: TOOL_DEFINITIONS.map((t) => t.name),
+    },
+    { headers: CORS }
+  );
 }
