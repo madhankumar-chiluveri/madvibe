@@ -32,11 +32,8 @@ const PREFETCH_ROUTES = [
   "/workspace/feed",
   "/workspace/brain",
   "/workspace/ledger",
-  "/workspace/automation",
   "/workspace/settings",
   "/workspace/trash",
-  "/workspace/automation",
-  "/workspace/automation/pin-studio",
 ];
 
 export default function WorkspaceLayout({

@@ -33,7 +33,6 @@ import {
   Settings,
   Sparkles,
   Wallet,
-  Workflow,
   Car,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -71,7 +70,6 @@ const MODULES = [
   { id: "brain" as const, label: "Brain", icon: BookOpen, href: "/workspace/brain" },
   { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
   { id: "garage" as const, label: "Garage", icon: Car, href: "/workspace/garage" },
-  { id: "automation" as const, label: "Automation", icon: Workflow, href: "/workspace/automation" },
   { id: "ai" as const, label: "Maddy AI", icon: Sparkles, href: "/workspace/ai" },
 ] as const;
 
@@ -102,10 +100,6 @@ const GARAGE_PANE_ITEMS = [
   { id: "documents", label: "Documents" },
 ] as const;
 
-const AUTOMATION_PANE_ITEMS = [
-  { id: "pinterest-pin-generator", label: "Pinterest Pin Generator", icon: Workflow },
-] as const;
-
 const PANE_DETAILS = {
   overview: {
     eyebrow: "Workspace",
@@ -132,11 +126,6 @@ const PANE_DETAILS = {
     title: "Garage",
     description: "Your vehicles, services, and running costs in one place.",
   },
-  automation: {
-    eyebrow: "Automation",
-    title: "Automation",
-    description: "Keep generators and repeatable workflows organized in one place.",
-  },
 } as const;
 
 const SNAPPY_EASE_STYLE = {
@@ -160,7 +149,7 @@ function getRouteModule(pathname: string) {
 
   if (!pathname.startsWith("/workspace")) return "overview";
   if (!segment) return "overview";
-  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "garage" || segment === "automation" || segment === "ai") {
+  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "garage" || segment === "ai") {
     return segment;
   }
   if (segment === "settings") return "overview";
@@ -295,7 +284,9 @@ function ModuleRail() {
     <div
       style={SNAPPY_EASE_STYLE}
       className={cn(
-        "flex h-full shrink-0 flex-col border-r border-border/60 bg-sidebar transition-[width] duration-300",
+        // z-50 keeps the rail above the floating context pane (z-45) so the
+        // pane slides out from *behind* the rail instead of over it.
+        "relative z-50 flex h-full shrink-0 flex-col border-r border-border/60 bg-sidebar transition-[width] duration-300",
         showExpandedRail ? "w-[208px]" : "w-[72px]"
       )}
     >
@@ -1067,7 +1058,7 @@ function OverviewContextPane() {
   const router = useRouter();
   const { openMaddyPanel, setCommandPaletteOpen, setActiveModule } = useAppStore();
 
-  const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger" | "garage" | "automation") => {
+  const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger" | "garage") => {
     setActiveModule(moduleId);
     router.push(href);
   };
@@ -1121,11 +1112,6 @@ function OverviewContextPane() {
             icon={<Car className="h-4 w-4" />}
             label="Open Garage"
             onClick={() => goTo("/workspace/garage", "garage")}
-          />
-          <NavItem
-            icon={<Workflow className="h-4 w-4" />}
-            label="Open Automation"
-            onClick={() => goTo("/workspace/automation", "automation")}
           />
           <NavItem
             icon={<Settings className="h-4 w-4" />}
@@ -1276,47 +1262,9 @@ function GarageContextPane() {
   );
 }
 
-function AutomationContextPane() {
-  const router = useRouter();
-  const { automationTab, setAutomationTab } = useAppStore();
-
-  return (
-    <div className="space-y-4 px-2 py-3">
-      <div className="px-3 py-1">
-        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-          Live Automations
-        </span>
-      </div>
-
-      <div className="space-y-0.5">
-        {AUTOMATION_PANE_ITEMS.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <NavItem
-              key={item.id}
-              icon={<Icon className="h-4 w-4" />}
-              label={item.label}
-              active={automationTab === item.id}
-              onClick={() => {
-                setAutomationTab(item.id);
-                router.push("/workspace/automation");
-              }}
-            />
-          );
-        })}
-      </div>
-
-      <div className="rounded-2xl border border-border/60 bg-card/40 px-3 py-3 text-xs leading-5 text-muted-foreground">
-        Pinterest pins ship first. Next automations can plug into this same module without growing the global nav again.
-      </div>
-    </div>
-  );
-}
-
 export function Sidebar() {
   const pathname = usePathname();
-  const { contextPaneCollapsed, setActiveModule } = useAppStore();
+  const { contextPaneCollapsed, setActiveModule, setContextPaneCollapsed } = useAppStore();
   const { resolvedWorkspaceId, workspaceList, workspaces } = useResolvedWorkspace();
   const [contextPaneWidth, setContextPaneWidth] = useState(CONTEXT_PANE_DEFAULT_WIDTH);
   const [resizingContextPane, setResizingContextPane] = useState(false);
@@ -1335,8 +1283,6 @@ export function Sidebar() {
           ? "ledger"
         : routeModule === "garage"
           ? "garage"
-        : routeModule === "automation"
-          ? "automation"
           : "overview";
 
   useEffect(() => {
@@ -1433,18 +1379,33 @@ export function Sidebar() {
   }
 
   return (
-    <div className="hidden h-full shrink-0 md:flex">
+    <div className="relative hidden h-full shrink-0 md:flex">
       <ModuleRail />
+
+      {/* Click-away backdrop — only over the content, keeps the rail interactive */}
+      <div
+        aria-hidden
+        onClick={() => setContextPaneCollapsed(true)}
+        className={cn(
+          "fixed inset-y-0 right-0 left-[72px] z-[44] bg-[rgba(16,18,20,0.18)] backdrop-blur-[1px] transition-opacity duration-300",
+          contextPaneCollapsed
+            ? "pointer-events-none opacity-0"
+            : "opacity-100"
+        )}
+        style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+      />
 
       <aside
         className={cn(
-          "relative overflow-hidden border-r border-border/60 bg-sidebar transition-[width,opacity,transform,border-color] duration-300",
+          // Floats over the content instead of squeezing it: absolute, anchored
+          // to the right edge of the 72px module rail.
+          "absolute left-[72px] top-0 z-[45] h-full overflow-hidden border-r border-border/60 bg-sidebar shadow-[8px_0_28px_rgba(0,0,0,0.14)] transition-[opacity,transform] duration-300",
           contextPaneCollapsed
-            ? "pointer-events-none -translate-x-2 border-transparent opacity-0"
+            ? "pointer-events-none -translate-x-full opacity-0"
             : "translate-x-0 opacity-100"
         )}
         style={{
-          width: contextPaneCollapsed ? 0 : contextPaneWidth,
+          width: contextPaneWidth,
           transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
         }}
         aria-hidden={contextPaneCollapsed}
@@ -1465,8 +1426,6 @@ export function Sidebar() {
               <LedgerContextPane />
             ) : paneModule === "garage" ? (
               <GarageContextPane />
-            ) : paneModule === "automation" ? (
-              <AutomationContextPane />
             ) : (
               <OverviewContextPane />
             )}
@@ -1514,8 +1473,6 @@ export function MobileWorkspaceContextSheet({
         ? "brain"
         : routeModule === "ledger"
           ? "ledger"
-          : routeModule === "automation"
-            ? "automation"
           : "overview";
 
   useEffect(() => {
@@ -1559,8 +1516,6 @@ export function MobileWorkspaceContextSheet({
               <FeedContextPane />
             ) : paneModule === "ledger" ? (
               <LedgerContextPane />
-            ) : paneModule === "automation" ? (
-              <AutomationContextPane />
             ) : (
               <OverviewContextPane />
             )}

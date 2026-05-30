@@ -28,7 +28,6 @@ import {
   Plus,
   Settings,
   Trash2,
-  Workflow,
 } from "lucide-react";
 import { AppIcon } from "@/components/ui/app-icon";
 import { toast } from "sonner";
@@ -179,13 +178,6 @@ export function CommandPalette() {
                   >
                     <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
                     Open reminders
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() => navigate("/workspace/automation")}
-                    className="cursor-pointer"
-                  >
-                    <Workflow className="w-4 h-4 mr-2 text-muted-foreground" />
-                    Automation
                   </CommandItem>
                   <CommandItem
                     onSelect={() => navigate("/workspace/settings")}

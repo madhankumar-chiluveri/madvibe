@@ -38,7 +38,6 @@ import {
   EyeOff,
   LockKeyhole,
   Loader2,
-  Plug,
   Mail,
   Trash2,
   UserPlus,
@@ -47,10 +46,9 @@ import {
 import { toast } from "sonner";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
-import { OciConfigSection } from "@/components/settings/oci-config-section";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 
-type Section = "appearance" | "workspace" | "maddy" | "integrations" | "keyboard" | "account";
+type Section = "appearance" | "workspace" | "maddy" | "keyboard" | "account";
 
 export default function SettingsPage() {
   const { signOut } = useAuthActions();
@@ -291,7 +289,6 @@ export default function SettingsPage() {
     { id: "appearance", label: "Appearance", icon: <Palette className="w-4 h-4" /> },
     { id: "workspace", label: "Workspace", icon: <Users className="w-4 h-4" /> },
     { id: "maddy", label: "Maddy AI", icon: <AppIcon className="w-4 h-4 rounded-md" /> },
-    { id: "integrations", label: "Integrations", icon: <Plug className="w-4 h-4" /> },
     { id: "keyboard", label: "Shortcuts", icon: <Keyboard className="w-4 h-4" /> },
     { id: "account", label: "Account", icon: <Shield className="w-4 h-4" /> },
   ];
@@ -766,16 +763,6 @@ export default function SettingsPage() {
                   </ul>
                 </SettingSection>
               </>
-            )}
-
-            {/* ── Integrations ── */}
-            {section === "integrations" && (
-              <SettingSection
-                title="Automation integrations"
-                description="External services used by the Automations module."
-              >
-                <OciConfigSection />
-              </SettingSection>
             )}
 
             {/* ── Keyboard shortcuts ── */}

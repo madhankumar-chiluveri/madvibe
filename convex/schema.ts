@@ -146,81 +146,6 @@ export default defineSchema({
     cardCoverPropertyId: v.optional(v.union(v.string(), v.null())),
   }).index("by_databaseId", ["databaseId"]),
 
-  // ── Automation ────────────────────────────────────
-  automations: defineTable({
-    workspaceId: v.id("workspaces"),
-    userId: v.string(),
-    type: v.union(
-      v.literal("pin_copy"),
-      v.literal("image_uploader"),
-      v.literal("pin_manager"),
-      v.literal("pin_generator"), // legacy — removed after wipeOldAutomations migration
-    ),
-    // Legacy fields kept optional until the wipeOldAutomations migration is run.
-    name: v.optional(v.string()),
-    databaseId: v.optional(v.id("databases")),
-    pageId: v.optional(v.id("pages")),
-    config: v.optional(v.any()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_workspace", ["workspaceId"])
-    .index("by_workspace_type", ["workspaceId", "type"])
-    .index("by_database", ["databaseId"]),
-
-  automationRuns: defineTable({
-    automationId: v.id("automations"),
-    userId: v.string(),
-    status: v.union(
-      v.literal("running"),
-      v.literal("completed"),
-      v.literal("failed")
-    ),
-    rowCount: v.number(),
-    resultCsv: v.optional(v.string()),
-    errorMessage: v.optional(v.string()),
-    startedAt: v.number(),
-    finishedAt: v.optional(v.number()),
-  }).index("by_automation", ["automationId", "startedAt"]),
-
-  pinCopyProducts: defineTable({
-    workspaceId: v.id("workspaces"),
-    title: v.string(),
-    amazonUrl: v.string(),
-    mainImageUrl: v.string(),
-    affiliateLink: v.string(),
-    niche: v.string(),
-    sortOrder: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_workspace_sort", ["workspaceId", "sortOrder"]),
-
-  pinManagerPins: defineTable({
-    workspaceId: v.id("workspaces"),
-    title: v.string(),
-    mediaUrl: v.string(),
-    pinterestBoard: v.string(),
-    thumbnail: v.string(),
-    description: v.string(),
-    link: v.string(),
-    publishDate: v.string(),
-    keywords: v.string(),
-    sortOrder: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_workspace_sort", ["workspaceId", "sortOrder"]),
-
-  ociUploadLog: defineTable({
-    workspaceId: v.id("workspaces"),
-    userId: v.string(),
-    filename: v.string(),
-    publicUrl: v.string(),
-    sizeBytes: v.number(),
-    contentType: v.string(),
-    uploadedAt: v.number(),
-  })
-    .index("by_workspace_uploaded", ["workspaceId", "uploadedAt"]),
-
   // ── Maddy Embeddings ───────────────────────────────
   maddyEmbeddings: defineTable({
     pageId: v.id("pages"),
@@ -256,18 +181,6 @@ export default defineSchema({
     aiTemperature: v.optional(v.number()),
     // MCP persistent API key (hashed) — used by the MadVibe MCP server for Claude/ChatGPT connectors
     mcpApiKeyHash: v.optional(v.string()),
-    // Oracle OCI Object Storage credentials (used by automation image uploader)
-    oci: v.optional(
-      v.object({
-        namespace: v.string(),
-        bucketName: v.string(),
-        region: v.string(),
-        tenancyOcid: v.string(),
-        userOcid: v.string(),
-        fingerprint: v.string(),
-        privateKeyPem: v.string(),
-      })
-    ),
   }).index("by_userId", ["userId"]),
 
   // ── News ───────────────────────────────────────────
