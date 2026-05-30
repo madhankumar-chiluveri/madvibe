@@ -9,7 +9,6 @@
  */
 
 import type * as accountConversion from "../accountConversion.js";
-import type * as aiChat from "../aiChat.js";
 import type * as auth from "../auth.js";
 import type * as blocks from "../blocks.js";
 import type * as comments from "../comments.js";
@@ -30,7 +29,6 @@ import type * as ledgerLoans from "../ledgerLoans.js";
 import type * as ledgerRecurring from "../ledgerRecurring.js";
 import type * as ledgerSecurity from "../ledgerSecurity.js";
 import type * as ledgerSecurityNode from "../ledgerSecurityNode.js";
-import type * as maddy from "../maddy.js";
 import type * as marketData from "../marketData.js";
 import type * as mcpService from "../mcpService.js";
 import type * as pages from "../pages.js";
@@ -49,7 +47,6 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   accountConversion: typeof accountConversion;
-  aiChat: typeof aiChat;
   auth: typeof auth;
   blocks: typeof blocks;
   comments: typeof comments;
@@ -70,7 +67,6 @@ declare const fullApi: ApiFromModules<{
   ledgerRecurring: typeof ledgerRecurring;
   ledgerSecurity: typeof ledgerSecurity;
   ledgerSecurityNode: typeof ledgerSecurityNode;
-  maddy: typeof maddy;
   marketData: typeof marketData;
   mcpService: typeof mcpService;
   pages: typeof pages;

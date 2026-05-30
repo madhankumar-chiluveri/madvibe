@@ -32,7 +32,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "MadVibe",
-  description: "Your AI-powered personal BRAIN OS. Organise everything with Maddy.",
+  description: "Your personal BRAIN OS. Organise everything in one private workspace.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

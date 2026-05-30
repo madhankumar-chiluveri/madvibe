@@ -1,6 +1,6 @@
 # MadVibe — AI-Powered Personal Knowledge OS
 
-> Your second brain, supercharged by Maddy AI.
+> Your second brain — notes, databases, finance, and feeds in one private workspace.
 
 ![MadVibe](https://img.shields.io/badge/MadVibe-AI--Knowledge--OS-7c3aed?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
@@ -22,15 +22,6 @@
 - **8 property types** — Title, Text, Number, Select, Checkbox, Date, URL, and more
 - **Real-time collaboration** — Instant sync across all tabs/devices via Convex
 
-### 🤖 Maddy AI (Powered by Google Gemini)
-- **Auto-tagging** — Automatically categorises your pages with relevant tags
-- **Page summarisation** — Get a 3-5 bullet summary of any page
-- **Task extraction** — Pull out action items from your documents
-- **Semantic search** — Find related pages by meaning, not just keywords
-- **Inline AI commands** — Explain, rewrite, continue, brainstorm, translate
-- **Workspace organisation** — AI-suggested restructuring of your knowledge base
-- **Related pages** — Discover connected content automatically
-
 ### 🎨 Polished UX
 - **Dark/Light/System** themes with instant switching
 - **6 accent colours** — Violet, Indigo, Rose, Amber, Emerald, Sky
@@ -51,7 +42,6 @@
 ### Prerequisites
 - Node.js 18+
 - A Convex account (free at [convex.dev](https://convex.dev))
-- A Google Gemini API key (free at [aistudio.google.com](https://aistudio.google.com))
 
 ### 1. Install dependencies
 ```bash
@@ -85,11 +75,6 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000)
 
-### 5. Add your Gemini API key
-1. Go to **Settings → Maddy AI**
-2. Paste your Gemini API key
-3. All AI features are now unlocked 🎉
-
 ---
 
 ## 📁 Project Structure
@@ -102,8 +87,7 @@ madvibe/
 │   ├── pages.ts               # Page CRUD + search
 │   ├── blocks.ts              # Block content
 │   ├── databases.ts           # Database/rows/views
-│   ├── workspaces.ts          # Workspaces + settings
-│   └── maddy.ts               # All Maddy AI actions
+│   └── workspaces.ts          # Workspaces + settings
 │
 └── src/
     ├── app/                   # Next.js App Router
@@ -133,9 +117,6 @@ madvibe/
     │   ├── layout/            # App layout
     │   │   └── command-palette # ⌘K search
     │   │
-    │   ├── maddy/             # AI assistant
-    │   │   └── maddy-panel    # Slide-in AI panel
-    │   │
     │   ├── providers/         # React context providers
     │   ├── pwa/               # PWA components
     │   ├── sidebar/           # Navigation sidebar
@@ -163,12 +144,10 @@ madvibe/
 | `databases` | Database schema (properties) |
 | `rows` | Database row data |
 | `views` | Saved database views |
-| `maddyEmbeddings` | Vector embeddings for semantic search |
 | `userSettings` | User preferences |
 
 ### Storage
 - **Convex DB** — All structured data (real-time sync)
-- **Convex Vector Index** — Semantic search embeddings (768-dim)
 - **localStorage** — UI preferences (theme, sidebar state)
 
 ---
@@ -197,7 +176,6 @@ madvibe/
 | **Backend** | Convex (real-time serverless) |
 | **Auth** | @convex-dev/auth (Password + Anonymous) |
 | **Editor** | BlockNote v0.20 |
-| **AI** | Google Gemini 1.5 Flash + text-embedding-004 |
 | **UI** | Tailwind CSS + shadcn/ui + Radix UI |
 | **Animations** | Framer Motion |
 | **State** | Zustand v5 |
@@ -230,4 +208,4 @@ MIT — Build your second brain, your way.
 
 ---
 
-*Built with ❤️ using Next.js, Convex, and Google Gemini*
+*Built with ❤️ using Next.js and Convex*

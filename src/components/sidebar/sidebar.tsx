@@ -70,7 +70,6 @@ const MODULES = [
   { id: "brain" as const, label: "Brain", icon: BookOpen, href: "/workspace/brain" },
   { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
   { id: "garage" as const, label: "Garage", icon: Car, href: "/workspace/garage" },
-  { id: "ai" as const, label: "Maddy AI", icon: Sparkles, href: "/workspace/ai" },
 ] as const;
 
 const FEED_PANE_ITEMS = [
@@ -149,7 +148,7 @@ function getRouteModule(pathname: string) {
 
   if (!pathname.startsWith("/workspace")) return "overview";
   if (!segment) return "overview";
-  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "garage" || segment === "ai") {
+  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "garage") {
     return segment;
   }
   if (segment === "settings") return "overview";
@@ -242,8 +241,6 @@ function ModuleRail() {
   const pathname = usePathname();
   const {
     contextPaneCollapsed,
-    maddyPanelOpen,
-    openMaddyPanel,
     setActiveModule,
     setContextPaneCollapsed,
   } = useAppStore();
@@ -253,18 +250,12 @@ function ModuleRail() {
   const showExpandedRailLabels = false;
 
   const handleModuleClick = useCallback(
-    (modId: typeof MODULES[number]["id"]) => {
-      if (modId === "ai") {
-        // setActiveModule is handled by the useEffect synced to pathname
-        openMaddyPanel("chat");
-        return;
-      }
-
+    () => {
       if (contextPaneCollapsed) {
         setContextPaneCollapsed(false);
       }
     },
-    [contextPaneCollapsed, openMaddyPanel, setContextPaneCollapsed]
+    [contextPaneCollapsed, setContextPaneCollapsed]
   );
 
   const handlePrefetch = useCallback(
@@ -331,15 +322,9 @@ function ModuleRail() {
               key={mod.id}
               mod={mod}
               isActive={active === mod.id}
-              isDocked={mod.id === "ai" && maddyPanelOpen}
               showLabel={showExpandedRailLabels}
               showTooltip={!showExpandedRail}
-              onClick={(event) => {
-                if (mod.id === "ai") {
-                  event.preventDefault();
-                }
-                handleModuleClick(mod.id);
-              }}
+              onClick={() => handleModuleClick()}
               onPrefetch={() => handlePrefetch(mod.href)}
             />
           ))}
@@ -1056,7 +1041,7 @@ function ContextPaneFrame({
 
 function OverviewContextPane() {
   const router = useRouter();
-  const { openMaddyPanel, setCommandPaletteOpen, setActiveModule } = useAppStore();
+  const { setCommandPaletteOpen, setActiveModule } = useAppStore();
 
   const goTo = (href: string, moduleId: "overview" | "feed" | "brain" | "ledger" | "garage") => {
     setActiveModule(moduleId);
@@ -1077,11 +1062,6 @@ function OverviewContextPane() {
             label="Search"
             onClick={() => setCommandPaletteOpen(true)}
             kbd="Ctrl K"
-          />
-          <NavItem
-            icon={<AppIcon className="h-4 w-4 rounded-md" />}
-            label="Ask Maddy"
-            onClick={() => openMaddyPanel("chat")}
           />
         </div>
       </div>

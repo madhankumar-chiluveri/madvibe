@@ -172,7 +172,7 @@ export function MadVibeShowcase() {
           Open a calmer command center for everything you think through.
         </h1>
         <p className="mt-[clamp(0.875rem,2vh,1.25rem)] max-w-[520px] text-base leading-7 text-muted-foreground">
-          Notes, tasks, money, news, habits, and Maddy AI settle into one private workspace that feels composed from the first screen.
+          Notes, tasks, money, news, and habits settle into one private workspace that feels composed from the first screen.
         </p>
       </LoginMotionBlock>
 
@@ -203,7 +203,7 @@ export function MadVibeShowcase() {
           <div className="mt-5 rounded-xl bg-muted/70 p-3">
             <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5 text-[var(--notion-orange-text)]" />
-              Maddy found 3 next actions
+              3 suggested next actions
             </div>
             <div className="space-y-2">
               {["Review feed shortlist", "Close ledger budget", "Plan focus block"].map((item) => (

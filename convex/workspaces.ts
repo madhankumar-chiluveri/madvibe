@@ -535,7 +535,6 @@ export const updateSettings = mutation({
     theme: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
     accentColor: v.optional(v.string()),
     fontFamily: v.optional(v.union(v.literal("default"), v.literal("serif"), v.literal("mono"))),
-    maddyEnabled: v.optional(v.boolean()),
     fullWidthDefault: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {

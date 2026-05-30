@@ -10,7 +10,6 @@ import {
   Newspaper,
   BookOpen,
   Wallet,
-  Sparkles,
   Car,
 } from "lucide-react";
 
@@ -19,7 +18,6 @@ const TABS = [
   { id: "feed" as const,     label: "FEED",     icon: Newspaper,        href: "/workspace/feed" },
   { id: "brain" as const,    label: "BRAIN",    icon: BookOpen,         href: "/workspace/brain" },
   { id: "ledger" as const,   label: "LEDGER",   icon: Wallet,           href: "/workspace/ledger" },
-  { id: "ai" as const,       label: "Maddy AI", icon: Sparkles,         href: "/workspace/ai" },
   { id: "garage" as const,   label: "GARAGE",   icon: Car,              href: "/workspace/garage" },
 ] as const;
 
@@ -31,7 +29,7 @@ export function MobileNav() {
 
   const active = TABS.find((t) => {
     if (t.id === "brain") {
-      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "garage", "ai"].includes(workspaceSegment ?? "");
+      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "garage"].includes(workspaceSegment ?? "");
     }
     return workspaceSegment === t.id;
   })?.id ?? "overview";

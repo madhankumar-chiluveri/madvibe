@@ -177,8 +177,6 @@ export const createPage = internalMutation({
       sortOrder: maxOrder + 1000,
       createdBy: args.userId,
       updatedAt: Date.now(),
-      maddyTags: [],
-      maddySuggested: [],
     });
 
     await ctx.db.insert("blocks", {

@@ -340,12 +340,12 @@ export default function GaragePage() {
               </div>
             )}
 
-            {/* Maddy's Intelligent Insight */}
+            {/* Intelligent Insight */}
             {vehicles && vehicles.length > 0 && insight && (
               <div className="bg-card border border-border/60 rounded-xl p-5 shadow-sm space-y-3 mt-6 border-l-4 border-l-purple-500">
                 <div className="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
                   <Sparkles className="h-4 w-4" />
-                  💡 Maddy&apos;s Garage Insight
+                  💡 Garage Insight
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed pl-1 font-medium">
                   {insight}

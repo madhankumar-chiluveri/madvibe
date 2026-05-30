@@ -195,7 +195,7 @@ export default function LoginPage() {
                   </h2>
                   <p className="mt-2.5 text-sm leading-6 text-muted-foreground [@media(max-height:750px)]:hidden">
                     {step === "signIn"
-                      ? "Continue into your notes, tasks, ledger, feeds, and Maddy AI context."
+                      ? "Continue into your notes, tasks, ledger, and feeds."
                       : "Start with one private place for your ideas, routines, money, and daily signal."}
                   </p>
                 </LoginMotionBlock>

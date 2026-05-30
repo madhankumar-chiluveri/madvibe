@@ -1826,19 +1826,6 @@ export function DatabaseView({ page }: DatabaseViewProps) {
               {page.title || <span className="text-muted-foreground/70">Untitled</span>}
             </h1>
           )}
-
-          {page.maddyTags?.length > 0 && (
-            <div className="mb-5 flex flex-wrap gap-2">
-              {page.maddyTags.map((tag: string) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-foreground/8 bg-foreground/[0.04] px-3 py-1 text-xs text-foreground/80"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 

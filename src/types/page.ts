@@ -22,8 +22,6 @@ export interface Page {
   sortOrder: number;
   createdBy: string;
   updatedAt: number;
-  maddyTags?: string[];
-  maddySuggested?: string[];
 }
 
 export interface Workspace {
@@ -57,6 +55,4 @@ export interface UpdatePageInput {
   coverImage?: string | null;
   isFullWidth?: boolean;
   isFavourite?: boolean;
-  maddyTags?: string[];
-  maddySuggested?: string[];
 }

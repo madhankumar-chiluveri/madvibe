@@ -164,7 +164,7 @@
   }
 }
 
-/* ── Maddy gradient (grayscale) ───────────────────────────────────────────── */
+/* ── Scrollbar utilities ──────────────────────────────────────────────────── */
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -176,17 +176,6 @@
     width: 0;
     height: 0;
   }
-}
-
-.maddy-gradient-bg {
-  background: linear-gradient(135deg, var(--foreground) 0%, var(--notion-brown-text) 52%, var(--notion-gray-text) 100%);
-}
-
-.maddy-gradient-text {
-  background: linear-gradient(135deg, var(--foreground) 0%, var(--notion-brown-text) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */

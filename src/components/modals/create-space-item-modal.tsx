@@ -1,11 +1,9 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useAction, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
-  Bot,
   Database,
   FileText,
   FileUp,
@@ -19,7 +17,6 @@ import {
 import { CsvImportModal } from "@/components/modals/csv-import-modal";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
-import { useAppStore } from "@/store/app.store";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,7 +26,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { sanitizeBlockNoteDocument } from "../../../shared/blocknote-content";
@@ -47,13 +43,10 @@ type TemplateId =
   | "empty_page"
   | "empty_database"
   | "import_csv"
-  | "maddy"
   | "project_brief"
   | "tasks_tracker"
   | "sprint_board"
   | "meeting_notes";
-
-type ModalMode = "catalog" | "maddy";
 
 interface TemplateOption {
   id: TemplateId;
@@ -89,14 +82,6 @@ const OPTIONS: TemplateOption[] = [
     category: "quick",
     icon: FileUp,
     accent: "from-emerald-700/40 to-teal-900/10",
-  },
-  {
-    id: "maddy",
-    title: "Build with Maddy",
-    description: "Generate a starter page from a short brief.",
-    category: "quick",
-    icon: Bot,
-    accent: "from-amber-700/40 to-orange-900/10",
   },
   {
     id: "tasks_tracker",
@@ -140,42 +125,31 @@ export function CreateSpaceItemModal({
   spaceLabel,
 }: CreateSpaceItemModalProps) {
   const router = useRouter();
-  const { geminiApiKey } = useAppStore();
   const createPage = useMutation(api.pages.create);
   const createDatabase = useMutation(api.databases.create);
   const replaceAllBlocks = useMutation(api.blocks.replaceAll);
-  const generateProjectStarter = useAction(api.maddy.generateProjectStarter);
 
   const [search, setSearch] = useState("");
-  const [mode, setMode] = useState<ModalMode>("catalog");
   const [loadingId, setLoadingId] = useState<TemplateId | null>(null);
-  const [maddyProjectName, setMaddyProjectName] = useState("");
-  const [maddyBrief, setMaddyBrief] = useState("");
   const [csvImportOpen, setCsvImportOpen] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setSearch("");
-      setMode("catalog");
       setLoadingId(null);
-      setMaddyProjectName("");
-      setMaddyBrief("");
     }
   }, [open]);
 
   const options = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return OPTIONS.map((option) => ({
-      ...option,
-      disabled: option.id === "maddy" && !geminiApiKey,
-    })).filter((option) => {
+    return OPTIONS.filter((option) => {
       if (!query) return true;
       return (
         option.title.toLowerCase().includes(query) ||
         option.description.toLowerCase().includes(query)
       );
     });
-  }, [geminiApiKey, search]);
+  }, [search]);
 
   const createDocumentPage = async (title: string, blocks?: any[]) => {
     const pageId = await createPage({
@@ -226,11 +200,6 @@ export function CreateSpaceItemModal({
       return;
     }
 
-    if (optionId === "maddy") {
-      setMode("maddy");
-      setMaddyProjectName(spaceLabel === "General" ? "" : `${spaceLabel} Starter`);
-      return;
-    }
 
     setLoadingId(optionId);
 
@@ -270,42 +239,6 @@ export function CreateSpaceItemModal({
     }
   };
 
-  const handleCreateWithMaddy = async () => {
-    const projectName = maddyProjectName.trim() || "Project Starter";
-    const brief = maddyBrief.trim();
-
-    if (!brief) {
-      toast.error("Add a short project brief for Maddy");
-      return;
-    }
-
-    if (!geminiApiKey) {
-      toast.error("Add your Gemini API key in Settings to use Maddy");
-      return;
-    }
-
-    setLoadingId("maddy");
-
-    try {
-      const content = await generateProjectStarter({
-        projectName,
-        brief,
-        geminiApiKey,
-      });
-
-      const blocks = markdownToBlocks(String(content || ""));
-      const pageId = await createDocumentPage(projectName, blocks.length > 0 ? blocks : createProjectBriefBlocks(projectName, brief));
-
-      onClose();
-      router.push(`/workspace/${pageId}`);
-    } catch (error) {
-      console.error(error);
-      toast.error("Maddy could not build the starter");
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
   return (
     <>
     <CsvImportModal
@@ -325,31 +258,16 @@ export function CreateSpaceItemModal({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <DialogTitle className="text-left text-2xl text-foreground">
-                  {mode === "catalog" ? `Add to ${spaceLabel}` : `Build with Maddy for ${spaceLabel}`}
+                  {`Add to ${spaceLabel}`}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-left text-muted-foreground">
-                  {mode === "catalog"
-                    ? "Choose an empty item or a ready-made project template."
-                    : "Describe the project and Maddy will create a starter page."}
+                  Choose an empty item or a ready-made project template.
                 </DialogDescription>
               </div>
-
-              {mode === "maddy" && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="rounded-xl text-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground"
-                  onClick={() => setMode("catalog")}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-              )}
             </div>
           </DialogHeader>
 
-          {mode === "catalog" ? (
-            <div className="space-y-8">
+          <div className="space-y-8">
               <div className="relative max-w-xl">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -396,55 +314,6 @@ export function CreateSpaceItemModal({
                 </div>
               </section>
             </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="space-y-4">
-                <Input
-                  value={maddyProjectName}
-                  onChange={(event) => setMaddyProjectName(event.target.value)}
-                  placeholder="Starter page title"
-                  className="h-11 rounded-2xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
-                />
-                <Textarea
-                  value={maddyBrief}
-                  onChange={(event) => setMaddyBrief(event.target.value)}
-                  placeholder="Describe the project, what you're building, the main deliverables, timeline, and anything Maddy should keep in mind."
-                  className="min-h-[220px] rounded-2xl border-foreground/10 bg-foreground/[0.03] text-foreground placeholder:text-muted-foreground focus-visible:ring-foreground/15"
-                />
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm text-muted-foreground">
-                    Maddy will create a structured starter page with scope, milestones, risks, and first tasks.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={handleCreateWithMaddy}
-                    disabled={loadingId === "maddy"}
-                    className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    {loadingId === "maddy" ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Bot className="mr-2 h-4 w-4" />
-                    )}
-                    Build starter
-                  </Button>
-                </div>
-              </div>
-
-              <div className="rounded-[24px] border border-foreground/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5">
-                <div className="mb-3 flex items-center gap-2 text-foreground">
-                  <Sparkles className="h-4 w-4 text-amber-300" />
-                  <span className="text-sm font-medium">What Maddy will generate</span>
-                </div>
-                <ul className="space-y-3 text-sm text-muted-foreground">
-                  <li>Mission and success criteria</li>
-                  <li>Suggested milestones and early risks</li>
-                  <li>First tasks to get momentum</li>
-                  <li>A cleaner project brief you can edit immediately</li>
-                </ul>
-              </div>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

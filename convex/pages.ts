@@ -41,8 +41,6 @@ export const create = mutation({
       sortOrder: maxOrder + 1000,
       createdBy: userId,
       updatedAt: Date.now(),
-      maddyTags: [],
-      maddySuggested: [],
     });
 
     // Create initial empty block
@@ -98,8 +96,6 @@ export const createSpace = mutation({
       sortOrder: maxOrder + 1000,
       createdBy: userId,
       updatedAt: Date.now(),
-      maddyTags: [],
-      maddySuggested: [],
     });
 
     await ctx.db.insert("blocks", {
@@ -128,7 +124,7 @@ export const createSpace = mutation({
           content: [
             {
               type: "text",
-              text: "Create a task tracker, a project brief, meeting notes, or let Maddy build a starter page for you.",
+              text: "Create a task tracker, a project brief, meeting notes, or start from a blank page.",
               styles: {},
             },
           ],
@@ -153,8 +149,6 @@ export const update = mutation({
     coverImage: v.optional(v.union(v.string(), v.null())),
     isFullWidth: v.optional(v.boolean()),
     isFavourite: v.optional(v.boolean()),
-    maddyTags: v.optional(v.array(v.string())),
-    maddySuggested: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     await requirePageAccess(ctx, args.id, "editor");
@@ -230,13 +224,6 @@ export const remove = mutation({
     for (const block of blocks) {
       await ctx.db.delete(block._id);
     }
-
-    // Delete embedding
-    const embedding = await ctx.db
-      .query("maddyEmbeddings")
-      .withIndex("by_pageId", (q) => q.eq("pageId", args.id))
-      .first();
-    if (embedding) await ctx.db.delete(embedding._id);
 
     await ctx.db.delete(args.id);
   },
@@ -408,5 +395,43 @@ export const search = query({
         q.search("title", args.query).eq("workspaceId", args.workspaceId).eq("isArchived", false)
       )
       .take(20);
+  },
+});
+
+function extractText(node: any): string {
+  if (!node) return "";
+  if (typeof node === "string") return node;
+  if (node.text) return node.text;
+  if (Array.isArray(node)) return node.map(extractText).join(" ");
+  if (node.content) return extractText(node.content);
+  return "";
+}
+
+// Page title + a short text preview, used by the MCP `get_page_content` tool.
+export const getPageContent = query({
+  args: { pageId: v.id("pages") },
+  handler: async (ctx, args) => {
+    const { page } = await requirePageAccess(ctx, args.pageId, "viewer");
+
+    const blocks = await ctx.db
+      .query("blocks")
+      .withIndex("by_pageId", (q) => q.eq("pageId", args.pageId))
+      .order("asc")
+      .take(20);
+
+    const contentPreview = blocks
+      .map((b) => {
+        try {
+          if (typeof b.content === "string") return b.content;
+          if (b.content?.content) return extractText(b.content);
+          return "";
+        } catch {
+          return "";
+        }
+      })
+      .join(" ")
+      .slice(0, 1000);
+
+    return { title: page.title, contentPreview };
   },
 });

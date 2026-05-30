@@ -6,15 +6,8 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Id } from "../../convex/_generated/dataModel";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 
-type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "garage" | "ai";
+type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "garage";
 export type GarageTab = "overview" | "services" | "expenses" | "checklist" | "documents";
-export type MaddyPanelTab = "chat" | "search" | "page";
-export type MaddyProvider =
-  | "gemini"
-  | "openai"
-  | "anthropic"
-  | "groq"
-  | "openrouter";
 export type LedgerTab = "dashboard" | "credit_cards" | "loans" | "investments" | "budget" | "goals" | "recurring" | "market";
 type FeedCategory = "for_you" | "ai_ml" | "tech_it" | "productivity" | "must_know" | "general" | null;
 
@@ -38,36 +31,12 @@ interface AppState {
   quickCaptureOpen: boolean;
   setQuickCaptureOpen: (v: boolean) => void;
 
-  maddyPanelOpen: boolean;
-  maddyPanelTab: MaddyPanelTab;
-  setMaddyPanelOpen: (v: boolean) => void;
-  setMaddyPanelTab: (tab: MaddyPanelTab) => void;
-  openMaddyPanel: (tab?: MaddyPanelTab) => void;
-  closeMaddyPanel: () => void;
-
   theme: Theme;
   setTheme: (t: Theme) => void;
   accentColor: AccentColor;
   setAccentColor: (c: AccentColor) => void;
   fontFamily: FontFamily;
   setFontFamily: (f: FontFamily) => void;
-
-  maddyEnabled: boolean;
-  setMaddyEnabled: (v: boolean) => void;
-  geminiApiKey: string;
-  setGeminiApiKey: (k: string) => void;
-  openaiApiKey: string;
-  setOpenaiApiKey: (k: string) => void;
-  anthropicApiKey: string;
-  setAnthropicApiKey: (k: string) => void;
-  groqApiKey: string;
-  setGroqApiKey: (k: string) => void;
-  openrouterApiKey: string;
-  setOpenrouterApiKey: (k: string) => void;
-  maddyDefaultProvider: MaddyProvider;
-  setMaddyDefaultProvider: (provider: MaddyProvider) => void;
-  maddyDefaultModel: string;
-  setMaddyDefaultModel: (model: string) => void;
 
   recentPageIds: Id<"pages">[];
   addRecentPage: (id: Id<"pages">) => void;
@@ -119,36 +88,12 @@ export const useAppStore = create<AppState>()(
       quickCaptureOpen: false,
       setQuickCaptureOpen: (v) => set({ quickCaptureOpen: v }),
 
-      maddyPanelOpen: false,
-      maddyPanelTab: "chat",
-      setMaddyPanelOpen: (v) => set({ maddyPanelOpen: v }),
-      setMaddyPanelTab: (tab) => set({ maddyPanelTab: tab }),
-      openMaddyPanel: (tab = "chat") => set({ maddyPanelOpen: true, maddyPanelTab: tab }),
-      closeMaddyPanel: () => set({ maddyPanelOpen: false }),
-
       theme: "system",
       setTheme: (t) => set({ theme: t }),
       accentColor: "violet",
       setAccentColor: (c) => set({ accentColor: c }),
       fontFamily: "default",
       setFontFamily: (f) => set({ fontFamily: f }),
-
-      maddyEnabled: true,
-      setMaddyEnabled: (v) => set({ maddyEnabled: v }),
-      geminiApiKey: "",
-      setGeminiApiKey: (k) => set({ geminiApiKey: k }),
-      openaiApiKey: "",
-      setOpenaiApiKey: (k) => set({ openaiApiKey: k }),
-      anthropicApiKey: "",
-      setAnthropicApiKey: (k) => set({ anthropicApiKey: k }),
-      groqApiKey: "",
-      setGroqApiKey: (k) => set({ groqApiKey: k }),
-      openrouterApiKey: "",
-      setOpenrouterApiKey: (k) => set({ openrouterApiKey: k }),
-      maddyDefaultProvider: "gemini",
-      setMaddyDefaultProvider: (provider) => set({ maddyDefaultProvider: provider }),
-      maddyDefaultModel: "gemini-1.5-flash-latest",
-      setMaddyDefaultModel: (model) => set({ maddyDefaultModel: model }),
 
       recentPageIds: [],
       addRecentPage: (id) => {
@@ -232,14 +177,6 @@ export const useAppStore = create<AppState>()(
         theme: s.theme,
         accentColor: s.accentColor,
         fontFamily: s.fontFamily,
-        maddyEnabled: s.maddyEnabled,
-        geminiApiKey: s.geminiApiKey,
-        openaiApiKey: s.openaiApiKey,
-        anthropicApiKey: s.anthropicApiKey,
-        groqApiKey: s.groqApiKey,
-        openrouterApiKey: s.openrouterApiKey,
-        maddyDefaultProvider: s.maddyDefaultProvider,
-        maddyDefaultModel: s.maddyDefaultModel,
         recentPageIds: s.recentPageIds,
         expandedPageIds: s.expandedPageIds,
         focusMinutes: s.focusMinutes,

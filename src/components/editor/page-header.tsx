@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { useMutation, useAction } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { AppIcon } from "@/components/ui/app-icon";
@@ -13,7 +13,6 @@ import {
   Smile,
   Maximize2,
   Minimize2,
-  Wand2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,13 +39,10 @@ export function PageHeader({
   onMobileToolbarToggle,
 }: PageHeaderProps) {
   const updatePage = useMutation(api.pages.update);
-  const tagPage = useAction(api.maddy.tagPage);
-  const { geminiApiKey, maddyEnabled } = useAppStore();
 
   const [title, setTitle] = useState(page.title);
   const [showEmoji, setShowEmoji] = useState(false);
   const [pickerPos, setPickerPos] = useState<{ top: number; left: number }>({ top: 120, left: 80 });
-  const [tagging, setTagging] = useState(false);
 
   const titleAreaRef = useRef<HTMLDivElement>(null);
   const titleSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,25 +141,6 @@ export function PageHeader({
     setShowEmoji(true);
   }, [editable]);
 
-  const handleAutoTag = useCallback(async () => {
-    if (!editable) return;
-    if (!geminiApiKey) {
-      toast.error("Add your Gemini API key in Settings to use Maddy AI");
-      return;
-    }
-    setTagging(true);
-    try {
-      const result = await tagPage({ pageId: page._id, geminiApiKey });
-      toast.success(
-        `Tagged: ${(result as any).tags?.join(", ") || "done"}`
-      );
-    } catch {
-      toast.error("Tagging failed");
-    } finally {
-      setTagging(false);
-    }
-  }, [editable, geminiApiKey, page._id, tagPage]);
-
   // Shared toolbar actions list (reused on desktop hover + mobile menu)
   const toolbarActions = (
     <>
@@ -189,16 +166,6 @@ export function PageHeader({
           onClick={() => { handleRemoveIcon(); onMobileToolbarToggle?.(); }}
         >
           <X className="w-3.5 h-3.5" /> Remove icon
-        </button>
-      )}
-      {editable && maddyEnabled && (
-        <button
-          className="flex items-center gap-1.5 px-2.5 py-2 rounded hover:bg-accent/50 transition-colors text-xs text-foreground whitespace-nowrap"
-          onClick={() => { handleAutoTag(); onMobileToolbarToggle?.(); }}
-          disabled={tagging}
-        >
-          <Wand2 className="w-3.5 h-3.5" />
-          {tagging ? "Tagging…" : "Auto-tag"}
         </button>
       )}
       <ReminderTriggerButton
@@ -312,20 +279,6 @@ export function PageHeader({
             !editable && "cursor-default"
           )}
         />
-
-        {/* Tags */}
-        {page.maddyTags && page.maddyTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {page.maddyTags.map((tag: string) => (
-              <span
-                key={tag}
-                className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Emoji picker — fixed positioned to avoid z-index/overflow issues */}

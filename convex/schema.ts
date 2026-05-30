@@ -83,8 +83,6 @@ export default defineSchema({
     sortOrder: v.number(),
     createdBy: v.string(),
     updatedAt: v.number(),
-    maddyTags: v.optional(v.array(v.string())),
-    maddySuggested: v.optional(v.array(v.string())),
     isDailyNote: v.optional(v.boolean()),
     dailyNoteDate: v.optional(v.string()), // "YYYY-MM-DD"
   })
@@ -146,39 +144,13 @@ export default defineSchema({
     cardCoverPropertyId: v.optional(v.union(v.string(), v.null())),
   }).index("by_databaseId", ["databaseId"]),
 
-  // ── Maddy Embeddings ───────────────────────────────
-  maddyEmbeddings: defineTable({
-    pageId: v.id("pages"),
-    vector: v.array(v.float64()),
-    contentHash: v.string(),
-    updatedAt: v.number(),
-  })
-    .index("by_pageId", ["pageId"])
-    .vectorIndex("by_vector", {
-      vectorField: "vector",
-      dimensions: 768,
-      filterFields: [],
-    }),
-
   // ── User Settings ──────────────────────────────────
   userSettings: defineTable({
     userId: v.string(),
     theme: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
     accentColor: v.optional(v.string()),
     fontFamily: v.optional(v.union(v.literal("default"), v.literal("serif"), v.literal("mono"))),
-    maddyEnabled: v.optional(v.boolean()),
     fullWidthDefault: v.optional(v.boolean()),
-    // AI provider settings
-    openrouterKey: v.optional(v.string()),
-    anthropicKey: v.optional(v.string()),
-    openaiKey: v.optional(v.string()),
-    googleKey: v.optional(v.string()),
-    groqKey: v.optional(v.string()),
-    ollamaEndpoint: v.optional(v.string()),
-    defaultModel: v.optional(v.string()),
-    defaultProvider: v.optional(v.string()),
-    aiSystemPrompt: v.optional(v.string()),
-    aiTemperature: v.optional(v.number()),
     // MCP persistent API key (hashed) — used by the MadVibe MCP server for Claude/ChatGPT connectors
     mcpApiKeyHash: v.optional(v.string()),
   }).index("by_userId", ["userId"]),
@@ -560,35 +532,6 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
   }).index("by_userId", ["userId"]),
-
-  // ── AI Conversations ───────────────────────────────
-  aiConversations: defineTable({
-    userId: v.string(),
-    title: v.string(),
-    model: v.string(),
-    provider: v.string(),
-    contextModule: v.optional(v.string()),
-    contextPageId: v.optional(v.string()),
-    isPinned: v.boolean(),
-    messageCount: v.number(),
-    totalTokens: v.optional(v.number()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_userId", ["userId"])
-    .index("by_userId_updatedAt", ["userId", "updatedAt"]),
-
-  aiMessages: defineTable({
-    conversationId: v.id("aiConversations"),
-    role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
-    content: v.string(),
-    model: v.optional(v.string()),
-    tokensInput: v.optional(v.number()),
-    tokensOutput: v.optional(v.number()),
-    createdAt: v.number(),
-  })
-    .index("by_conversationId", ["conversationId"])
-    .index("by_conversationId_createdAt", ["conversationId", "createdAt"]),
 
   // ── Habits ─────────────────────────────────────────
   habits: defineTable({

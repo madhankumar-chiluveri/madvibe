@@ -510,17 +510,17 @@ function DashboardTab() {
         </div>
       )}
 
-      {/* AI Insight */}
+      {/* Insight */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="text-xs font-semibold text-notion-purple-text uppercase tracking-wide mb-1">
-          💡 Maddy's Ledger Insight
+          💡 Ledger Insight
         </p>
         <p className="text-sm text-foreground/80">
           {data && data.expenses > data.income
             ? `You've spent ${fmt(data.expenses - data.income)} more than you earned this month. Review your expense categories to find savings.`
             : data && data.income > 0
               ? `Great job! You've saved ${fmt(savings)} this month (${((savings / data.income) * 100).toFixed(0)}% savings rate). Consider investing the surplus.`
-              : "Add your income and expenses to get personalized insights from Maddy."}
+              : "Add your income and expenses to get personalized insights."}
         </p>
       </div>
     </div>

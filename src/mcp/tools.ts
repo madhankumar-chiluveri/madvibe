@@ -298,7 +298,7 @@ export async function callTool(
       });
 
     case "get_page_content":
-      return await client.query(api.maddy.getPageForMaddy, {
+      return await client.query(api.pages.getPageContent, {
         pageId: args.pageId as Id<"pages">,
       });
 

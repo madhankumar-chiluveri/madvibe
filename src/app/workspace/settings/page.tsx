@@ -48,7 +48,7 @@ import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 import { ThemeSwitcher } from "@/components/settings/theme-switcher";
 
-type Section = "appearance" | "workspace" | "maddy" | "keyboard" | "account";
+type Section = "appearance" | "workspace" | "keyboard" | "account";
 
 export default function SettingsPage() {
   const { signOut } = useAuthActions();
@@ -60,10 +60,6 @@ export default function SettingsPage() {
     setAccentColor,
     fontFamily,
     setFontFamily,
-    maddyEnabled,
-    setMaddyEnabled,
-    geminiApiKey,
-    setGeminiApiKey,
   } = useAppStore();
   const { setTheme: setNextTheme } = useTheme();
   const { currentWorkspace, resolvedWorkspaceId } = useResolvedWorkspace();
@@ -96,8 +92,6 @@ export default function SettingsPage() {
     (api as any).accountConversion.convertPasswordAccountToGoogle
   );
 
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [geminiInput, setGeminiInput] = useState(geminiApiKey);
   const [saving, setSaving] = useState(false);
   const [conversionPassword, setConversionPassword] = useState("");
   const [authAction, setAuthAction] = useState<"start-google" | "finish-google" | null>(null);
@@ -112,16 +106,6 @@ export default function SettingsPage() {
     setTheme(t);
     setNextTheme(t);
     updateSettings({ theme: t }).catch(() => {});
-  };
-
-  const handleSaveApiKey = async () => {
-    setSaving(true);
-    try {
-      setGeminiApiKey(geminiInput.trim());
-      toast.success("API key saved");
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleStartGoogleConversion = async () => {
@@ -288,7 +272,6 @@ export default function SettingsPage() {
   const navItems: { id: Section; label: string; icon: ReactNode }[] = [
     { id: "appearance", label: "Appearance", icon: <Palette className="w-4 h-4" /> },
     { id: "workspace", label: "Workspace", icon: <Users className="w-4 h-4" /> },
-    { id: "maddy", label: "Maddy AI", icon: <AppIcon className="w-4 h-4 rounded-md" /> },
     { id: "keyboard", label: "Shortcuts", icon: <Keyboard className="w-4 h-4" /> },
     { id: "account", label: "Account", icon: <Shield className="w-4 h-4" /> },
   ];
@@ -447,7 +430,6 @@ export default function SettingsPage() {
               </>
             )}
 
-            {/* ── Maddy AI ── */}
             {section === "workspace" && (
               <SettingSection
                 title="Workspace collaboration"
@@ -664,105 +646,6 @@ export default function SettingsPage() {
                   ) : null}
                 </div>
               </SettingSection>
-            )}
-
-            {section === "maddy" && (
-              <>
-                <SettingSection title="Enable Maddy AI">
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={maddyEnabled}
-                      onCheckedChange={(v) => {
-                        setMaddyEnabled(v);
-                        updateSettings({ maddyEnabled: v }).catch(() => {});
-                      }}
-                    />
-                    <span className="text-sm">
-                      {maddyEnabled ? "Enabled" : "Disabled"}
-                    </span>
-                  </div>
-                </SettingSection>
-
-                <Separator />
-
-                <SettingSection
-                  title="Gemini API Key"
-                  description="Required for AI features. Get your free key at aistudio.google.com"
-                >
-                  <div className="space-y-2">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          type={apiKeyVisible ? "text" : "password"}
-                          value={geminiInput}
-                          onChange={(e) => setGeminiInput(e.target.value)}
-                          placeholder="AIza..."
-                          className="pr-10 h-10"
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-                          onClick={() => setApiKeyVisible(!apiKeyVisible)}
-                        >
-                          {apiKeyVisible ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                      <Button
-                        onClick={handleSaveApiKey}
-                        disabled={saving}
-                        className="bg-foreground text-background hover:opacity-90 h-10 px-4"
-                      >
-                        <Save className="w-4 h-4 mr-1.5" />
-                        Save
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Stored locally in your browser. Never sent to our servers.
-                    </p>
-                     {geminiApiKey && (
-                       <div className="flex items-center gap-1.5 text-xs text-foreground">
-                         <Check className="w-3.5 h-3.5" />
-                         API key configured
-                       </div>
-                     )}
-                  </div>
-                </SettingSection>
-
-                <Separator />
-
-                <SettingSection title="Maddy capabilities">
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-foreground shrink-0" />
-                      Auto-tag pages based on content
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-foreground shrink-0" />
-                      Summarise long notes
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-foreground shrink-0" />
-                      Extract tasks from documents
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-foreground shrink-0" />
-                      Semantic search across your BRAIN
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-foreground shrink-0" />
-                      Inline AI: explain, rewrite, continue, brainstorm
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-foreground shrink-0" />
-                      Workspace reorganisation suggestions
-                    </li>
-                  </ul>
-                </SettingSection>
-              </>
             )}
 
             {/* ── Keyboard shortcuts ── */}
