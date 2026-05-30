@@ -166,9 +166,10 @@ export async function POST(req: NextRequest) {
 
       case "notifications/initialized":
       case "notifications/cancelled":
-        // Notifications have no id — return 200 + application/json (not 204)
-        // Some clients (Perplexity) reject responses with missing Content-Type
-        return Response.json({}, { headers: CORS });
+        // JSON-RPC spec: server MUST NOT reply to notifications.
+        // MCP Streamable HTTP spec: return 202 Accepted, no body.
+        // Empty body → pydantic skips parsing. 204 caused content-type issues on Perplexity.
+        return new Response(null, { status: 202, headers: CORS });
 
       case "ping":
         return ok(id, {});
@@ -187,6 +188,10 @@ export async function POST(req: NextRequest) {
       }
 
       default:
+        // Any other notification (no id) → 202, no body
+        if (typeof method === "string" && method.startsWith("notifications/")) {
+          return new Response(null, { status: 202, headers: CORS });
+        }
         return err(id, -32601, `Method not found: ${method}`);
     }
   } catch (e: unknown) {
