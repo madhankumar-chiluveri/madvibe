@@ -22,6 +22,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TaskEvent {
   rowId: string;
@@ -51,6 +58,43 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
     date: Date;
     tasks: TaskEvent[];
   } | null>(null);
+
+  // Kanban filter state
+  const [filterSpace, setFilterSpace] = useState("all");
+  const [filterDatabase, setFilterDatabase] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  // Distinct option lists derived from all events
+  const spaceOptions = useMemo(() => {
+    const seen = new Set<string>();
+    events.forEach((e) => { if (e.spaceName) seen.add(e.spaceName); });
+    return Array.from(seen).sort();
+  }, [events]);
+
+  const databaseOptions = useMemo(() => {
+    const seen = new Set<string>();
+    events.forEach((e) => {
+      if (filterSpace !== "all" && e.spaceName !== filterSpace) return;
+      if (e.databaseName) seen.add(e.databaseName);
+    });
+    return Array.from(seen).sort();
+  }, [events, filterSpace]);
+
+  const statusOptions = useMemo(() => {
+    const seen = new Set<string>();
+    events.forEach((e) => { if (e.status) seen.add(e.status); });
+    return Array.from(seen).sort();
+  }, [events]);
+
+  // Filtered events used in all views
+  const filteredEvents = useMemo(() => {
+    return events.filter((e) => {
+      if (filterSpace !== "all" && e.spaceName !== filterSpace) return false;
+      if (filterDatabase !== "all" && e.databaseName !== filterDatabase) return false;
+      if (filterStatus !== "all" && (e.status ?? "No Status") !== filterStatus) return false;
+      return true;
+    });
+  }, [events, filterSpace, filterDatabase, filterStatus]);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth(); // 0-indexed
@@ -175,7 +219,7 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
   // Index events by "YYYY-MM-DD" local date string
   const eventsByDate = useMemo(() => {
     const map = new Map<string, TaskEvent[]>();
-    events.forEach((event) => {
+    filteredEvents.forEach((event) => {
       const date = new Date(event.timestamp);
       const key = formatDateKey(date);
       const existing = map.get(key) || [];
@@ -183,7 +227,7 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
       map.set(key, existing);
     });
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   // Kanban view date columns (renders exactly 7 columns for the selected week)
   const kanbanColumns = useMemo(() => {
@@ -346,6 +390,61 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
         </div>
       </div>
 
+      {/* Kanban Filters Row */}
+      {viewMode === "kanban" && (
+        <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-border/60 mb-3">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide shrink-0">Filter:</span>
+          {/* Space / Project filter */}
+          <Select value={filterSpace} onValueChange={(v) => { setFilterSpace(v); setFilterDatabase("all"); }}>
+            <SelectTrigger className="h-7 w-auto min-w-[110px] max-w-[160px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+              <SelectValue placeholder="All Spaces" />
+            </SelectTrigger>
+            <SelectContent className="text-[11px]">
+              <SelectItem value="all">All Spaces</SelectItem>
+              {spaceOptions.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Page / Database filter */}
+          <Select value={filterDatabase} onValueChange={setFilterDatabase}>
+            <SelectTrigger className="h-7 w-auto min-w-[110px] max-w-[160px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+              <SelectValue placeholder="All Pages" />
+            </SelectTrigger>
+            <SelectContent className="text-[11px]">
+              <SelectItem value="all">All Pages</SelectItem>
+              {databaseOptions.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Status filter */}
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-7 w-auto min-w-[110px] max-w-[160px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent className="text-[11px]">
+              <SelectItem value="all">All Statuses</SelectItem>
+              {statusOptions.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Active filter indicator / reset */}
+          {(filterSpace !== "all" || filterDatabase !== "all" || filterStatus !== "all") && (
+            <button
+              onClick={() => { setFilterSpace("all"); setFilterDatabase("all"); setFilterStatus("all"); }}
+              className="text-[10px] font-bold text-notion-red-text hover:underline ml-auto"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 2. Main Content Body */}
       <div className="flex-1 min-h-0">
         {viewMode === "calendar" ? (
@@ -435,7 +534,7 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
                           ) : (
                             <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                           )}
-                          <span className={cn("truncate flex-1", isDone && "line-through opacity-70")}>
+                          <span className={cn("truncate flex-1", isDone && "opacity-80")}>
                             {task.taskName}
                           </span>
                         </div>
@@ -521,7 +620,7 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
                             <h4
                               className={cn(
                                 "text-[11px] font-bold text-foreground leading-snug tracking-tight mb-2 group-hover:text-primary transition-colors",
-                                isDone && "line-through text-muted-foreground opacity-60"
+                                isDone && "text-muted-foreground opacity-80"
                               )}
                             >
                               {task.taskName}
@@ -568,7 +667,56 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
             </div>
 
             {/* Navigation Controls inside Dialog */}
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto select-none pr-10">
+            <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto select-none pr-10">
+              {/* Filters — Space, Page, Status */}
+              <Select value={filterSpace} onValueChange={(v) => { setFilterSpace(v); setFilterDatabase("all"); }}>
+                <SelectTrigger className="h-7 w-auto min-w-[110px] max-w-[150px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="All Spaces" />
+                </SelectTrigger>
+                <SelectContent className="text-[11px]">
+                  <SelectItem value="all">All Spaces</SelectItem>
+                  {spaceOptions.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterDatabase} onValueChange={setFilterDatabase}>
+                <SelectTrigger className="h-7 w-auto min-w-[110px] max-w-[150px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="All Pages" />
+                </SelectTrigger>
+                <SelectContent className="text-[11px]">
+                  <SelectItem value="all">All Pages</SelectItem>
+                  {databaseOptions.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-7 w-auto min-w-[110px] max-w-[150px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="text-[11px]">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {statusOptions.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(filterSpace !== "all" || filterDatabase !== "all" || filterStatus !== "all") && (
+                <button
+                  onClick={() => { setFilterSpace("all"); setFilterDatabase("all"); setFilterStatus("all"); }}
+                  className="text-[10px] font-bold text-notion-red-text hover:underline"
+                >
+                  Clear
+                </button>
+              )}
+
+              <div className="w-px h-5 bg-border mx-1" />
+
+              {/* Week pill */}
               <span className="text-xs font-bold text-foreground bg-muted px-3 py-1.5 rounded-lg border border-border font-mono">
                 {getHeaderTitle()}
               </span>
@@ -667,7 +815,7 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
                             <h4
                               className={cn(
                                 "text-xs font-bold text-foreground leading-snug tracking-tight mb-3 group-hover:text-primary transition-colors",
-                                isDone && "line-through text-muted-foreground opacity-65"
+                                isDone && "text-muted-foreground opacity-80"
                               )}
                             >
                               {task.taskName}
@@ -754,7 +902,7 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
                     <span
                       className={cn(
                         "text-xs font-bold leading-normal text-foreground group-hover:text-primary",
-                        isDone && "line-through text-muted-foreground opacity-60"
+                        isDone && "text-muted-foreground opacity-80"
                       )}
                     >
                       {task.taskName}
