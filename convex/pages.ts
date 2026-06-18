@@ -492,20 +492,4 @@ export const getPageContent = query({
   },
 });
 
-export const cleanLegacyMaddyFields = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const pages = await ctx.db.query("pages").collect();
-    let count = 0;
-    for (const page of pages) {
-      if ("maddySuggested" in page || "maddyTags" in page) {
-        await ctx.db.patch(page._id, {
-          maddySuggested: undefined,
-          maddyTags: undefined,
-        });
-        count++;
-      }
-    }
-    return { cleanedCount: count };
-  },
-});
+

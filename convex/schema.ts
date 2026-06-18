@@ -85,8 +85,6 @@ export default defineSchema({
     updatedAt: v.number(),
     isDailyNote: v.optional(v.boolean()),
     dailyNoteDate: v.optional(v.string()), // "YYYY-MM-DD"
-    maddySuggested: v.optional(v.any()),
-    maddyTags: v.optional(v.any()),
   })
     .index("by_workspaceId", ["workspaceId"])
     .index("by_parentId", ["parentId"])
