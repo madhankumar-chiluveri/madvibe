@@ -48,12 +48,12 @@ export const getWorkspaceCalendarTasks = query({
 
       if (!db) continue;
 
-      const titleProp = db.properties.find(
-        (p: any) =>
-          p.type === "title" ||
-          p.name?.toLowerCase() === "task" ||
-          p.name?.toLowerCase() === "name"
-      );
+      // Prioritise column named "Task", then any title-type, then "Name"
+      const titleProp =
+        db.properties.find((p: any) => p.name?.toLowerCase() === "task") ??
+        db.properties.find((p: any) => p.type === "title") ??
+        db.properties.find((p: any) => p.name?.toLowerCase() === "name");
+
       const dateProps = db.properties.filter(
         (p: any) => p.type === "date" || p.type === "created_time"
       );
@@ -71,8 +71,35 @@ export const getWorkspaceCalendarTasks = query({
 
       const spaceName = resolveSpaceName(page._id);
 
+      // Helper: extract plain text from a title/text cell value.
+      // Values can be a plain string OR a BlockNote inline-content array
+      // like [{type:"text", text:"My Task", styles:{}},...].
+      const extractText = (val: unknown): string => {
+        if (!val) return "";
+        if (typeof val === "string") return val.trim();
+        if (Array.isArray(val)) {
+          return val
+            .map((item: any) => {
+              if (typeof item === "string") return item;
+              if (item && typeof item === "object") {
+                if (typeof item.text === "string") return item.text;
+                if (Array.isArray(item.content)) {
+                  return item.content
+                    .map((c: any) => (typeof c?.text === "string" ? c.text : ""))
+                    .join("");
+                }
+              }
+              return "";
+            })
+            .join("");
+        }
+        return String(val).trim();
+      };
+
       for (const row of rows) {
-        const taskName = titleProp ? row.data[titleProp.id] || "Untitled" : "Untitled";
+        const taskName = titleProp
+          ? (extractText(row.data[titleProp.id]) || "Untitled")
+          : "Untitled";
 
         let statusVal = null;
         let statusColor = null;
@@ -104,7 +131,7 @@ export const getWorkspaceCalendarTasks = query({
                 pageId: page._id,
                 databaseName: page.title || db.name || "Untitled Database",
                 spaceName,
-                taskName: String(taskName),
+                taskName,
                 datePropertyName: dateProp.name || "Date",
                 datePropertyId: dateProp.id,
                 datePropertyType: dateProp.type,

@@ -63,6 +63,7 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
   const [filterSpace, setFilterSpace] = useState("all");
   const [filterDatabase, setFilterDatabase] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDateType, setFilterDateType] = useState("Completed Date");
 
   // Distinct option lists derived from all events
   const spaceOptions = useMemo(() => {
@@ -86,15 +87,23 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
     return Array.from(seen).sort();
   }, [events]);
 
+  // Distinct date property names (e.g. "Created Date", "Completed Date")
+  const dateTypeOptions = useMemo(() => {
+    const seen = new Set<string>();
+    events.forEach((e) => { if (e.datePropertyName) seen.add(e.datePropertyName); });
+    return Array.from(seen).sort();
+  }, [events]);
+
   // Filtered events used in all views
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
       if (filterSpace !== "all" && e.spaceName !== filterSpace) return false;
       if (filterDatabase !== "all" && e.databaseName !== filterDatabase) return false;
       if (filterStatus !== "all" && (e.status ?? "No Status") !== filterStatus) return false;
+      if (filterDateType !== "all" && e.datePropertyName !== filterDateType) return false;
       return true;
     });
-  }, [events, filterSpace, filterDatabase, filterStatus]);
+  }, [events, filterSpace, filterDatabase, filterStatus, filterDateType]);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth(); // 0-indexed
@@ -433,10 +442,23 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
             </SelectContent>
           </Select>
 
+          {/* Date Type filter (Created Date / Completed Date) */}
+          <Select value={filterDateType} onValueChange={setFilterDateType}>
+            <SelectTrigger className="h-7 w-auto min-w-[120px] max-w-[170px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+              <SelectValue placeholder="All Date Types" />
+            </SelectTrigger>
+            <SelectContent className="text-[11px]">
+              <SelectItem value="all">All Date Types</SelectItem>
+              {dateTypeOptions.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Active filter indicator / reset */}
-          {(filterSpace !== "all" || filterDatabase !== "all" || filterStatus !== "all") && (
+          {(filterSpace !== "all" || filterDatabase !== "all" || filterStatus !== "all" || filterDateType !== "all") && (
             <button
-              onClick={() => { setFilterSpace("all"); setFilterDatabase("all"); setFilterStatus("all"); }}
+              onClick={() => { setFilterSpace("all"); setFilterDatabase("all"); setFilterStatus("all"); setFilterDateType("all"); }}
               className="text-[10px] font-bold text-notion-red-text hover:underline ml-auto"
             >
               Clear filters
@@ -705,9 +727,21 @@ export const CalendarWidget = memo(function CalendarWidget({ events = [] }: Cale
                 </SelectContent>
               </Select>
 
-              {(filterSpace !== "all" || filterDatabase !== "all" || filterStatus !== "all") && (
+              <Select value={filterDateType} onValueChange={setFilterDateType}>
+                <SelectTrigger className="h-7 w-auto min-w-[120px] max-w-[160px] text-[11px] font-semibold rounded-lg border-border/70 bg-muted/40 px-2 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="All Date Types" />
+                </SelectTrigger>
+                <SelectContent className="text-[11px]">
+                  <SelectItem value="all">All Date Types</SelectItem>
+                  {dateTypeOptions.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(filterSpace !== "all" || filterDatabase !== "all" || filterStatus !== "all" || filterDateType !== "all") && (
                 <button
-                  onClick={() => { setFilterSpace("all"); setFilterDatabase("all"); setFilterStatus("all"); }}
+                  onClick={() => { setFilterSpace("all"); setFilterDatabase("all"); setFilterStatus("all"); setFilterDateType("all"); }}
                   className="text-[10px] font-bold text-notion-red-text hover:underline"
                 >
                   Clear
