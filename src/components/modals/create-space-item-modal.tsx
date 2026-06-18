@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "convex/react";
@@ -465,32 +465,40 @@ function createMeetingNotesBlocks() {
 
 function createTasksTrackerProperties() {
   return [
-    createProperty("id", "ID"),
+    createProperty("id", "S.No"),
     createProperty("title", "Task"),
+    updateProperty(createProperty("select", "Assigned to"), {
+      config: {
+        options: [
+          { id: "madhan", label: "Madhan", color: "green" },
+          { id: "sanjit", label: "Sanjit", color: "blue" },
+          { id: "rohit", label: "Rohit", color: "purple" },
+        ],
+        defaultValue: "madhan",
+      },
+    }),
     updateProperty(createProperty("select", "Status"), {
       config: {
         options: [
-          { id: "not_started", label: "Not started", color: "gray" },
-          { id: "in_progress", label: "In progress", color: "blue" },
-          { id: "blocked", label: "Blocked", color: "red" },
+          { id: "not_started", label: "Not Started", color: "gray" },
+          { id: "in_progress", label: "In Progress", color: "blue" },
           { id: "done", label: "Done", color: "green" },
+          { id: "halted", label: "Halted", color: "red" },
         ],
+        defaultValue: "not_started",
       },
     }),
-    updateProperty(createProperty("select", "Priority"), {
+    updateProperty(createProperty("select", "Assigned By"), {
       config: {
         options: [
-          { id: "low", label: "Low", color: "gray" },
-          { id: "medium", label: "Medium", color: "yellow" },
-          { id: "high", label: "High", color: "red" },
+          { id: "rohit", label: "Rohit", color: "purple" },
+          { id: "praneeth", label: "Praneeth", color: "orange" },
         ],
+        defaultValue: "rohit",
       },
     }),
-    createProperty("text", "Assignee"),
-    createProperty("text", "Assigned By"),
-    createProperty("date", "Due"),
-    createProperty("text", "Notes"),
-    createProperty("created_time", "Created"),
+    createProperty("date", "Created Date"),
+    createProperty("date", "Completed Date"),
   ];
 }
 

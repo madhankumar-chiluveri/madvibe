@@ -246,6 +246,60 @@ export const move = mutation({
   },
 });
 
+export const reorderPage = mutation({
+  args: {
+    id: v.id("pages"),
+    newParentId: v.union(v.id("pages"), v.null()),
+    targetIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await requirePageAccess(ctx, args.id, "editor");
+
+    const page = await ctx.db.get(args.id);
+    if (!page) throw new Error("Page not found");
+
+    // Get siblings in the destination parent
+    const siblings = await ctx.db
+      .query("pages")
+      .withIndex("by_workspaceId", (q) => q.eq("workspaceId", page.workspaceId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("parentId"), args.newParentId),
+          q.eq(q.field("isArchived"), false),
+          q.neq(q.field("_id"), args.id),
+          args.newParentId === null
+            ? page.isSpaceRoot === true
+              ? q.eq(q.field("isSpaceRoot"), true)
+              : q.neq(q.field("isSpaceRoot"), true)
+            : true
+        )
+      )
+      .collect();
+
+    // Sort by sortOrder in memory
+    siblings.sort((a, b) => a.sortOrder - b.sortOrder);
+
+    let newSortOrder = 1000;
+    if (siblings.length === 0) {
+      newSortOrder = 1000;
+    } else if (args.targetIndex <= 0) {
+      newSortOrder = siblings[0].sortOrder - 1000;
+    } else if (args.targetIndex >= siblings.length) {
+      newSortOrder = siblings[siblings.length - 1].sortOrder + 1000;
+    } else {
+      const prev = siblings[args.targetIndex - 1];
+      const next = siblings[args.targetIndex];
+      newSortOrder = (prev.sortOrder + next.sortOrder) / 2;
+    }
+
+    await ctx.db.patch(args.id, {
+      parentId: args.newParentId,
+      sortOrder: newSortOrder,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 export const get = query({
   args: { id: v.id("pages") },
   handler: async (ctx, args) => {
@@ -303,7 +357,7 @@ export const list = query({
   handler: async (ctx, args) => {
     await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
-    return await ctx.db
+    const pages = await ctx.db
       .query("pages")
       .withIndex("by_workspaceId", (q) => q.eq("workspaceId", args.workspaceId))
       .filter((q) =>
@@ -312,8 +366,9 @@ export const list = query({
           q.eq(q.field("isArchived"), false)
         )
       )
-      .order("asc")
       .collect();
+
+    return pages.sort((a, b) => a.sortOrder - b.sortOrder);
   },
 });
 
@@ -322,7 +377,7 @@ export const listSpaceRoots = query({
   handler: async (ctx, args) => {
     await requireWorkspaceAccess(ctx, args.workspaceId, "viewer");
 
-    return await ctx.db
+    const spaces = await ctx.db
       .query("pages")
       .withIndex("by_workspaceId", (q) => q.eq("workspaceId", args.workspaceId))
       .filter((q) =>
@@ -332,8 +387,9 @@ export const listSpaceRoots = query({
           q.eq(q.field("isSpaceRoot"), true)
         )
       )
-      .order("asc")
       .collect();
+
+    return spaces.sort((a, b) => a.sortOrder - b.sortOrder);
   },
 });
 

@@ -8,7 +8,7 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { ArrowDownToLine, ArrowUpToLine, Bell, MoreVertical, Plus, Trash2 } from "lucide-react";
+import { ArrowDownToLine, ArrowUpToLine, Bell, MoreVertical, Plus, Trash2, GripVertical } from "lucide-react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
 import { ReminderDialog } from "@/components/reminders/reminder-dialog";
@@ -32,6 +32,7 @@ import {
 } from "./database-utils";
 import { PropertyHeaderMenu } from "./property-header-menu";
 import { PropertyCell } from "./property-cell";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const SELECTION_COLUMN_WIDTH = 44;
 const MIN_COLUMN_WIDTH = 96;
@@ -58,6 +59,7 @@ interface TableViewProps {
   onBatchDeleteRows: (rowIds: Id<"rows">[]) => Promise<void>;
   onUpdateProperties: (updater: (current: PropertySchema[]) => PropertySchema[]) => Promise<void>;
   onMoveProperty: (propertyId: string, direction: "left" | "right") => Promise<void>;
+  onReorderRow?: (rowId: Id<"rows">, targetIndex: number) => Promise<void>;
 }
 
 export function TableView({
@@ -77,6 +79,7 @@ export function TableView({
   onBatchDeleteRows,
   onUpdateProperties,
   onMoveProperty,
+  onReorderRow,
 }: TableViewProps) {
   const [newRowLoading, setNewRowLoading] = useState(false);
   const [newPropertyLoading, setNewPropertyLoading] = useState(false);
@@ -85,6 +88,29 @@ export function TableView({
   const [columnWidthDrafts, setColumnWidthDrafts] = useState<Record<string, number>>({});
   const [reminderRow, setReminderRow] = useState<any | null>(null);
   const titleProperty = properties.find((property) => property.type === "title");
+  
+  const processedRows = useMemo(() => {
+    if (!rows) return undefined;
+    const idProperties = properties.filter((property) => property.type === "id");
+    if (idProperties.length === 0) return rows;
+
+    return rows.map((row, index) => {
+      const nextData = { ...(row.data ?? {}) };
+      for (const property of idProperties) {
+        nextData[property.id] = index + 1;
+      }
+      return { ...row, data: nextData };
+    });
+  }, [rows, properties]);
+
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination || !onReorderRow) return;
+    if (result.source.index === result.destination.index) return;
+
+    const rowId = result.draggableId as Id<"rows">;
+    await onReorderRow(rowId, result.destination.index);
+  };
+
   const selectAllRef = useRef<HTMLInputElement | null>(null);
   const resizeDragRef = useRef<{
     propertyId: string;
@@ -384,6 +410,7 @@ export function TableView({
 
   return (
     <div className="database-shell overflow-clip bg-card">
+      <DragDropContext onDragEnd={handleDragEnd}>
       {editable && selectedCount > 0 ? (
         <div className="border-b border-foreground/8 bg-foreground/[0.03] px-4 py-3">
           <DatabaseRowSelectionBar
@@ -582,165 +609,188 @@ export function TableView({
             </tr>
           </thead>
 
-          <tbody>
-            {rows === undefined ? (
-              <tr>
-                <td colSpan={properties.length + 2} className="h-12 px-4 text-sm text-muted-foreground">
-                  Loading rows...
-                </td>
-              </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={properties.length + 2}
-                  className="px-4 py-16 text-center text-sm text-muted-foreground"
-                >
-                  No rows yet. Add your first entry to start building the database.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row: any) => {
-                const isSelected = selectedRowIds.has(String(row._id));
-
-                return (
-                <tr
-                  key={row._id}
-                  className={cn(
-                    "group border-b border-foreground/6 transition-colors",
-                    isSelected
-                      ? "bg-sky-500/[0.09] hover:bg-sky-500/[0.12]"
-                      : "bg-card hover:bg-accent"
-                  )}
-                >
-                  <td
-                    className={cn(
-                      "sticky left-0 z-30 overflow-hidden border-r border-foreground/6 px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]",
-                      isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
-                    )}
-                  >
-                    {editable ? (
-                      <label className="flex min-h-[38px] items-center justify-center">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(event) => toggleRowSelection(row._id, event.target.checked)}
-                          className="h-4 w-4 rounded border-foreground/15 bg-foreground/[0.04] accent-white"
-                          aria-label={`Select row ${titleProperty ? String(row.data?.[titleProperty.id] ?? "Untitled row") : String(row._id)}`}
-                        />
-                      </label>
-                    ) : (
-                      <div className="min-h-[38px]" />
-                    )}
-                  </td>
-                  {properties.map((property) => {
-                    const isFrozen = Boolean(property.config?.frozen);
-                    const left = frozenState.offsets[property.id];
+          <Droppable droppableId="table-rows" type="ROW">
+            {(provided) => (
+              <tbody {...provided.droppableProps} ref={provided.innerRef}>
+                {processedRows === undefined ? (
+                  <tr>
+                    <td colSpan={properties.length + 2} className="h-12 px-4 text-sm text-muted-foreground">
+                      Loading rows...
+                    </td>
+                  </tr>
+                ) : processedRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={properties.length + 2}
+                      className="px-4 py-16 text-center text-sm text-muted-foreground"
+                    >
+                      No rows yet. Add your first entry to start building the database.
+                    </td>
+                  </tr>
+                ) : (
+                  processedRows.map((row: any, index: number) => {
+                    const isSelected = selectedRowIds.has(String(row._id));
 
                     return (
-                      <td
-                        key={property.id}
-                        style={isFrozen ? { left } : undefined}
-                        className={cn(
-                          "border-r border-foreground/6 px-0 py-0 align-middle overflow-hidden",
-                          isFrozen &&
-                            "sticky z-20",
-                          isFrozen &&
-                            (isSelected
-                              ? "bg-sky-950/55 group-hover:bg-sky-950/65"
-                              : "bg-card group-hover:bg-accent"),
-                          isFrozen &&
-                            property.id === frozenState.lastFrozenId &&
-                            "shadow-[1px_0_0_0_rgba(255,255,255,0.06),14px_0_28px_rgba(0,0,0,0.18)]"
-                        )}
-                      >
-                        <PropertyCell
-                          property={property}
-                          value={row.data?.[property.id]}
-                          rowCreatedAt={row._creationTime}
-                          rowData={row.data}
-                          allProperties={properties}
-                          now={now}
-                          fullWidth
-                          onChange={
-                            editable
-                              ? (nextValue) => handleCellChange(row._id, property, nextValue)
-                              : undefined
-                          }
-                        />
-                      </td>
-                    );
-                  })}
-
-                  <td className={cn(
-                    "sticky right-0 z-20 border-l border-foreground/6 px-0 py-0 align-middle shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]",
-                    isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
-                  )}>
-                    <div className="flex items-center justify-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-foreground/[0.06] hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
-                            title="Row actions"
-                            aria-label="Row actions"
-                          >
-                            <MoreVertical className="h-3.5 w-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-[180px] border-foreground/10 bg-popover text-foreground"
-                        >
-                          <DropdownMenuItem
-                            className="focus:bg-foreground/[0.06]"
-                            onSelect={(e: Event) => {
-                              e.preventDefault();
-                              setReminderRow(row);
+                      <Draggable key={row._id} draggableId={row._id} index={index} isDragDisabled={!editable}>
+                        {(provided, snapshot) => (
+                          <tr
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            style={{
+                              ...provided.draggableProps.style,
+                              display: snapshot.isDragging ? "table" : undefined,
                             }}
+                            className={cn(
+                              "group border-b border-foreground/6 transition-colors",
+                              isSelected
+                                ? "bg-sky-500/[0.09] hover:bg-sky-500/[0.12]"
+                                : "bg-card hover:bg-accent",
+                              snapshot.isDragging && "bg-[var(--notion-gray-bg)]/90 shadow-md"
+                            )}
                           >
-                            <Bell className="mr-2 h-3.5 w-3.5" />
-                            Remind me
-                          </DropdownMenuItem>
+                            <td
+                              className={cn(
+                                "sticky left-0 z-30 overflow-hidden border-r border-foreground/6 px-0 py-0 align-middle shadow-[1px_0_0_0_rgba(255,255,255,0.06)]",
+                                isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
+                              )}
+                            >
+                              {editable ? (
+                                <div className="flex items-center justify-center gap-1 min-h-[38px] px-1">
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="flex h-5 w-3 items-center justify-center cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Drag to reorder row"
+                                  >
+                                    <GripVertical className="h-3.5 w-3.5" />
+                                  </div>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(event) => toggleRowSelection(row._id, event.target.checked)}
+                                    className="h-4 w-4 rounded border-foreground/15 bg-foreground/[0.04] accent-white"
+                                    aria-label={`Select row ${titleProperty ? String(row.data?.[titleProperty.id] ?? "Untitled row") : String(row._id)}`}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="min-h-[38px]" />
+                              )}
+                            </td>
+                            {properties.map((property) => {
+                              const isFrozen = Boolean(property.config?.frozen);
+                              const left = frozenState.offsets[property.id];
 
-                          {editable && (
-                            <>
-                              <DropdownMenuSeparator />
-                              {onInsertRow ? (
-                                <>
-                                  <DropdownMenuItem
-                                    className="focus:bg-foreground/[0.06]"
-                                    onSelect={() => void onInsertRow(row._id, "above")}
+                              return (
+                                <td
+                                  key={property.id}
+                                  style={isFrozen ? { left } : undefined}
+                                  className={cn(
+                                    "border-r border-foreground/6 px-0 py-0 align-middle overflow-hidden",
+                                    isFrozen &&
+                                      "sticky z-20",
+                                    isFrozen &&
+                                      (isSelected
+                                        ? "bg-sky-950/55 group-hover:bg-sky-950/65"
+                                        : "bg-card group-hover:bg-accent"),
+                                    isFrozen &&
+                                      property.id === frozenState.lastFrozenId &&
+                                      "shadow-[1px_0_0_0_rgba(255,255,255,0.06),14px_0_28px_rgba(0,0,0,0.18)]"
+                                  )}
+                                >
+                                  <PropertyCell
+                                    property={property}
+                                    value={row.data?.[property.id]}
+                                    rowCreatedAt={row._creationTime}
+                                    rowData={row.data}
+                                    allProperties={properties}
+                                    now={now}
+                                    fullWidth
+                                    onChange={
+                                      editable
+                                        ? (nextValue) => handleCellChange(row._id, property, nextValue)
+                                        : undefined
+                                    }
+                                  />
+                                </td>
+                              );
+                            })}
+
+                            <td className={cn(
+                              "sticky right-0 z-20 border-l border-foreground/6 px-0 py-0 align-middle shadow-[-1px_0_0_0_rgba(255,255,255,0.06)]",
+                              isSelected ? "bg-sky-950/55 group-hover:bg-sky-950/65" : "bg-card group-hover:bg-accent"
+                            )}>
+                              <div className="flex items-center justify-center">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-foreground/[0.06] hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
+                                      title="Row actions"
+                                      aria-label="Row actions"
+                                    >
+                                      <MoreVertical className="h-3.5 w-3.5" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    align="end"
+                                    className="w-[180px] border-foreground/10 bg-popover text-foreground"
                                   >
-                                    <ArrowUpToLine className="mr-2 h-3.5 w-3.5" />
-                                    Insert row above
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="focus:bg-foreground/[0.06]"
-                                    onSelect={() => void onInsertRow(row._id, "below")}
-                                  >
-                                    <ArrowDownToLine className="mr-2 h-3.5 w-3.5" />
-                                    Insert row below
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                </>
-                              ) : null}
-                              <DropdownMenuItem
-                                className="text-red-300 focus:bg-red-500/12 focus:text-red-200"
-                                onSelect={() => void onDeleteRow(row._id)}
-                              >
-                                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                                Delete row
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              )})
+                                    <DropdownMenuItem
+                                      className="focus:bg-foreground/[0.06]"
+                                      onSelect={(e: Event) => {
+                                        e.preventDefault();
+                                        setReminderRow(row);
+                                      }}
+                                    >
+                                      <Bell className="mr-2 h-3.5 w-3.5" />
+                                      Remind me
+                                    </DropdownMenuItem>
+
+                                    {editable && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        {onInsertRow ? (
+                                          <>
+                                            <DropdownMenuItem
+                                              className="focus:bg-foreground/[0.06]"
+                                              onSelect={() => void onInsertRow(row._id, "above")}
+                                            >
+                                              <ArrowUpToLine className="mr-2 h-3.5 w-3.5" />
+                                              Insert row above
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                              className="focus:bg-foreground/[0.06]"
+                                              onSelect={() => void onInsertRow(row._id, "below")}
+                                            >
+                                              <ArrowDownToLine className="mr-2 h-3.5 w-3.5" />
+                                              Insert row below
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                          </>
+                                        ) : null}
+                                        <DropdownMenuItem
+                                          className="text-red-300 focus:bg-red-500/12 focus:text-red-200"
+                                          onSelect={() => void onDeleteRow(row._id)}
+                                        >
+                                          <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                          Delete row
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Draggable>
+                    );
+                  })
+                )}
+                {provided.placeholder}
+              </tbody>
             )}
-          </tbody>
+          </Droppable>
 
           <tfoot>
             <tr className="h-11 border-t border-foreground/8 bg-background">
@@ -789,6 +839,7 @@ export function TableView({
           }}
         />
       )}
+      </DragDropContext>
     </div>
   );
 }

@@ -47,6 +47,11 @@ function buildProsemirrorAliases() {
   return aliases;
 }
 
+// Compute the ProseMirror alias map ONCE at module load. webpack(config) is
+// invoked multiple times (client, server, edge), so building it inside the
+// hook re-ran 14 require.resolve() calls each time for no benefit.
+const prosemirrorAliases = buildProsemirrorAliases();
+
 const nextConfig = {
   serverExternalPackages: [
     "@blocknote/core",
@@ -59,7 +64,7 @@ const nextConfig = {
     // Deduplicate ProseMirror packages across @tiptap/pm, @blocknote/*, etc.
     config.resolve.alias = {
       ...config.resolve.alias,
-      ...buildProsemirrorAliases(),
+      ...prosemirrorAliases,
     };
 
     return config;
@@ -69,17 +74,24 @@ const nextConfig = {
       { protocol: "https", hostname: "**" },
     ],
   },
-  // Performance: enable experimental optimizations
+  // Performance: tree-shake big barrel packages so dev/prod only compile the
+  // icons/components actually imported instead of the whole package surface.
   experimental: {
     optimizePackageImports: [
       "lucide-react",
       "recharts",
       "date-fns",
+      "framer-motion",
+      "cmdk",
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
       "@radix-ui/react-select",
       "@radix-ui/react-popover",
-      "framer-motion",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-context-menu",
+      "@radix-ui/react-scroll-area",
+      "@radix-ui/react-avatar",
     ],
   },
   // Compress responses

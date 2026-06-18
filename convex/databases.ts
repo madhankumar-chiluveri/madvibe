@@ -92,14 +92,61 @@ export const listRows = query({
   handler: async (ctx, args) => {
     await requireDatabaseAccess(ctx, args.databaseId, "viewer");
 
-    return await ctx.db
+    const rows = await ctx.db
       .query("rows")
       .withIndex("by_databaseId", (q) => q.eq("databaseId", args.databaseId))
       .filter((q) => q.neq(q.field("isArchived"), true))
-      .order("asc")
       .collect();
+
+    return rows.sort((a, b) => a.sortOrder - b.sortOrder);
   },
 });
+
+function handleStatusAndCompletionDates(properties: any[], data: any, oldData?: any) {
+  if (!properties || !data) return data;
+
+  const statusProp = properties.find(
+    (p: any) => p.name?.toLowerCase() === "status" && p.type === "select"
+  );
+  const completedDateProp = properties.find(
+    (p: any) =>
+      (p.name?.toLowerCase() === "completed date" ||
+        p.name?.toLowerCase() === "completion date") &&
+      p.type === "date"
+  );
+
+  if (statusProp && completedDateProp) {
+    const oldStatus = oldData?.[statusProp.id];
+    const newStatus = data[statusProp.id];
+
+    const options = statusProp.config?.options || statusProp.options || [];
+    const doneOption = options.find((o: any) => o.label?.toLowerCase() === "done");
+
+    const isDone = (val: any) => {
+      if (!val) return false;
+      const sVal = String(val).toLowerCase();
+      if (doneOption) {
+        return (
+          sVal === String(doneOption.id).toLowerCase() ||
+          sVal === String(doneOption.label).toLowerCase() ||
+          sVal === "done"
+        );
+      }
+      return sVal === "done";
+    };
+
+    const wasDone = isDone(oldStatus);
+    const isNowDone = isDone(newStatus);
+
+    if (isNowDone && !wasDone) {
+      data[completedDateProp.id] = Date.now();
+    } else if (!isNowDone && wasDone) {
+      data[completedDateProp.id] = null;
+    }
+  }
+
+  return data;
+}
 
 export const addRow = mutation({
   args: {
@@ -110,6 +157,33 @@ export const addRow = mutation({
   },
   handler: async (ctx, args) => {
     await requireDatabaseAccess(ctx, args.databaseId, "editor");
+
+    const database = await ctx.db.get(args.databaseId);
+    if (database && database.properties) {
+      const data = { ...(args.data ?? {}) };
+      for (const property of database.properties) {
+        if (
+          property.type === "date" &&
+          (property.name?.toLowerCase() === "created date" ||
+            property.name?.toLowerCase() === "creation date") &&
+          (data[property.id] === undefined || data[property.id] === null)
+        ) {
+          data[property.id] = Date.now();
+        } else if (
+          property.type === "created_time" &&
+          (data[property.id] === undefined || data[property.id] === null)
+        ) {
+          data[property.id] = Date.now();
+        } else if (
+          property.config?.defaultValue !== undefined &&
+          property.config?.defaultValue !== null &&
+          (data[property.id] === undefined || data[property.id] === null)
+        ) {
+          data[property.id] = property.config.defaultValue;
+        }
+      }
+      args.data = handleStatusAndCompletionDates(database.properties, data);
+    }
 
     let nextSortOrder = args.sortOrder;
     if (nextSortOrder === undefined) {
@@ -139,7 +213,70 @@ export const updateRow = mutation({
   },
   handler: async (ctx, args) => {
     await requireRowAccess(ctx, args.id, "editor");
+
+    const row = await ctx.db.get(args.id);
+    if (row) {
+      const database = await ctx.db.get(row.databaseId);
+      if (database && database.properties) {
+        args.data = handleStatusAndCompletionDates(database.properties, args.data, row.data);
+      }
+    }
+
     await ctx.db.patch(args.id, { data: args.data });
+  },
+});
+
+export const updateRowOrder = mutation({
+  args: {
+    id: v.id("rows"),
+    sortOrder: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await requireRowAccess(ctx, args.id, "editor");
+    await ctx.db.patch(args.id, { sortOrder: args.sortOrder });
+  },
+});
+
+export const reorderRow = mutation({
+  args: {
+    id: v.id("rows"),
+    targetIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await requireRowAccess(ctx, args.id, "editor");
+
+    const row = await ctx.db.get(args.id);
+    if (!row) throw new Error("Row not found");
+
+    // Get siblings in the database
+    const siblings = await ctx.db
+      .query("rows")
+      .withIndex("by_databaseId", (q) => q.eq("databaseId", row.databaseId))
+      .filter((q) =>
+        q.and(
+          q.neq(q.field("isArchived"), true),
+          q.neq(q.field("_id"), args.id)
+        )
+      )
+      .collect();
+
+    // Sort by sortOrder in memory
+    siblings.sort((a, b) => a.sortOrder - b.sortOrder);
+
+    let newSortOrder = 1000;
+    if (siblings.length === 0) {
+      newSortOrder = 1000;
+    } else if (args.targetIndex <= 0) {
+      newSortOrder = siblings[0].sortOrder - 1000;
+    } else if (args.targetIndex >= siblings.length) {
+      newSortOrder = siblings[siblings.length - 1].sortOrder + 1000;
+    } else {
+      const prev = siblings[args.targetIndex - 1];
+      const next = siblings[args.targetIndex];
+      newSortOrder = (prev.sortOrder + next.sortOrder) / 2;
+    }
+
+    await ctx.db.patch(args.id, { sortOrder: newSortOrder });
   },
 });
 

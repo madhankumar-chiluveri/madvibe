@@ -427,6 +427,15 @@ export function buildInitialRowData(properties: PropertySchema[], now = Date.now
       continue;
     }
 
+    if (
+      property.type === "date" &&
+      (property.name.toLowerCase() === "created date" ||
+        property.name.toLowerCase() === "creation date")
+    ) {
+      initialData[property.id] = now;
+      continue;
+    }
+
     const configuredDefault = property.config?.defaultValue;
     if (configuredDefault !== undefined && configuredDefault !== null) {
       initialData[property.id] = normalizeValueForProperty(

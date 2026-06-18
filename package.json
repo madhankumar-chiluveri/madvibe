@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "convex:dev": "convex dev",
-    "convex:deploy": "convex deploy"
+    "convex:deploy": "convex deploy",
+    "perf:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/optimize-windows-dev.ps1"
   },
   "dependencies": {
     "@blocknote/core": "0.37.0",

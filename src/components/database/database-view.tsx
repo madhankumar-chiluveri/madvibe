@@ -12,6 +12,7 @@ import {
 import { useMutation, useQuery } from "convex/react";
 import {
   ArrowUpDown,
+  Download,
   Filter,
   LayoutGrid,
   LayoutList,
@@ -490,10 +491,50 @@ export function DatabaseView({ page }: DatabaseViewProps) {
   const replaceRowsMutation = useMutation(api.databases.replaceRows);
   const ensureDefaultViewMutation = useMutation(api.databases.ensureDefaultView);
   const updateViewMutation = useMutation(api.databases.updateView);
+  const reorderRowMutationBase = useMutation(api.databases.reorderRow);
 
   const database = useQuery(api.databases.getByPage, { pageId: page._id });
 
   const databaseIdForOptimistic = database?._id ?? null;
+
+  const reorderRowMutation = useMemo(
+    () =>
+      reorderRowMutationBase.withOptimisticUpdate((localStore, args) => {
+        if (!databaseIdForOptimistic) return;
+        const queryArgs = { databaseId: databaseIdForOptimistic };
+        const current = localStore.getQuery(api.databases.listRows, queryArgs);
+        if (!current) return;
+
+        const currentIndex = current.findIndex((row) => row._id === args.id);
+        if (currentIndex === -1 || currentIndex === args.targetIndex) return;
+
+        const next = [...current];
+        const [removed] = next.splice(currentIndex, 1);
+        next.splice(args.targetIndex, 0, removed);
+
+        // Compute optimistic sortOrder
+        let newSortOrder = 1000;
+        if (next.length === 1) {
+          newSortOrder = 1000;
+        } else if (args.targetIndex <= 0) {
+          newSortOrder = next[1].sortOrder - 1000;
+        } else if (args.targetIndex >= next.length - 1) {
+          newSortOrder = next[next.length - 2].sortOrder + 1000;
+        } else {
+          const prev = next[args.targetIndex - 1];
+          const nextItem = next[args.targetIndex + 1];
+          if (prev && nextItem) {
+            newSortOrder = (prev.sortOrder + nextItem.sortOrder) / 2;
+          }
+        }
+
+        removed.sortOrder = newSortOrder;
+
+        const finalRows = next.sort((a, b) => a.sortOrder - b.sortOrder);
+        localStore.setQuery(api.databases.listRows, queryArgs, finalRows);
+      }),
+    [databaseIdForOptimistic, reorderRowMutationBase]
+  );
 
   const updateRowMutation = useMemo(
     () =>
@@ -1083,6 +1124,40 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     [canEditWorkspace, createSnapshot, deleteRowMutation, properties, pushHistoryEntry, rows]
   );
 
+  const handleReorderRow = useCallback(
+    async (rowId: Id<"rows">, targetIndex: number) => {
+      if (!canEditWorkspace) return;
+      if (rows === undefined) return;
+
+      const beforeRows = rows;
+      const beforeProperties = properties;
+
+      await reorderRowMutation({ id: rowId, targetIndex });
+
+      // Find the index of the row being moved
+      const currentIndex = beforeRows.findIndex((row: any) => row._id === rowId);
+      if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+      const next = [...beforeRows];
+      const [removed] = next.splice(currentIndex, 1);
+      next.splice(targetIndex, 0, removed);
+
+      const before = createSnapshot(beforeRows, beforeProperties);
+      if (!before) return;
+
+      const after = createSnapshot(next, beforeProperties);
+
+      if (after) {
+        pushHistoryEntry({
+          before,
+          after,
+          label: "Reorder row",
+        });
+      }
+    },
+    [canEditWorkspace, createSnapshot, properties, pushHistoryEntry, reorderRowMutation, rows]
+  );
+
   const handleBatchUpdateRows = useCallback(
     async (updates: Array<{ rowId: Id<"rows">; data: Record<string, unknown> }>) => {
       if (!canEditWorkspace) return;
@@ -1621,6 +1696,68 @@ export function DatabaseView({ page }: DatabaseViewProps) {
     return null;
   };
 
+  const handleExportCSV = useCallback(() => {
+    if (!visibleRows || !properties) {
+      toast.error("Database is loading or empty");
+      return;
+    }
+
+    const headers = properties.map((property) => property.name || "Untitled");
+
+    const getCSVValue = (row: any, property: PropertySchema): string => {
+      const value = row.data?.[property.id];
+      if (value === null || value === undefined) return "";
+
+      switch (property.type) {
+        case "multi_select":
+          if (Array.isArray(value)) {
+            return value
+              .map((v: any) => {
+                const option = property.config?.options?.find((o: any) => o.id === v);
+                return option ? option.label : String(v);
+              })
+              .join(", ");
+          }
+          return "";
+        case "select": {
+          const option = property.config?.options?.find((o: any) => o.id === value);
+          return option ? option.label : String(value);
+        }
+        case "date":
+          return new Date(Number(value)).toLocaleDateString();
+        case "checkbox":
+          return value ? "Yes" : "No";
+        default:
+          return String(value);
+      }
+    };
+
+    const csvRows = visibleRows.map((row: any) =>
+      properties.map((property) => {
+        const rawValue = getCSVValue(row, property);
+        const escaped = rawValue.replace(/"/g, '""');
+        return `"${escaped}"`;
+      })
+    );
+
+    const csvContent = [
+      headers.map((h) => `"${h.replace(/"/g, '""')}"`).join(","),
+      ...csvRows.map((row: any) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${page.title || database?.name || "database"}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported successfully");
+  }, [visibleRows, properties, page.title, database?.name]);
+
   const renderDatabaseToolbar = () => (
     <div className="border-b border-foreground/8 bg-card px-3 py-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -1793,6 +1930,17 @@ export function DatabaseView({ page }: DatabaseViewProps) {
             pageIcon={page.icon}
           />
         }
+        rightContent={
+          <Button
+            onClick={handleExportCSV}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title="Export to CSV"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        }
       />
 
       <div className="max-w-full px-3 pb-3 pt-9 md:px-6">
@@ -1858,6 +2006,7 @@ export function DatabaseView({ page }: DatabaseViewProps) {
                     onBatchDeleteRows={handleBatchDeleteRows}
                     onUpdateProperties={handleUpdateProperties}
                     onMoveProperty={handleMoveProperty}
+                    onReorderRow={handleReorderRow}
                   />
                 )}
                 {viewType === "board" && (

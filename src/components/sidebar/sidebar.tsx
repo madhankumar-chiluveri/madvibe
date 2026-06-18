@@ -34,8 +34,10 @@ import {
   Sparkles,
   Wallet,
   Car,
+  GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -374,9 +376,11 @@ interface PageItemProps {
   page: any;
   depth?: number;
   workspaceId: Id<"workspaces">;
+  dragHandleProps?: any;
+  isDragging?: boolean;
 }
 
-function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
+function PageItem({ page, depth = 0, workspaceId, dragHandleProps, isDragging }: PageItemProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
@@ -452,12 +456,23 @@ function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
     <div>
       <div
         className={cn(
-          "group flex items-center gap-1 rounded-md px-2 py-[5px] text-[13px] font-medium transition-colors",
+          "group/page-item flex items-center gap-1 rounded-md px-2 py-[5px] text-[13px] font-medium transition-colors",
           "hover:bg-[rgba(55,53,47,0.04)] dark:hover:bg-[rgba(255,255,255,0.04)]",
-          isActive && "bg-[rgba(55,53,47,0.08)] text-foreground dark:bg-[rgba(255,255,255,0.07)]"
+          isActive && "bg-[rgba(55,53,47,0.08)] text-foreground dark:bg-[rgba(255,255,255,0.07)]",
+          isDragging && "bg-[rgba(55,53,47,0.12)] text-foreground dark:bg-[rgba(255,255,255,0.1)] opacity-70"
         )}
-        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        style={{ paddingLeft: `${Math.max(0, 8 + depth * 14 - (dragHandleProps ? 12 : 0))}px` }}
       >
+        {dragHandleProps && (
+          <div
+            {...dragHandleProps}
+            className="flex h-5 w-3 items-center justify-center cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover/page-item:opacity-100 transition-opacity"
+            title="Drag to reorder page"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </div>
+        )}
+
         <button
           type="button"
           className={cn(
@@ -541,16 +556,32 @@ function PageItem({ page, depth = 0, workspaceId }: PageItemProps) {
       </div>
 
       {expanded && hasChildren ? (
-        <div>
-          {children!.map((child: any) => (
-            <PageItem
-              key={child._id}
-              page={child}
-              depth={depth + 1}
-              workspaceId={workspaceId}
-            />
-          ))}
-        </div>
+        <Droppable droppableId={page._id} type="PAGE">
+          {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef}>
+              {children!.map((child: any, index: number) => (
+                <Draggable key={child._id} draggableId={child._id} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      style={provided.draggableProps.style}
+                    >
+                      <PageItem
+                        page={child}
+                        depth={depth + 1}
+                        workspaceId={workspaceId}
+                        dragHandleProps={provided.dragHandleProps}
+                        isDragging={snapshot.isDragging}
+                      />
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
       ) : null}
     </div>
   );
@@ -577,6 +608,8 @@ interface SpaceSectionProps {
   workspaceId: Id<"workspaces">;
   onAddNew: (parentId: Id<"pages"> | null, spaceLabel: string) => void;
   autoExpandToken?: string | null;
+  dragHandleProps?: any;
+  isDragging?: boolean;
 }
 
 function SpaceSection({
@@ -584,6 +617,8 @@ function SpaceSection({
   workspaceId,
   onAddNew,
   autoExpandToken = null,
+  dragHandleProps,
+  isDragging,
 }: SpaceSectionProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -633,8 +668,18 @@ function SpaceSection({
   };
 
   return (
-    <div className="mb-2 rounded-xl border border-border/60 bg-card/40">
-      <div className="flex items-center gap-2 px-2 py-2">
+    <div className={cn("mb-2 rounded-xl border border-border/60 bg-card/40 transition-shadow", isDragging && "shadow-md bg-[var(--notion-gray-bg)]/80")}>
+      <div className="flex items-center gap-1 px-2 py-2 group/space-header">
+        {dragHandleProps && (
+          <div
+            {...dragHandleProps}
+            className="flex h-5 w-3 items-center justify-center cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover/space-header:opacity-100 transition-opacity"
+            title="Drag to reorder space"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </div>
+        )}
+
         <button
           type="button"
           className="flex h-5 w-5 items-center justify-center rounded hover:bg-accent/60"
@@ -652,7 +697,7 @@ function SpaceSection({
 
         <button
           type="button"
-          className="flex-1 truncate text-left text-sm font-medium text-foreground"
+          className="flex-1 truncate text-left text-sm font-medium text-foreground ml-1"
           onClick={handleOpenSpace}
           onMouseEnter={handlePrefetch}
           onFocus={handlePrefetch}
@@ -719,14 +764,32 @@ function SpaceSection({
                 No items yet. Use Add new to create the first page or database.
               </div>
             ) : (
-              children.map((child: any) => (
-                <PageItem
-                  key={child._id}
-                  page={child}
-                  depth={1}
-                  workspaceId={workspaceId}
-                />
-              ))
+              <Droppable droppableId={`space-pages-${space._id}`} type="PAGE">
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef}>
+                    {children.map((child: any, index: number) => (
+                      <Draggable key={child._id} draggableId={child._id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            style={provided.draggableProps.style}
+                          >
+                            <PageItem
+                              page={child}
+                              depth={1}
+                              workspaceId={workspaceId}
+                              dragHandleProps={provided.dragHandleProps}
+                              isDragging={snapshot.isDragging}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
             )}
           </div>
 
@@ -754,6 +817,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const [createItemOpen, setCreateItemOpen] = useState(false);
   const [createItemParentId, setCreateItemParentId] = useState<Id<"pages"> | null>(null);
   const [createItemSpaceLabel, setCreateItemSpaceLabel] = useState("General");
+  const [mounted, setMounted] = useState(false);
 
   const rootPages = useQuery(api.pages.list, { workspaceId, parentId: null });
   const spaceRoots = useQuery(api.pages.listSpaceRoots, { workspaceId });
@@ -762,6 +826,11 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const activeAncestors =
     useQuery(api.pages.getAncestors, activePageId ? { id: activePageId } : "skip") ?? [];
   const createSpace = useMutation(api.pages.createSpace);
+  const reorderPageMutation = useMutation(api.pages.reorderPage);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const generalPages = useMemo(
     () => (rootPages ?? []).filter((page: any) => !page.isSpaceRoot),
@@ -815,8 +884,63 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
     }
   };
 
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const { source, destination, type } = result;
+
+    if (type === "SPACE") {
+      if (source.index === destination.index) return;
+      try {
+        await reorderPageMutation({
+          id: result.draggableId as Id<"pages">,
+          newParentId: null,
+          targetIndex: destination.index,
+        });
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to reorder spaces");
+      }
+    } else if (type === "PAGE") {
+      if (source.droppableId === destination.droppableId && source.index === destination.index) {
+        return;
+      }
+
+      let newParentId: Id<"pages"> | null = null;
+      if (destination.droppableId.startsWith("space-pages-")) {
+        newParentId = destination.droppableId.replace("space-pages-", "") as Id<"pages">;
+      } else if (destination.droppableId === "general-pages") {
+        newParentId = null;
+      } else {
+        newParentId = destination.droppableId as Id<"pages">;
+      }
+
+      try {
+        await reorderPageMutation({
+          id: result.draggableId as Id<"pages">,
+          newParentId,
+          targetIndex: destination.index,
+        });
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to reorder pages");
+      }
+    }
+  };
+
+  if (!mounted || rootPages === undefined || spaceRoots === undefined) {
+    return (
+      <div className="space-y-1.5 px-2 py-1.5">
+        <div className="skeleton-shimmer h-3.5 w-3/4 rounded" />
+        <div className="skeleton-shimmer h-3.5 w-1/2 rounded" />
+        <div className="skeleton-shimmer h-3.5 w-5/6 rounded" />
+        <div className="skeleton-shimmer h-3.5 w-2/3 rounded" />
+      </div>
+    );
+  }
+
   return (
-    <>
+    <DragDropContext onDragEnd={handleDragEnd}>
       <div className="space-y-0.5 px-2 pt-2">
         <NavItem
           icon={<Search className="h-4 w-4" />}
@@ -857,81 +981,110 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
         </div>
 
         <div className="px-1 pb-4">
-          {rootPages === undefined || spaceRoots === undefined ? (
-            <div className="space-y-1.5 px-2 py-1.5">
-              <div className="skeleton-shimmer h-3.5 w-3/4 rounded" />
-              <div className="skeleton-shimmer h-3.5 w-1/2 rounded" />
-              <div className="skeleton-shimmer h-3.5 w-5/6 rounded" />
-              <div className="skeleton-shimmer h-3.5 w-2/3 rounded" />
+          <div className="mb-2 rounded-xl border border-border/60 bg-card/40">
+            <div className="flex items-center gap-2 px-2 py-2">
+              <SpaceBadge fallbackLabel="G" />
+              <span className="flex-1 text-sm font-medium text-foreground">General</span>
             </div>
-          ) : (
-            <>
-              <div className="mb-2 rounded-xl border border-border/60 bg-card/40">
-                <div className="flex items-center gap-2 px-2 py-2">
-                  <SpaceBadge fallbackLabel="G" />
-                  <span className="flex-1 text-sm font-medium text-foreground">General</span>
-                </div>
 
-                <div className="pb-2">
-                  <div className="px-1">
-                    {generalPages.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-muted-foreground">
-                        Use General for loose notes and personal pages.
-                      </div>
-                    ) : (
-                      generalPages.map((page: any) => (
-                        <PageItem key={page._id} page={page} workspaceId={workspaceId} />
-                      ))
-                    )}
+            <div className="pb-2">
+              <div className="px-1">
+                {generalPages.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-muted-foreground">
+                    Use General for loose notes and personal pages.
                   </div>
-
-                  <button
-                    type="button"
-                    className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-[5px] text-[13px] font-medium text-muted-foreground transition-colors hover:bg-[rgba(55,53,47,0.04)] hover:text-foreground dark:hover:bg-[rgba(255,255,255,0.04)]"
-                    onClick={() => handleOpenCreateItem(null, "General")}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add new
-                  </button>
-                </div>
+                ) : (
+                  <Droppable droppableId="general-pages" type="PAGE">
+                    {(provided) => (
+                      <div {...provided.droppableProps} ref={provided.innerRef}>
+                        {generalPages.map((page: any, index: number) => (
+                          <Draggable key={page._id} draggableId={page._id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                style={provided.draggableProps.style}
+                              >
+                                <PageItem
+                                  page={page}
+                                  workspaceId={workspaceId}
+                                  dragHandleProps={provided.dragHandleProps}
+                                  isDragging={snapshot.isDragging}
+                                />
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                )}
               </div>
 
+              <button
+                type="button"
+                className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-2 rounded-md px-2 py-[5px] text-[13px] font-medium text-muted-foreground transition-colors hover:bg-[rgba(55,53,47,0.04)] hover:text-foreground dark:hover:bg-[rgba(255,255,255,0.04)]"
+                onClick={() => handleOpenCreateItem(null, "General")}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add new
+              </button>
+            </div>
+          </div>
+
+          <Droppable droppableId="spaces-list" type="SPACE">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef}>
                 {spaceRoots.length > 0 ? (
-                  spaceRoots.map((space: any) => (
-                    <SpaceSection
-                      key={space._id}
-                      space={space}
-                      workspaceId={workspaceId}
-                      onAddNew={handleOpenCreateItem}
-                      autoExpandToken={
-                        space._id === activeSpaceId
-                          ? String(activePageId ?? space._id)
-                          : null
-                      }
-                    />
+                  spaceRoots.map((space: any, index: number) => (
+                    <Draggable key={space._id} draggableId={space._id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          style={provided.draggableProps.style}
+                        >
+                          <SpaceSection
+                            space={space}
+                            workspaceId={workspaceId}
+                            onAddNew={handleOpenCreateItem}
+                            dragHandleProps={provided.dragHandleProps}
+                            isDragging={snapshot.isDragging}
+                            autoExpandToken={
+                              space._id === activeSpaceId
+                                ? String(activePageId ?? space._id)
+                                : null
+                            }
+                          />
+                        </div>
+                      )}
+                    </Draggable>
                   ))
                 ) : (
-                <div className="px-3 py-5 text-center">
-                  <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-muted/40">
-                    <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                  <div className="px-3 py-5 text-center">
+                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-muted/40">
+                      <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Create your first project space</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Keep each project&apos;s tasks, notes, and databases isolated.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-3 h-8 text-xs"
+                      onClick={() => setCreateSpaceOpen(true)}
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      New space
+                    </Button>
                   </div>
-                  <p className="text-sm font-medium text-foreground">Create your first project space</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Keep each project&apos;s tasks, notes, and databases isolated.
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-3 h-8 text-xs"
-                    onClick={() => setCreateSpaceOpen(true)}
-                  >
-                    <Plus className="mr-1 h-3 w-3" />
-                    New space
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
+                )}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
         </div>
       </div>
 
@@ -984,7 +1137,7 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
         parentId={createItemParentId}
         spaceLabel={createItemSpaceLabel}
       />
-    </>
+    </DragDropContext>
   );
 }
 

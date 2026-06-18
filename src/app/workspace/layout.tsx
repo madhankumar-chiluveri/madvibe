@@ -39,8 +39,14 @@ export default function WorkspaceLayout({
   const router = useRouter();
   useResolvedWorkspace();
 
-  // Prefetch all primary routes on mount so navigation feels instant
+  // Prefetch all primary routes on mount so navigation feels instant.
+  // IMPORTANT: only in production. In `next dev`, router.prefetch() forces
+  // webpack to compile every prefetched route bundle at once on first
+  // workspace entry — compiling 6 heavy routes (incl. the 2,900-line ledger
+  // page + recharts) simultaneously is the single biggest cause of the dev
+  // server feeling unusable. In dev, routes compile lazily on real navigation.
   useEffect(() => {
+    if (process.env.NODE_ENV !== "production") return;
     PREFETCH_ROUTES.forEach((route) => router.prefetch(route));
   }, [router]);
 

@@ -11,7 +11,6 @@ import {
   AuthPanel,
   LoginBackdrop,
   LoginMotionBlock,
-  MadVibeShowcase,
 } from "@/components/auth/login-visuals";
 import { AppIcon } from "@/components/ui/app-icon";
 import { Button } from "@/components/ui/button";
@@ -168,26 +167,14 @@ export default function LoginPage() {
       <main className="relative h-[100dvh] overflow-hidden bg-background text-foreground">
         <LoginBackdrop />
 
-        <div className="relative z-10 grid h-full grid-cols-1 lg:grid-cols-[1fr_500px] xl:grid-cols-[1fr_560px]">
-          <section className="hidden h-full min-h-0 items-center justify-center overflow-hidden px-8 py-[clamp(1rem,3vh,2.5rem)] lg:flex xl:px-14">
-            <MadVibeShowcase />
-          </section>
-
-          <section className="flex h-full min-h-0 items-center justify-center overflow-y-auto scrollbar-hide px-5 py-6 sm:py-8 lg:py-10 [@media(max-height:850px)]:py-6 [@media(max-height:700px)]:py-3 sm:px-8 lg:px-10">
-            <div className="w-full max-w-[460px]">
+        <div className="relative z-10 flex h-full items-center justify-center overflow-y-auto scrollbar-hide px-5 py-6 sm:py-8">
+          <section className="w-full max-w-[460px]">
+            <div className="w-full">
               <AuthPanel>
                 <LoginMotionBlock delay={0.08} className="mb-6 sm:mb-7 [@media(max-height:750px)]:mb-3.5 [@media(max-height:650px)]:mb-2">
-                  <div className="mb-5 sm:mb-6 flex items-center justify-between gap-4 [@media(max-height:750px)]:mb-3 [@media(max-height:750px)]:hidden">
-                    <div className="flex items-center gap-3">
-                      <AppIcon className="h-10 w-10 rounded-2xl shadow-sm" />
-                      <div>
-                        <p className="text-sm font-semibold leading-none">MadVibe</p>
-                        <p className="mt-1 text-xs text-muted-foreground">AI workspace</p>
-                      </div>
-                    </div>
-                    <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
-                      Private
-                    </span>
+                  <div className="mb-5 sm:mb-6 flex items-center gap-3 [@media(max-height:750px)]:mb-3">
+                    <AppIcon className="h-10 w-10 rounded-2xl shadow-sm" />
+                    <span className="text-2xl font-bold tracking-tight text-foreground">MadVibe</span>
                   </div>
 
                   <h2 className="text-3xl font-semibold tracking-tight sm:text-[2rem] [@media(max-height:750px)]:text-2xl [@media(max-height:650px)]:text-xl">
@@ -195,7 +182,7 @@ export default function LoginPage() {
                   </h2>
                   <p className="mt-2.5 text-sm leading-6 text-muted-foreground [@media(max-height:750px)]:hidden">
                     {step === "signIn"
-                      ? "Continue into your notes, tasks, ledger, and feeds."
+                      ? "Continue into your notes, tasks, ledger, etc."
                       : "Start with one private place for your ideas, routines, money, and daily signal."}
                   </p>
                 </LoginMotionBlock>
