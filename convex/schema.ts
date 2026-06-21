@@ -758,4 +758,18 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_vehicleId", ["vehicleId"]),
+
+  // ── MADFIT Fitness & Nutrition ────────────────────────
+  madfitState: defineTable({
+    userId: v.string(),
+    progress: v.string(), // Serialized JSON string of exercise toggle state
+    completedDates: v.array(v.string()), // Array of "YYYY-MM-DD" completion dates
+    weightLog: v.array(
+      v.object({
+        v: v.number(), // Weight value in kg
+        d: v.string(), // Logged display date
+      })
+    ),
+    updatedAt: v.number(),
+  }).index("by_userId", ["userId"]),
 });

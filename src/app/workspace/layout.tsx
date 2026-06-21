@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 
 // Heavy components loaded after first paint — framer-motion, reminder logic, etc.
 const ReminderCenter = dynamic(
@@ -27,6 +26,7 @@ const PREFETCH_ROUTES = [
   "/workspace/feed",
   "/workspace/brain",
   "/workspace/ledger",
+  "/workspace/fit",
   "/workspace/settings",
   "/workspace/trash",
 ];
@@ -37,7 +37,6 @@ export default function WorkspaceLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  useResolvedWorkspace();
 
   // Prefetch all primary routes on mount so navigation feels instant.
   // IMPORTANT: only in production. In `next dev`, router.prefetch() forces

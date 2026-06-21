@@ -66,14 +66,14 @@ export function OdometerPopover({ vehicleId, currentOdometer, trigger }: Odomete
           <Button
             variant="outline"
             size="sm"
-            className="h-8 rounded-lg border-border/60 hover:bg-[var(--notion-gray-bg)] text-xs gap-1.5"
+            className="h-9 rounded-lg border-border/60 hover:bg-[var(--notion-gray-bg)] text-xs gap-1.5"
           >
             <Gauge className="h-3.5 w-3.5" />
             ⊙ {currentOdometer.toLocaleString()} km
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-64 rounded-xl border border-border/60 bg-card p-3 shadow-xl" align="end">
+      <PopoverContent className="w-[min(16rem,calc(100vw-2rem))] rounded-xl border border-border/60 bg-card p-3 shadow-xl" align="end">
         <form onSubmit={handleUpdate} className="space-y-3">
           <div className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">

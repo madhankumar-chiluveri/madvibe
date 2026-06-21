@@ -6,7 +6,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Id } from "../../convex/_generated/dataModel";
 import type { AccentColor, FontFamily, Theme } from "@/types/ui";
 
-type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "garage";
+type ActiveModule = "overview" | "feed" | "brain" | "ledger" | "garage" | "fit";
 export type GarageTab = "overview" | "services" | "expenses" | "checklist" | "documents";
 export type LedgerTab = "dashboard" | "credit_cards" | "loans" | "investments" | "budget" | "goals" | "recurring" | "market";
 type FeedCategory = "for_you" | "ai_ml" | "tech_it" | "productivity" | "must_know" | "general" | null;

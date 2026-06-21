@@ -1,26 +1,39 @@
 export default function OverviewLoading() {
   return (
-    <div className="min-h-full bg-background">
-      <div className="max-w-5xl mx-auto px-4 py-6 md:px-6 md:py-8 animate-fade-in-fast">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Greeting */}
-          <div className="col-span-full flex items-center gap-3 px-1 pb-1">
-            <div className="skeleton-shimmer h-6 w-6 rounded" />
-            <div className="skeleton-shimmer h-7 w-48 rounded-md" />
+    <div className="min-h-full bg-background flex flex-col">
+      {/* WorkspaceTopBar */}
+      <div className="sticky top-0 z-40 flex items-center justify-between gap-2 px-4 py-2 md:px-8 border-b border-border/50 bg-background h-[41px]">
+        <div className="skeleton-shimmer h-5 w-44 rounded-md" />
+        <div className="skeleton-shimmer h-8 w-8 rounded-lg" />
+      </div>
+
+      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 md:px-6 md:py-8 space-y-6">
+        {/* Page header — title left, badge right, border-b */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2 border-b border-border/60">
+          <div className="space-y-1.5">
+            <div className="skeleton-shimmer h-7 w-32 rounded-md" />
+            <div className="skeleton-shimmer h-3 w-72 rounded" />
           </div>
+          <div className="skeleton-shimmer h-7 w-36 rounded-lg" />
+        </div>
 
-          {/* Quick capture */}
-          <div className="col-span-full">
-            <div className="skeleton-shimmer h-12 rounded-xl border" />
+        {/* OverviewCards — grid-cols-1 sm:2 lg:4, h-[120px] each */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="skeleton-shimmer h-[120px] rounded-xl border border-border/60" />
+          ))}
+        </div>
+
+        {/* Main grid: CalendarWidget (col-span-2) + 3 right summaries */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <div className="skeleton-shimmer h-[580px] rounded-[10px] border border-border" />
           </div>
-
-          {/* Habit strip */}
-          <div className="col-span-full skeleton-shimmer h-24 rounded-2xl border" />
-
-          {/* Widgets */}
-          <div className="skeleton-shimmer h-44 rounded-2xl border" />
-          <div className="skeleton-shimmer h-44 rounded-2xl border" />
-          <div className="skeleton-shimmer h-44 rounded-2xl border" />
+          <div className="lg:col-span-1 flex flex-col gap-6">
+            <div className="skeleton-shimmer h-[280px] rounded-[10px] border border-border" />
+            <div className="skeleton-shimmer h-[260px] rounded-[10px] border border-border" />
+            <div className="skeleton-shimmer h-[240px] rounded-[10px] border border-border" />
+          </div>
         </div>
       </div>
     </div>

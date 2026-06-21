@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -11,6 +10,7 @@ import {
   BookOpen,
   Wallet,
   Car,
+  Dumbbell,
 } from "lucide-react";
 
 const TABS = [
@@ -19,6 +19,7 @@ const TABS = [
   { id: "brain" as const,    label: "BRAIN",    icon: BookOpen,         href: "/workspace/brain" },
   { id: "ledger" as const,   label: "LEDGER",   icon: Wallet,           href: "/workspace/ledger" },
   { id: "garage" as const,   label: "GARAGE",   icon: Car,              href: "/workspace/garage" },
+  { id: "fit" as const,      label: "FIT",      icon: Dumbbell,         href: "/workspace/fit" },
 ] as const;
 
 export function MobileNav() {
@@ -29,16 +30,10 @@ export function MobileNav() {
 
   const active = TABS.find((t) => {
     if (t.id === "brain") {
-      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "garage"].includes(workspaceSegment ?? "");
+      return pathname.startsWith("/workspace") && !["overview", "feed", "ledger", "garage", "fit"].includes(workspaceSegment ?? "");
     }
     return workspaceSegment === t.id;
   })?.id ?? "overview";
-
-  useEffect(() => {
-    TABS.forEach((tab) => {
-      router.prefetch(tab.href);
-    });
-  }, [router]);
 
   return (
     <nav

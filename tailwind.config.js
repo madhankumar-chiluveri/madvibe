@@ -88,7 +88,7 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-geist)", "system-ui", "sans-serif"],
+        sans: ["var(--font-nunito-sans)", "system-ui", "sans-serif"],
         serif: ["var(--font-roboto-serif)", "Georgia", "Cambria", "serif"],
         mono: ["var(--font-jetbrains-mono)", "JetBrains Mono", "Consolas", "monospace"],
       },

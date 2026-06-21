@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { useState, useMemo, useEffect } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useAppStore, type GarageTab } from "@/store/app.store";
 import { cn } from "@/lib/utils";
 import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
@@ -19,7 +20,6 @@ import {
   FileText,
   Activity,
   ShieldAlert,
-  Sparkles,
 } from "lucide-react";
 import { VehicleCard } from "@/components/garage/vehicle-card";
 import { VehicleDetailHeader } from "@/components/garage/vehicle-detail-header";
@@ -60,6 +60,7 @@ export default function GaragePage() {
     selectedVehicleId,
     setSelectedVehicleId,
   } = useAppStore();
+  const reduceMotion = useReducedMotion();
 
   // Queries
   const vehicles = useQuery(
@@ -69,11 +70,6 @@ export default function GaragePage() {
   
   const stats = useQuery(
     api.garage.getDashboardStats,
-    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
-  );
-
-  const insight = useQuery(
-    api.garage.getGarageInsight,
     resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
   );
 
@@ -221,11 +217,11 @@ export default function GaragePage() {
 
   // Tab configurations
   const tabsConfig = [
-    { id: "overview" as const, label: "Overview", icon: LayoutDashboard },
-    { id: "services" as const, label: "Service Logs", icon: Wrench },
-    { id: "expenses" as const, label: "Running Costs", icon: DollarSign },
-    { id: "checklist" as const, label: "Maintenance", icon: Clock },
-    { id: "documents" as const, label: "Documents", icon: FileText },
+    { id: "overview" as const, label: "Overview", shortLabel: "Overview", icon: LayoutDashboard },
+    { id: "services" as const, label: "Service Logs", shortLabel: "Service", icon: Wrench },
+    { id: "expenses" as const, label: "Running Costs", shortLabel: "Costs", icon: DollarSign },
+    { id: "checklist" as const, label: "Maintenance", shortLabel: "Upkeep", icon: Clock },
+    { id: "documents" as const, label: "Documents", shortLabel: "Docs", icon: FileText },
   ];
 
   if (!resolvedWorkspaceId) {
@@ -260,7 +256,7 @@ export default function GaragePage() {
       <div className="flex-1 overflow-y-auto overscroll-contain pb-24 md:pb-6">
         {!selectedVehicleId ? (
           /* DASHBOARD (GRID VIEW) */
-          <div className="space-y-6 p-6 max-w-5xl mx-auto">
+          <div className="space-y-6 p-4 sm:p-6 max-w-5xl mx-auto">
             {/* 3-Up summary cards */}
             {vehicles && vehicles.length > 0 && stats && (
               <div className="grid gap-4 sm:grid-cols-3">
@@ -340,22 +336,11 @@ export default function GaragePage() {
               </div>
             )}
 
-            {/* Intelligent Insight */}
-            {vehicles && vehicles.length > 0 && insight && (
-              <div className="bg-card border border-border/60 rounded-xl p-5 shadow-sm space-y-3 mt-6 border-l-4 border-l-purple-500">
-                <div className="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
-                  <Sparkles className="h-4 w-4" />
-                  💡 Garage Insight
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed pl-1 font-medium">
-                  {insight}
-                </p>
-              </div>
-            )}
+
           </div>
         ) : (
           /* VEHICLE DETAIL VIEW */
-          <div className="space-y-6 p-6 max-w-5xl mx-auto">
+          <div className="space-y-6 p-4 sm:p-6 max-w-5xl mx-auto">
             {activeVehicle ? (
               <>
                 {/* 1. Detail header with stats */}
@@ -367,27 +352,47 @@ export default function GaragePage() {
                   onEditSpecs={handleOpenEditSpecs}
                 />
 
-                {/* 2. Horizontally scrollable pill tabs rail */}
-                <div className="flex border-b border-border/60 pb-px overflow-x-auto gap-1 scrollbar-none">
-                  {tabsConfig.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = garageTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setGarageTab(tab.id)}
-                        className={cn(
-                          "relative flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-colors shrink-0",
-                          isActive
-                            ? "text-foreground border-b-2 border-primary"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                        {tab.label}
-                      </button>
-                    );
-                  })}
+                {/* 2. Sticky section switcher with sliding active pill (MadFit-style) */}
+                <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2.5 bg-background/85 backdrop-blur-md">
+                  <div className="grid grid-cols-5 gap-1 p-1 rounded-2xl bg-muted/50 border border-border">
+                    {tabsConfig.map((tab) => {
+                      const Icon = tab.icon;
+                      const isSelected = garageTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setGarageTab(tab.id)}
+                          aria-current={isSelected ? "page" : undefined}
+                          className="relative flex items-center justify-center py-2.5 rounded-xl font-extrabold text-[11px] sm:text-xs transition-colors duration-200 active:scale-[0.97]"
+                        >
+                          {isSelected && (
+                            <motion.span
+                              layoutId="garage-tab-pill"
+                              className="absolute inset-0 rounded-xl bg-card shadow-sm border border-border/40"
+                              transition={
+                                reduceMotion
+                                  ? { duration: 0 }
+                                  : { type: "spring", stiffness: 500, damping: 38 }
+                              }
+                            />
+                          )}
+                          <span
+                            className={cn(
+                              "relative z-10 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 min-w-0",
+                              !isSelected && "text-muted-foreground"
+                            )}
+                            style={isSelected ? { color: activeVehicle?.color || "var(--foreground)" } : undefined}
+                          >
+                            <Icon className="w-4 h-4 shrink-0" strokeWidth={isSelected ? 2.5 : 2} />
+                            <span className="truncate max-w-full leading-none">
+                              <span className="sm:hidden">{tab.shortLabel}</span>
+                              <span className="hidden sm:inline">{tab.label}</span>
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* 3. Lazy rendering tab content panels */}

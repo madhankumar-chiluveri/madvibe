@@ -153,11 +153,11 @@ export function DocumentsTab({
               }
 
               return (
-                <div key={doc._id} className="bg-card border border-border/60 rounded-xl p-5 shadow-sm space-y-3 flex flex-col justify-between h-40 relative group">
+                <div key={doc._id} className="bg-card border border-border/60 rounded-xl p-5 shadow-sm space-y-3 flex flex-col justify-between min-h-[10rem] relative group">
                   <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{getDocTypeIcon(doc.type)}</span>
-                      <span className="text-xs font-bold text-foreground truncate max-w-[150px]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-lg shrink-0">{getDocTypeIcon(doc.type)}</span>
+                      <span className="text-xs font-bold text-foreground truncate min-w-0">
                         {doc.label}
                       </span>
                     </div>
@@ -186,7 +186,7 @@ export function DocumentsTab({
                       href={doc.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+                      className="text-xs text-primary font-bold hover:underline flex items-center gap-1 py-1"
                     >
                       <Eye className="h-3.5 w-3.5" /> View Doc
                     </a>
@@ -195,7 +195,7 @@ export function DocumentsTab({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(doc._id)}
-                      className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

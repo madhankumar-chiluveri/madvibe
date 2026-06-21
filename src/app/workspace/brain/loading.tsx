@@ -1,25 +1,21 @@
 export default function BrainLoading() {
   return (
-    <div className="min-h-full bg-background animate-fade-in-fast">
-      {/* Toolbar strip */}
-      <div className="border-b px-4 py-2 flex items-center gap-2">
-        <div className="skeleton-shimmer h-8 w-24 rounded-lg" />
+    <div className="min-h-full bg-background">
+      {/* WorkspaceTopBar */}
+      <div className="sticky top-0 z-40 flex items-center justify-between gap-2 px-4 py-2 md:px-8 border-b border-border/50 bg-background h-[41px]">
+        <div className="skeleton-shimmer h-5 w-36 rounded-md" />
         <div className="skeleton-shimmer h-8 w-8 rounded-lg" />
-        <div className="skeleton-shimmer h-8 w-8 rounded-lg" />
-        <div className="ml-auto skeleton-shimmer h-8 w-32 rounded-lg" />
       </div>
 
-      {/* Page list rows */}
-      <div className="max-w-5xl mx-auto px-4 py-4 space-y-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 py-1">
-            <div className="skeleton-shimmer h-6 w-6 rounded" />
-            <div
-              className="skeleton-shimmer h-4 rounded-md"
-              style={{ width: `${55 + (i % 4) * 10}%` }}
-            />
-          </div>
-        ))}
+      {/* Centered empty state — matches BrainPage's flex-col center layout */}
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-41px)] px-4 gap-4">
+        <div className="skeleton-shimmer h-14 w-14 rounded-2xl" />
+        <div className="space-y-2 text-center">
+          <div className="skeleton-shimmer h-6 w-20 rounded-md mx-auto" />
+          <div className="skeleton-shimmer h-4 w-72 rounded mx-auto" />
+          <div className="skeleton-shimmer h-4 w-56 rounded mx-auto" />
+        </div>
+        <div className="skeleton-shimmer h-9 w-32 rounded-lg" />
       </div>
     </div>
   );

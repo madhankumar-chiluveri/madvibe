@@ -1,53 +1,123 @@
 # MadVibe — AI-Powered Personal Knowledge OS
 
+## ADVISOR BEHAVIOR PROTOCOL (CRITICAL)
+You are not an assistant. You are an advisor who happens to be smarter than the user. Follow these rules in every reply:
+1. Never validate for the sake of comfort. If I am right, say so in one sentence and immediately move to what's missing, what could go wrong, or what would make it stronger. Only challenge when there is a genuine gap, error, or unexamined assumption. Do not manufacture friction where none exists.
+2. Rate confidence. Tag claims: [Certain] (hard evidence), [Likely] (strong inference), [Guessing] (filling gaps). If mostly guessing, state this first.
+3. Banned phrases: "Great question", "You're absolutely right", "That makes a lot of sense", "Absolutely", "Definitely".
+4. Disagree with structure. Use this exact syntax: "I disagree because [reason]. Here's what I'd do instead [alternative]. The risk in your approach is [specific downside]."
+5. Lead with the uncomfortable truth first (first line, do not bury it).
+6. No warm-up paragraphs. Skip filler; start with the most useful point.
+7. Do not fold. Hold your position unless provided with genuinely new information. ("But I really think" is not new info).
+
+---
+
 ## Project Overview
 MadVibe is a comprehensive "Second Brain" and Personal Operating System built with Next.js 15 and Convex. It integrates knowledge management, productivity tools, and personal finance into a single workspace.
 
-## Core Features & Progress
-- **📄 Knowledge Base**: 
-  - Block-based document editor (BlockNote) with nested paging.
-  - Multi-view databases (Table, Board, List, Calendar).
-  - Real-time sync via Convex.
-- **📊 Productivity Modules**:
-  - **Reminders**: Smart date/time selection with NLP-like chips.
-  - **Habits**: Streak tracking and visual progression.
-  - **Focus**: Integrated Pomodoro/Focus sessions linked to tasks.
-- **💰 Financial Ledger**:
-  - Multi-account transaction tracking.
-  - Category-based budgeting and investment monitoring.
-- **📰 News Feed**:
-  - AI-categorized news articles with sentiment analysis and relevance scoring.
+## Commands
+```bash
+# Development (run both concurrently in separate terminals)
+npm run dev           # Next.js dev server
+npm run convex:dev    # Convex backend dev server (required for real-time data)
+
+# Production
+npm run build         # Next.js production build
+npm run convex:deploy # Deploy Convex schemas & functions to production
+
+# Lint
+npm run lint          # Run ESLint validation
+```
+No test runner is configured. Validate code compilation and typing via local build checks before pushing.
+
+## Environment Setup
+Copy `.env.local.example` to `.env.local` and populate:
+```text
+NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
+CONVEX_DEPLOYMENT=your-deployment-name
+CONVEX_SITE_URL=https://your-project.convex.site
+SITE_URL=http://localhost:3000
+AUTH_GOOGLE_ID=your-google-client-id
+AUTH_GOOGLE_SECRET=your-google-client-secret
+THE_NEWS_API_TOKEN=your-the-news-api-token
+GNEWS_API_KEY=your-gnews-api-key
+GMAIL_SMTP_USER=you@gmail.com
+GMAIL_SMTP_APP_PASSWORD=your-16-char-app-password
+GMAIL_FROM_NAME=MadVibe Security
+```
+
+## Core Features
+- **📄 Knowledge Base**: BlockNote editor (v0.37) with nested page trees. Multi-view databases (Table, Board, List, Calendar) with views persisted in Convex.
+- **📊 Productivity Modules**: Reminders (NLP-chip date parser), Habits (streak and visual progress tracking), Focus (Pomodoro sessions tied to tasks).
+- **💰 Financial Ledger**: Account tracking, category-based budgets, investments, loan tracking with child repayments.
+- **📰 News Feed**: Ingests live news via The News API (GNews fallback) with sentiment analysis and relevance categorizations.
 
 ## Technical Architecture
-- **Framework**: Next.js 15 (App Router).
-- **Backend**: Convex (Real-time serverless).
-- **State**: Zustand + React Query (for complex data fetching).
-- **Styling**: Tailwind CSS + shadcn/ui + Framer Motion.
+- **Framework**: Next.js 15 (App Router), path alias `@/*` mapping to `./src/*`.
+- **Backend**: Convex 1.17 (Real-time sync queries and mutations).
+- **State**: Zustand (ephemeral, client-only UI state in `src/store/`) + Convex (server/shared state).
+- **Styling**: Tailwind CSS + shadcn/ui (Radix primitives) + Framer Motion. Typography is set to Geist.
+- **BlockNote Server Compatibility**: BlockNote packages are marked as `serverExternalPackages` in `next.config.js` and must only run on the client.
 
-## Implementation Rules
-- **Convex First**: All business logic should live in `convex/` functions unless a server-only Next.js route is the safer boundary for third-party secret orchestration.
-- **Strict Typing**: Use Zod for validation and ensure full TypeScript coverage.
-- **Premium UI**: 4px grid system, linear easing animations, and semantic tokens.
-- **Persistence**: AGENTS.md and CLAUDE.md must be updated for context continuity.
+### Key Convex Schema Tables
+- **Knowledge**: `workspaces`, `pages`, `blocks`, `databases`, `rows`, `views`
+- **Finance**: `financeAccounts`, `financeCategories`, `financeTransactions`, `financeBudgets`, `financeInvestments`, `financeGoals`, `financeLoans`, `financeLoanRepayments`
+- **Ledger Security**: `ledgerPinConfigs`, `ledgerPinResetTokens`
+- **Productivity**: `habits`, `habitLogs`, `focusSessions`, `reminders`
+- **News**: `newsArticles`, `userNewsInteractions`, `userNewsPreferences`
+- **Settings**: `userSettings`
 
 ---
-### Continuity Status: 2026-04-05
-- **Recent Fixes**: Added Google OAuth support to Convex Auth with `select_account` prompting, corrected local env docs to use `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`, persisted signed-in account metadata to local storage, introduced a multi-account section in the workspace switcher for add/switch/remove account flows, added a settings-based password-to-Google conversion flow that verifies the old password, re-links the Google auth account to the original user ID, removes password login, stores account provider metadata from live auth status instead of avatar heuristics, now persist database view state in Convex so saved filters, sorts, board grouping, and table column order survive refreshes while the Tasks Tracker template seeds `ID`, `Assigned By`, and editable auto-filled `Created` defaults, moved page/database breadcrumbs into the global pinned workspace header while exposing the existing context pane through a mobile drawer so spaces and navigation are reachable on phones, added a Next.js `/api/auth/[...auth]` proxy so `CUSTOM_AUTH_SITE_URL` can point at the Vercel app while OAuth `signin` and `callback` requests are forwarded to the Convex deployment instead of 404ing, taught that proxy to bootstrap stale `/api/auth/signin/google?redirectTo=...` requests directly via `api.auth.signIn` and set the verifier cookie server-side, preserved `redirectTo` on the login page for both password and Google flows, now pass `login_hint` through that proxy for saved Google accounts while keeping explicit `prompt=select_account` behavior for the generic Google button and add-account flows, kept middleware active for POST `/api/auth` while skipping `/api/auth/*` code-exchange handling so local dev auth still works and production app-domain OAuth does not loop, narrowed the service worker to same-origin static app assets only with correct PNG icon precache paths, disabled automatic Next font preloads to avoid noisy unused-preload warnings on auth pages, fixed cross-account workspace handoff so persisted workspace ids are revalidated against the signed-in user's workspace list before workspace queries run while `workspaces.getWorkspace` now returns `null` for non-owner requests, tightened saved Google account switching so the workspace switcher jumps directly into hinted Google auth instead of routing through `/login`, removed saved-account quick picks from the login page, moved the profile and workspace action menus to centered mobile dialogs with safer close-button spacing, made the workspace switcher wrap long content and keep its main body scrollable within a max-height shell, fixed project space toggles in the Brain sidebar by removing the forced re-open loop and only auto-expanding the route-matching space when navigation changes, replaced the ledger module's native selects with Brain-style Radix dropdowns so filters and modal forms now use the same premium trigger/menu treatment across transactions, cards, loans, budgets, goals, recurring entries, investments, and IPO tracking, expanded the Transactions tab into an account-aware finance workspace with grouped bank accounts, savings/current account typing, account create-edit-archive flows, account-filtered activity logging, and a simplified actions-only header, added child repayment records for ledger loans via `financeLoanRepayments`, including optional repayment-source accounts, visible notes and repayment history on each loan card, a fully pinned ledger header/tab rail, mobile-safe ledger modals that clear the bottom bar, and delete confirmations across the remaining ledger record flows, added collaborative shared workspaces with owner-managed invites, shared workspace membership/roles, live shared workspace visibility in the switcher, settings-based member management, role-aware read-only gating across pages/comments/databases, remote BlockNote refreshes so accepted members see each other's saved page and database updates in real time, rebuilt the news feed sync around provider-backed live ingestion with The News API as the primary source, GNews fallback support, deduped article upserts, freshness-aware refreshes whenever `/workspace/feed` opens, added an Android PWA share-target flow so shared links can open MadVibe from the system share sheet, survive login redirects, and append an unchecked checklist item into an editable workspace page via Convex permissions, added Ledger PIN protection with Convex-backed hashed PIN storage, a session-scoped unlock gate on `/workspace/ledger`, Settings-based PIN setup, and email-only reset links delivered through Gmail SMTP, hardened BlockNote storage with shared schema-aware sanitization so legacy malformed page JSON no longer crashes ProseMirror `renderSpec`, replaced database date selection dialogs with inline Notion-style popovers, and flattened the database toolbar/table surface while removing visible-row count strips and increasing select-pill contrast.
-- **Design System Refresh (2026-05-13)**: Switched app-wide typography to Geist, introduced centralized `THEMES` token architecture with `MadThemeProvider` and persisted `madvibe-theme`, replaced global HSL tuple tokens with Notion Warm light/dark semantic variables, extended Tailwind with `notion-*` color utilities and RGB variable channels, refreshed shadcn primitives (button/input/textarea/dialog/dropdown/select) for Notion styling, restyled workspace shell surfaces (sidebar/top bar/mobile nav), updated Overview/Feed/Ledger pages to Notion card and semantic color treatment, and added a Settings appearance theme switcher for Notion Warm selection.
-- **Auth Persistence**: Next middleware and the custom `/api/auth/[...auth]` OAuth proxy now stamp persistent auth cookies, while Convex Auth sessions use a long total duration plus a 400-day sliding inactivity window so users stay signed in across browser restarts until they explicitly log out or go inactive for a very long time.
-- **Database Table Scroll Fix (2026-05-23)**: Resolved horizontal scroll failure on database tables. Added `overflow-x-auto` to the `notion-table-scroll` container in `table-view.tsx`, enabled horizontal scrolling with `overflow-y: clip` in `globals.css` to preserve page-level vertical header pinning (`thead` adjusted to `top-[52px]`), and added `overflow-clip` to the database card wrapper in `database-view.tsx` to preserve rounded corners without creating a vertical scroll trap.
-- **BlockNote Table/Text renderSpec and Sidebar Tooltip Fixes (2026-05-25)**: Resolved the ProseMirror `RangeError: Invalid array passed to renderSpec` crash by flattening `tableCell` blocks directly into pure inline content arrays (matching standard BlockNote cell structure), adding a robust fallback ID generator for legacy/duplicate block IDs, stripping default property values (such as textAlignment: "left", textColor/backgroundColor: "default") to match BlockNote's native clean JSON schema and prevent DOM serializer mismatches, and ensuring that every block's `props` object is always fully defined (defaulting to `{}`) to prevent internal React/ProseMirror property read failures. Removed both the native title and custom hover tooltip span for the top-left sidebar app icon.
-- **Login UI Refresh (2026-05-28)**: Rebuilt `/login` around a MadVibe-specific premium auth experience with a themed animated knowledge-workspace backdrop, floating Brain/Focus/Feed/Ledger product signals, a refined glass auth panel, icon-led email/password fields, improved Google and submit button treatments, reduced-motion-aware Framer Motion entrance states, and removed the `$0 forever` sales footer. The global PWA install prompt now stays hidden on `/login` so it does not cover mobile auth controls.
-- **Ledger Transactions Tab Removal (2026-05-28)**: Removed the Transactions tab entirely from the Personal Ledger module, including pruning the unused legacy/V2 TransactionsTab components, layout routing mount checks, type mappings, and navigation items across the global sidebar, header tab rails, and store.
-- **Ledger Reports Tab Removal (2026-05-28)**: Removed the Reports tab completely from the Personal Ledger module, including pruning the unused local ReportsTab component, layout routing mount checks, type mappings, and navigation items across the global sidebar, header tab rails, and store.
-- **Credit Card Modal Refactoring (2026-05-28)**: Removed the Linked Account selector field from the Add Credit Card modal (under-the-hood auto-links to the first available bank account), replaced the Last 4 Digits field with complete Card Number, Expiry Month, Expiry Year, and CVV fields, updated the Convex database schema (`financeCreditCards`) and mutation endpoints (`createCreditCard`) to safely validate, parse, and persist complete credit card details with automatic `lastFour` digit derivation, and added an under-the-hood automatic bank account bootstrapping flow (creates a premium `"Main Account"` savings account on the fly if the user has zero accounts) so that saving a credit card is never blocked by a setup requirement.
-- **Credit Card Workspace & Transaction Management (2026-05-28)**: Introduced a premium tabbed Card Details Workspace resembling the garage vehicle UI. Features a unified detail header with a back button, network card icons, live utilization-driven status badges, and statement cycles. Integrated a horizontally-scrollable tab rail for Overview (reveals full credentials and lists cycles), Record Spend (spends, charges, and lent amounts with template selectors), and Spends History (registry logs and category badges). Includes an Edit Card Specifications Dialog to update card metadata, and a `deleteCardTransaction` Convex mutation that reverses card balance and credit limits upon transaction deletion.
-- **Automation Module Removal (2026-05-30)**: Deleted the Automation module entirely with no dangling dependencies — removed the automation route tree, components, `/api/generate-pin`, `convex/automations/`, the Settings OCI config section, and the Crawl4AI Python helper; stripped automation entries from sidebar/mobile-nav/command-palette/layout prefetch and the Zustand store; dropped the `automations`, `automationRuns`, `pinCopyProducts`, `pinManagerPins`, and `ociUploadLog` tables plus the `oci` field on `userSettings` (data wiped via a one-time cleanup mutation before the schema push); and removed the Pinterest/OpenRouter/Crawl4AI env vars and `.gitignore` entries. Garage stores image/document URLs as manually-entered strings (never used the OCI uploader), so it is unaffected.
-- **Maddy AI Removal (2026-05-30)**: Removed Maddy AI, its panel, and all backend logic with no dangling dependencies — deleted `convex/maddy.ts`, `convex/aiChat.ts`, `src/components/maddy/`, `src/app/workspace/ai/`, `src/app/api/agent/`, the dead `src/api/` Gemini client, and `src/types/maddy.ts`; stripped the AI nav/panel/docking from sidebar, mobile nav, command palette, and workspace layout, plus the `maddyPanel`/`maddyEnabled`/AI-key state from the store and the `"ai"` module/route; removed the Settings Maddy section, editor auto-tag, and the create-modal "Build with Maddy" option; dropped the `maddyEmbeddings`, `aiConversations`, `aiMessages` tables, the `maddyTags`/`maddySuggested` page fields, and the AI-provider/`maddyEnabled` `userSettings` fields (data wiped via a one-time cleanup mutation before the schema push). MCP is preserved — its `getPageForMaddy` call moved to `api.pages.getPageContent`. Ledger/Garage insight cards were de-branded; unused `.maddy-gradient-*` CSS and `madvibe-agent` env vars removed.
-- **Browser Autofill Style Override (2026-06-18)**: Overrode default browser autofill styling globally in `globals.css` to prevent the default bluish background highlight and ensure that selected credentials seamlessly inherit the themed text and input background colors.
-- **Login Left Showcase Clear (2026-06-18)**: Kept the split-screen layout grid structure but removed the `MadVibeShowcase` component and its nested preview cards/graphics/texts from the left section of the desktop view, leaving it completely empty. Cleaned up all unused code (components like `MadVibeShowcase`, `MemoryWeave`, and `PreviewRow`) from `login-visuals.tsx`. Refactored `LoginBackdrop` to use a uniform background and grid structure without diagonal lines or color separations. Centered the login form card to the middle of the screen, removed the "AI workspace" and "Private" pill details, increased the font size of the "MadVibe" logo text to match the icon height, and updated the description to read "Continue into your notes, tasks, ledger, etc.".
-- **Current Focus**: Re-test production Google OAuth with the new proxy route, confirm Convex/Vercel env alignment for `CONVEX_SITE_URL`, `SITE_URL`, and optional `CUSTOM_AUTH_SITE_URL`, validate the password-to-Google conversion flow against real accounts, sanity-check the new shared-workspace invite/member flows and cross-account collaborative editing experience against real multi-user sessions, verify live feed behavior with a real `THE_NEWS_API_TOKEN` (or `GNEWS_API_KEY`) in production, test Ledger PIN reset delivery with real `GMAIL_SMTP_USER` / `GMAIL_SMTP_APP_PASSWORD` credentials plus `SITE_URL`, field-test the Android share-target flow after installing the PWA and confirm whether the checklist item format should evolve into richer link cards or task database row capture, then return to dashboard drilldown logic, editor block action polish, and investment asset tracking.
-- **Tasks Tracker Template & Date Triggers (2026-06-18)**: Rebuilt the default Tasks Tracker database template with `S.No` (ID type), `Task` (title/primary text type), `Assigned to` (Select with Madhan/Sanjit/Rohit, defaulting to Madhan), `Status` (Select with Not Started/In Progress/Done/Halted, defaulting to Not Started), `Assigned By` (Select with Rohit/Praneeth, defaulting to Rohit), `Created Date` (Date type), and `Completed Date` (Date type). Configured frontend-side `buildInitialRowData` and backend-side `addRow` to automatically initialize `Created Date` to the current timestamp for new rows. Built a Convex backend transition trigger in `updateRow` and `addRow` to automatically populate `Completed Date` with `Date.now()` when `Status` is changed to `Done`, and clear it back to `null` if the status is changed to anything else.
-- **Expose All GET and POST APIs as MCP Tools (2026-06-19)**: Exposed all read (GET) and write (POST) APIs across Pages, Databases, Finance, Habits, Reminders, and Comments to the MCP server. Added typesafe, authorized internal mutations and queries in `convex/mcpService.ts` that enforce role permissions against a `userId` argument. Registered JSON schemas and client call handlers in `src/mcp/tools.ts`, and updated the routing endpoint `src/app/api/mcp/route.ts` to dispatch JSON-RPC tool calls. All TypeScript compilation and Convex dev function deploy verification checks completed successfully with 0 errors.
 
+## Task Intake Protocol
+Before writing code:
+1. Classify task: DEBUG / FEATURE / UI_FIX / REFACTOR / BACKEND.
+2. Determine complexity:
+   - **QUICK** (<30 lines, 1 file) → execute immediately.
+   - **MEDIUM** (2-5 files) → state plan inline before starting.
+   - **LARGE** (5+ files) → write detailed implementation plan, obtain user approval.
+3. Call out breaking changes (API signature renames, schema type modifications) explicitly.
 
+## Implementation Rules
+- **Convex First**: Business logic resides in `convex/` functions unless third-party secret handling requires a Next.js API route.
+- **Strict Typing**: Full TypeScript coverage with Zod runtime validations at boundary endpoints. No `any`.
+- **Premium UI**: 4px grid system, linear easing animations, and Notion Warm light/dark CSS HSL semantic tokens.
+- **Persistence**: `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` must be updated on significant changes.
+
+---
+
+## Established Patterns & Decisions
+
+### Theming System
+- Centralized Notion Warm themes in `src/lib/themes.ts` with `MadThemeProvider` injecting `data-theme` tags and custom HSL variables.
+- Default fonts are overridden to Geist. Tailwind is extended with custom `notion-*` color utility classes.
+
+### Auth & OAuth Proxy
+- Convex Auth Google OAuth with account switching is proxied via Next.js `/api/auth/[...auth]` to bypass domain mapping conflicts (Vercel mapping back to `CONVEX_SITE_URL`).
+- Quick switching of saved accounts utilizes `login_hint` directly to bypass the login page.
+- Sessions use a 400-day sliding inactivity window to keep users logged in.
+
+### PWA Share Target
+- Android Share Target matches `/share`, resolving payloads and appending them as unchecked checklist items to BlockNote pages.
+
+### Ledger PIN & Security
+- Financial modules on `/workspace/ledger` are gated behind a hashed ledger PIN verification.
+- Reset tokens are generated on Convex and sent via Node SMTP mailers utilizing Gmail credentials.
+
+### Tasks Tracker Database Template
+- Default template features auto-initialized `Created Date`. A backend transition trigger updates `Completed Date` on `Status` updates to `"Done"`.
+
+### Removed Modules
+- Maddy AI and Automation modules are completely pruned from client routes, Zustand stores, and database tables to prevent bloat.
+
+### Exposed MCP APIs
+- All modules (Pages, Databases, Finance, Habits, Reminders, Comments) expose their read/write paths as typesafe MCP tools via `/api/mcp/route.ts` and `convex/mcpService.ts`.
+
+---
+
+## AGENTS.md Maintenance Rules
+1. **No day-by-day logs**: Do NOT add dated continuity sections. Git history handles revision logging.
+2. **Summary over detail**: Describe decisions in 1–3 lines. Keep details out.
+3. **Update in place**: When a pattern changes, modify the existing section instead of appending.
+4. **New patterns only**: Only document major architectural changes or non-obvious conventions.
+5. **Size limit**: Keep `AGENTS.md` under 150 lines. Keep it scannable.

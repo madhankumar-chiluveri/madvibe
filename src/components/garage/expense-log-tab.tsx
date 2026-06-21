@@ -252,15 +252,15 @@ export function ExpenseLogTab({
 
       {/* Filter and list */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center justify-between gap-2 px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate min-w-0">
             Expense Logging Audit Trail
           </h3>
 
-          <div className="flex items-center gap-2">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="flex items-center gap-2 shrink-0">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-8 text-xs rounded-lg border-border/60 w-36">
+              <SelectTrigger className="h-9 text-xs rounded-lg border-border/60 w-32 sm:w-40">
                 <SelectValue placeholder="All Expenses" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -349,7 +349,7 @@ export function ExpenseLogTab({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDelete(log._id)}
-                    className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -390,7 +390,7 @@ export function ExpenseLogTab({
               </Select>
             </div>
 
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-1.5 flex flex-col">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date *</label>
                 <PremiumDateTimePicker
@@ -428,7 +428,7 @@ export function ExpenseLogTab({
               </div>
             </div>
 
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Odometer (km)</label>
                 <Input
@@ -462,7 +462,7 @@ export function ExpenseLogTab({
                   id="isFullTank"
                   checked={isFullTank}
                   onChange={(e) => setIsFullTank(e.target.checked)}
-                  className="h-4 w-4 rounded border-border/60 text-primary cursor-pointer"
+                  className="h-5 w-5 rounded border-border/60 text-primary cursor-pointer"
                 />
                 <label htmlFor="isFullTank" className="text-xs font-semibold text-muted-foreground cursor-pointer select-none">
                   Check this if fuel fill-up represents a Full Tank (required for mileage calculations)
@@ -488,7 +488,7 @@ export function ExpenseLogTab({
                   id="syncCostToLedger"
                   checked={syncToLedger}
                   onChange={(e) => setSyncToLedger(e.target.checked)}
-                  className="h-4 w-4 rounded border-border/60 text-primary cursor-pointer"
+                  className="h-5 w-5 rounded border-border/60 text-primary cursor-pointer"
                 />
                 <label htmlFor="syncCostToLedger" className="text-xs font-bold uppercase tracking-wider text-foreground cursor-pointer select-none">
                   💼 Auto Sync with Finance Ledger

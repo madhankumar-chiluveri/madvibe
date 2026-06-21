@@ -245,7 +245,7 @@ export function ServiceLogTab({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDelete(log._id)}
-                    className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -509,7 +509,7 @@ export function ServiceLogTab({
                   id="syncToLedger"
                   checked={syncToLedger}
                   onChange={(e) => setSyncToLedger(e.target.checked)}
-                  className="h-4 w-4 rounded border-border/60 text-primary cursor-pointer"
+                  className="h-5 w-5 rounded border-border/60 text-primary cursor-pointer"
                 />
                 <label htmlFor="syncToLedger" className="text-xs font-bold uppercase tracking-wider text-foreground cursor-pointer select-none">
                   💼 Auto Sync with Finance Ledger

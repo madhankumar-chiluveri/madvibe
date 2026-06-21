@@ -187,7 +187,7 @@ export function OverviewTab({ vehicle, stats, fuelStats, onEditSpecs }: Overview
                 : `Warranty Active until ${new Date(vehicle.warrantyExpiry).toLocaleDateString("en-IN", { dateStyle: "medium" })}`}
             </span>
             {vehicle.warrantyKmLimit && (
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground block mt-0.5">
                 Limit: {vehicle.warrantyKmLimit.toLocaleString()} km (Current: {vehicle.currentOdometer.toLocaleString()} km)
               </span>
             )}
@@ -240,7 +240,7 @@ export function OverviewTab({ vehicle, stats, fuelStats, onEditSpecs }: Overview
           <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
             Owner Notes & Specific Instructions
           </h4>
-          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
             {vehicle.specs.notes}
           </p>
         </div>

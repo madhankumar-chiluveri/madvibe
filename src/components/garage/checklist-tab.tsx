@@ -159,7 +159,7 @@ export function ChecklistTab({
                     <span className="text-xs font-bold text-foreground block truncate">
                       {task.item}
                     </span>
-                    <span className="text-[10px] font-semibold text-notion-red-text flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] font-semibold text-notion-red-text flex flex-wrap items-center gap-2 mt-0.5">
                       {task.dueOdometer !== undefined && `Due: ${task.dueOdometer.toLocaleString()} km (overdue by ${(currentOdometer - task.dueOdometer).toLocaleString()} km)`}
                       {task.dueDate !== undefined && `Due: ${new Date(task.dueDate).toLocaleDateString("en-IN", { dateStyle: "medium" })}`}
                     </span>
@@ -170,7 +170,7 @@ export function ChecklistTab({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDelete(task._id)}
-                  className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -245,7 +245,7 @@ export function ChecklistTab({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDelete(task._id)}
-                  className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -286,7 +286,7 @@ export function ChecklistTab({
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDelete(task._id)}
-                  className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  className="h-9 w-9 text-destructive/70 hover:text-destructive hover:bg-[var(--notion-gray-bg)] rounded-lg md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -336,7 +336,7 @@ export function ChecklistTab({
               </Select>
             </div>
 
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Due at km reading</label>
                 <Input
@@ -383,7 +383,7 @@ export function ChecklistTab({
                 When completed, a new checklist item will auto-create at the completed point + intervals entered below.
               </p>
 
-              <div className="grid gap-4 grid-cols-2 pt-1 border-t border-border/40">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 pt-1 border-t border-border/40">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-semibold text-muted-foreground uppercase">Repeat every N km</label>
                   <Input
@@ -414,7 +414,7 @@ export function ChecklistTab({
                   id="setPushReminder"
                   checked={setPushReminder}
                   onChange={(e) => setSetPushReminder(e.target.checked)}
-                  className="h-4 w-4 rounded border-border/60 text-primary cursor-pointer"
+                  className="h-5 w-5 rounded border-border/60 text-primary cursor-pointer"
                 />
                 <label htmlFor="setPushReminder" className="text-xs font-semibold text-muted-foreground cursor-pointer select-none">
                   Set live push notification reminder for the due date

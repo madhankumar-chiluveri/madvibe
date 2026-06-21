@@ -35,6 +35,7 @@ import {
   Wallet,
   Car,
   GripVertical,
+  Dumbbell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -72,6 +73,7 @@ const MODULES = [
   { id: "brain" as const, label: "Brain", icon: BookOpen, href: "/workspace/brain" },
   { id: "ledger" as const, label: "Ledger", icon: Wallet, href: "/workspace/ledger" },
   { id: "garage" as const, label: "Garage", icon: Car, href: "/workspace/garage" },
+  { id: "fit" as const, label: "MadFit", icon: Dumbbell, href: "/workspace/fit" },
 ] as const;
 
 const FEED_PANE_ITEMS = [
@@ -150,7 +152,13 @@ function getRouteModule(pathname: string) {
 
   if (!pathname.startsWith("/workspace")) return "overview";
   if (!segment) return "overview";
-  if (segment === "overview" || segment === "feed" || segment === "ledger" || segment === "garage") {
+  if (
+    segment === "overview" ||
+    segment === "feed" ||
+    segment === "ledger" ||
+    segment === "garage" ||
+    segment === "fit"
+  ) {
     return segment;
   }
   if (segment === "settings") return "overview";
@@ -252,8 +260,10 @@ function ModuleRail() {
   const showExpandedRailLabels = false;
 
   const handleModuleClick = useCallback(
-    () => {
-      if (contextPaneCollapsed) {
+    (moduleId: string) => {
+      if (moduleId === "fit" || moduleId === "garage") {
+        setContextPaneCollapsed(true);
+      } else if (contextPaneCollapsed) {
         setContextPaneCollapsed(false);
       }
     },
@@ -266,12 +276,6 @@ function ModuleRail() {
     },
     [router]
   );
-
-  useEffect(() => {
-    MODULES.forEach((module) => {
-      router.prefetch(module.href);
-    });
-  }, [router]);
 
   return (
     <div
@@ -326,7 +330,7 @@ function ModuleRail() {
               isActive={active === mod.id}
               showLabel={showExpandedRailLabels}
               showTooltip={!showExpandedRail}
-              onClick={() => handleModuleClick()}
+              onClick={() => handleModuleClick(mod.id)}
               onPrefetch={() => handlePrefetch(mod.href)}
             />
           ))}
@@ -1321,11 +1325,10 @@ function LedgerContextPane() {
 }
 
 function GarageContextPane() {
-  const { garageTab, setGarageTab, selectedVehicleId, setSelectedVehicleId } = useAppStore();
-  const { resolvedWorkspaceId } = useResolvedWorkspace();
+  const { garageTab, setGarageTab, selectedVehicleId, setSelectedVehicleId, currentWorkspaceId } = useAppStore();
   const vehicles = useQuery(
     api.garage.listVehicles,
-    resolvedWorkspaceId ? { workspaceId: resolvedWorkspaceId } : "skip"
+    currentWorkspaceId ? { workspaceId: currentWorkspaceId } : "skip"
   );
 
   return (
@@ -1420,7 +1423,10 @@ export function Sidebar() {
 
   useEffect(() => {
     setActiveModule(routeModule);
-  }, [routeModule, setActiveModule]);
+    if (routeModule === "fit" || routeModule === "garage") {
+      setContextPaneCollapsed(true);
+    }
+  }, [routeModule, setActiveModule, setContextPaneCollapsed]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1594,7 +1600,6 @@ export function MobileWorkspaceContextSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const pathname = usePathname();
-  const { setActiveModule } = useAppStore();
   const previousPathnameRef = useRef(pathname);
   const { resolvedWorkspaceId, workspaceList, workspaces } = useResolvedWorkspace();
 
@@ -1607,10 +1612,6 @@ export function MobileWorkspaceContextSheet({
         : routeModule === "ledger"
           ? "ledger"
           : "overview";
-
-  useEffect(() => {
-    setActiveModule(routeModule);
-  }, [routeModule, setActiveModule]);
 
   useEffect(() => {
     if (previousPathnameRef.current === pathname) {

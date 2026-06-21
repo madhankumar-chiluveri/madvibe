@@ -105,7 +105,7 @@ export function VehicleDetailHeader({
         </div>
 
         {/* Quick actions bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 pb-1 md:flex-nowrap md:pb-0 shrink-0">
           <OdometerPopover
             vehicleId={vehicle._id}
             currentOdometer={vehicle.currentOdometer}

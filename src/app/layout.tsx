@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Roboto_Serif, JetBrains_Mono } from "next/font/google";
+import { Nunito_Sans, Roboto_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { MadThemeProvider } from "@/components/providers/mad-theme-provider";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
@@ -9,10 +9,10 @@ import { OfflineBanner } from "@/components/pwa/offline-banner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import Script from "next/script";
 
-const geist = Geist({
+const nunitoSans = Nunito_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-geist",
+  variable: "--font-nunito-sans",
   preload: false,
 });
 
@@ -67,7 +67,7 @@ export default function RootLayout({
 }) {
   return (
     <ConvexAuthNextjsServerProvider>
-      <html lang="en" suppressHydrationWarning className={`${geist.variable} ${robotoSerif.variable} ${jetbrainsMono.variable}`}>
+      <html lang="en" suppressHydrationWarning className={`${nunitoSans.variable} ${robotoSerif.variable} ${jetbrainsMono.variable}`}>
         <head>
           <script
             dangerouslySetInnerHTML={{

@@ -29,6 +29,7 @@ import type * as ledgerLoans from "../ledgerLoans.js";
 import type * as ledgerRecurring from "../ledgerRecurring.js";
 import type * as ledgerSecurity from "../ledgerSecurity.js";
 import type * as ledgerSecurityNode from "../ledgerSecurityNode.js";
+import type * as madfit from "../madfit.js";
 import type * as marketData from "../marketData.js";
 import type * as mcpService from "../mcpService.js";
 import type * as overview from "../overview.js";
@@ -68,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   ledgerRecurring: typeof ledgerRecurring;
   ledgerSecurity: typeof ledgerSecurity;
   ledgerSecurityNode: typeof ledgerSecurityNode;
+  madfit: typeof madfit;
   marketData: typeof marketData;
   mcpService: typeof mcpService;
   overview: typeof overview;
