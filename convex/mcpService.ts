@@ -2661,9 +2661,239 @@ export const getNews = internalQuery({
         .take(limit);
     }
     return await ctx.db
-      .query("newsArticles")
-      .withIndex("by_publishedAt")
-      .order("desc")
-      .take(limit);
+        .query("newsArticles")
+        .withIndex("by_publishedAt")
+        .order("desc")
+        .take(limit);
+  },
+});
+
+export const getDailyTasksDashboard = internalQuery({
+  args: {
+    userId: v.string(),
+    startDate: v.optional(v.string()),
+    endDate: v.optional(v.string()),
+    date: v.optional(v.string()),
+    projects: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const allWorkspaces = await ctx.db.query("workspaces").collect();
+    const authorizedWorkspaces = [];
+    for (const w of allWorkspaces) {
+      const access = await getWorkspaceAccessForUser(ctx, w._id, args.userId);
+      if (access) authorizedWorkspaces.push(w);
+    }
+
+    let targetStart = args.startDate;
+    let targetEnd = args.endDate;
+    if (args.date) {
+      targetStart = args.date;
+      targetEnd = args.date;
+    }
+
+    const dayMap = new Map<string, any[]>();
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let inProgressTasks = 0;
+    let pendingTasks = 0;
+
+    const formatToDateStr = (raw: unknown): string | null => {
+      if (!raw) return null;
+      let ts: number | null = null;
+      if (typeof raw === "number") ts = raw;
+      else if (typeof raw === "string") {
+        const parsed = Date.parse(raw);
+        if (!isNaN(parsed)) ts = parsed;
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      }
+      if (ts === null) return null;
+      const istDate = new Date(ts + 5.5 * 3600 * 1000);
+      return istDate.toISOString().slice(0, 10);
+    };
+
+    const extractText = (val: unknown): string => {
+      if (!val) return "";
+      if (typeof val === "string") return val.trim();
+      if (Array.isArray(val)) {
+        return val
+          .map((item: any) => {
+            if (typeof item === "string") return item;
+            if (item && typeof item === "object") {
+              if (typeof item.text === "string") return item.text;
+              if (Array.isArray(item.content)) {
+                return item.content
+                  .map((c: any) => (typeof c?.text === "string" ? c.text : ""))
+                  .join("");
+              }
+            }
+            return "";
+          })
+          .join("");
+      }
+      return String(val).trim();
+    };
+
+    for (const ws of authorizedWorkspaces) {
+      const pages = await ctx.db
+        .query("pages")
+        .withIndex("by_workspaceId_archived", (q) =>
+          q.eq("workspaceId", ws._id).eq("isArchived", false)
+        )
+        .collect();
+
+      const pagesMap = new Map(pages.map((p) => [p._id, p]));
+
+      const resolveSpaceName = (pageId: any): string => {
+        let current = pagesMap.get(pageId);
+        let depth = 0;
+        while (current && depth < 10) {
+          if (current.isSpaceRoot) return current.title;
+          if (!current.parentId) return current.title;
+          current = pagesMap.get(current.parentId);
+          depth++;
+        }
+        return ws.name || "Main Workspace";
+      };
+
+      const dbPages = pages.filter((p) => p.type === "database");
+
+      for (const page of dbPages) {
+        const spaceName = resolveSpaceName(page._id);
+        const projectName = page.title || "Untitled Database";
+
+        if (args.projects && args.projects.length > 0) {
+          const match = args.projects.some(
+            (proj) =>
+              projectName.toLowerCase().includes(proj.toLowerCase()) ||
+              spaceName.toLowerCase().includes(proj.toLowerCase())
+          );
+          if (!match) continue;
+        }
+
+        const db = await ctx.db
+          .query("databases")
+          .withIndex("by_pageId", (q) => q.eq("pageId", page._id))
+          .first();
+
+        if (!db) continue;
+
+        const titleProp =
+          db.properties.find((p: any) => p.name?.toLowerCase() === "task") ??
+          db.properties.find((p: any) => p.type === "title") ??
+          db.properties.find((p: any) => p.name?.toLowerCase() === "name");
+
+        const dateProps = db.properties.filter(
+          (p: any) =>
+            p.type === "date" ||
+            p.type === "created_time" ||
+            (p.name && p.name.toLowerCase().includes("date"))
+        );
+
+        const statusProp = db.properties.find(
+          (p: any) => p.name?.toLowerCase() === "status" && p.type === "select"
+        );
+
+        const assignedToProp = db.properties.find((p: any) =>
+          p.name?.toLowerCase().includes("assign")
+        );
+
+        const rows = await ctx.db
+          .query("rows")
+          .withIndex("by_databaseId", (q) => q.eq("databaseId", db._id))
+          .filter((q) => q.neq(q.field("isArchived"), true))
+          .collect();
+
+        for (const row of rows) {
+          const taskName = titleProp
+            ? extractText(row.data[titleProp.id]) || "Untitled"
+            : "Untitled";
+
+          let statusVal = "pending";
+          if (statusProp && row.data[statusProp.id]) {
+            const val = row.data[statusProp.id];
+            const options = statusProp.config?.options || statusProp.options || [];
+            const opt = options.find((o: any) => o.id === val || o.label === val);
+            statusVal = opt ? opt.label : String(val);
+          }
+
+          const statusLower = statusVal.toLowerCase();
+          if (statusLower === "done" || statusLower === "completed") {
+            completedTasks++;
+          } else if (statusLower === "in_progress" || statusLower === "in progress") {
+            inProgressTasks++;
+          } else {
+            pendingTasks++;
+          }
+          totalTasks++;
+
+          const taskDates = new Set<string>();
+
+          for (const dateProp of dateProps) {
+            const rawVal = row.data[dateProp.id];
+            const dateStr = formatToDateStr(rawVal);
+            if (dateStr) taskDates.add(dateStr);
+          }
+
+          const createdDateStr = formatToDateStr(row._creationTime);
+          if (createdDateStr) taskDates.add(createdDateStr);
+
+          const completedProp = db.properties.find(
+            (p: any) => p.name?.toLowerCase().includes("complet")
+          );
+          const completedDateStr = completedProp
+            ? formatToDateStr(row.data[completedProp.id])
+            : null;
+
+          const assignedTo = assignedToProp
+            ? extractText(row.data[assignedToProp.id])
+            : null;
+
+          for (const dateStr of taskDates) {
+            if (targetStart && dateStr < targetStart) continue;
+            if (targetEnd && dateStr > targetEnd) continue;
+
+            if (!dayMap.has(dateStr)) {
+              dayMap.set(dateStr, []);
+            }
+
+            const existingInDay = dayMap.get(dateStr)!;
+            if (!existingInDay.some((t) => t.rowId === row._id)) {
+              existingInDay.push({
+                rowId: row._id,
+                taskName,
+                spaceName,
+                projectName,
+                status: statusVal,
+                assignedTo,
+                createdDate: createdDateStr,
+                completedDate: completedDateStr,
+                workspaceName: ws.name,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const sortedDates = Array.from(dayMap.keys()).sort();
+    const days = sortedDates.map((date) => ({
+      date,
+      count: dayMap.get(date)!.length,
+      tasks: dayMap.get(date)!,
+    }));
+
+    return {
+      summary: {
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        pendingTasks,
+        dateFilter: {
+          startDate: targetStart ?? null,
+          endDate: targetEnd ?? null,
+        },
+      },
+      days,
+    };
   },
 });

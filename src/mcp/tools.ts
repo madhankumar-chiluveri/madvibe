@@ -2012,6 +2012,15 @@ export async function callTool(
         limit: (args.limit as number | undefined) ?? 10,
       });
 
+    case "get_daily_tasks_dashboard":
+      return await client.query((api as any).mcpService.getDailyTasksDashboard, {
+        userId: (args.userId as string) ?? "",
+        startDate: args.startDate as string | undefined,
+        endDate: args.endDate as string | undefined,
+        date: args.date as string | undefined,
+        projects: args.projects as string[] | undefined,
+      });
+
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

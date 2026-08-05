@@ -708,6 +708,15 @@ async function dispatch(
     case "get_news":
       return q("getNews", { category: args.category, limit: args.limit });
 
+    case "get_daily_tasks_dashboard":
+      return q("getDailyTasksDashboard", {
+        userId,
+        startDate: args.startDate,
+        endDate: args.endDate,
+        date: args.date,
+        projects: args.projects,
+      });
+
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
