@@ -1292,6 +1292,23 @@ export const TOOL_DEFINITIONS: McpTool[] = [
       },
     },
   },
+  {
+    name: "get_daily_tasks_dashboard",
+    description: "Get the consolidated daily tasks of all projects for each day or range.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Start date in YYYY-MM-DD format for date range filtering" },
+        endDate: { type: "string", description: "End date in YYYY-MM-DD format for date range filtering" },
+        date: { type: "string", description: "Single date in YYYY-MM-DD format" },
+        projects: {
+          type: "array",
+          items: { type: "string" },
+          description: "Optional list of project names to filter",
+        },
+      },
+    },
+  },
 ];
 
 export async function callTool(
