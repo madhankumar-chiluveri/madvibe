@@ -51,6 +51,8 @@ GMAIL_FROM_NAME=MadVibe Security
 - **📊 Productivity Modules**: Reminders (NLP-chip date parser), Habits (streak and visual progress tracking), Focus (Pomodoro sessions tied to tasks).
 - **💰 Financial Ledger**: Account tracking, category-based budgets, investments, loan tracking with child repayments.
 - **📰 News Feed**: Ingests live news via The News API (GNews fallback) with sentiment analysis and relevance categorizations.
+- **🏋️ MadFit**: 5-day training program with per-set logging (reps, load, duration), rest/work timers, session history, and a body-weight tracker with trend chart.
+- **🗓️ Task Calendar**: Standalone `/workspace/tasks` page aggregating dated rows from every database in the workspace. Month / Week / Day / Board views, filters, and a detail side sheet. Reached from the **Task Calendar** item in the Brain context pane; it is deliberately *not* on the Overview dashboard.
 
 ## Technical Architecture
 - **Framework**: Next.js 15 (App Router), path alias `@/*` mapping to `./src/*`.
@@ -65,7 +67,22 @@ GMAIL_FROM_NAME=MadVibe Security
 - **Ledger Security**: `ledgerPinConfigs`, `ledgerPinResetTokens`
 - **Productivity**: `habits`, `habitLogs`, `focusSessions`, `reminders`
 - **News**: `newsArticles`, `userNewsInteractions`, `userNewsPreferences`
+- **MadFit**: `madfitState` (profile + body metrics), `madfitSessions` (one row per user per date), `madfitSetLogs` (one row per completed set), `madfitWeightLogs` (one row per weigh-in, unique per date)
 - **Settings**: `userSettings`
+
+#### MadFit logging model
+- The training program is **data, not markup** — `src/lib/madfit-program.ts` is the single source of truth. Exercise `id` values are stable slugs referenced by every `madfitSetLogs` row; **never repurpose an id**, or history silently reattaches to the wrong movement. Bump `PLAN_VERSION` when the program changes.
+- `madfitSessions.completedSets` is denormalised. It is recomputed from the actual set rows by `syncSessionCounters` after every write — never patch it directly.
+- `madfitState.progress` / `completedDates` / `weightLog` are **legacy** and optional. `madfit.bootstrap` drains them into the real tables on first load and is idempotent via `legacyMigratedAt`. Nothing should write to them again.
+- Date strings are generated client-side (`ymd()` in `src/lib/madfit-utils.ts`) so they follow the user's local timezone. Streaks are computed on the client for the same reason.
+- Charts on this route load via `next/dynamic` (`weight-chart.tsx`) to keep recharts off the initial bundle.
+
+#### Task Calendar model
+- `overview.getWorkspaceCalendarTasks` emits **one event per (row × date property)**, so a row with both a Created and a Completed date appears twice. Every React key must therefore include `datePropertyId` — use `eventKey()` from `src/components/tasks/task-event.ts`.
+- Day bucketing goes through `eventDateKey()`, not raw local date. `Date.parse("2026-08-16")` yields **UTC** midnight, so bare dates are read back in UTC and only real datetimes are read locally; reading a bare date locally shifts it a day for any negative UTC offset. `hasMeaningfulTime()` gates the clock display off the same test.
+- `taskTone()` is the single place that decides whether an event reads as done / created / scheduled. Do not re-derive that conditional at a call site — it had already drifted across the four places the old dashboard widget repeated it.
+- The detail sheet composes `DialogPrimitive.Content` directly instead of the shared `DialogContent`. That component hard-codes a centred position plus zoom/slide-from-centre enter classes, and tailwind-merge does not treat the tailwindcss-animate `slide-in-from-*` utilities as conflicting, so overriding them via className leaves both sets live and lets stylesheet order pick the animation.
+- Weeks are Sunday-first here, matching the dashboard widget this replaced (MadFit's heatmap is Monday-first — the two are independent).
 
 ---
 

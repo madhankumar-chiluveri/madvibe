@@ -6,7 +6,6 @@ import { api } from "../../../../convex/_generated/api";
 import { useResolvedWorkspace } from "@/hooks/use-resolved-workspace";
 import { WorkspaceTopBar } from "@/components/workspace/workspace-top-bar";
 import { OverviewCards } from "@/components/dashboard/overview-cards";
-import { CalendarWidget } from "@/components/dashboard/calendar-widget";
 import { RemindersSummary } from "@/components/dashboard/reminders-summary";
 import { FinanceSummary } from "@/components/dashboard/finance-summary";
 import { VehiclesSummary } from "@/components/dashboard/vehicles-summary";
@@ -15,19 +14,15 @@ import { FolderOpen } from "lucide-react";
 export default memo(function OverviewPage() {
   const { resolvedWorkspaceId: workspaceId } = useResolvedWorkspace();
 
-  // 1. Fetch dashboard aggregated metrics
+  // Dashboard aggregated metrics. The cross-project calendar query used to run
+  // here too; it now lives on /workspace/tasks so the dashboard no longer pays
+  // for a full workspace database walk on every visit.
   const metrics = useQuery(
     api.overview.getOverviewMetrics,
     workspaceId ? { workspaceId } : "skip"
   );
 
-  // 2. Fetch all calendar task events cross-project
-  const calendarTasks = useQuery(
-    api.overview.getWorkspaceCalendarTasks,
-    workspaceId ? { workspaceId } : "skip"
-  );
-
-  const loading = metrics === undefined || calendarTasks === undefined;
+  const loading = metrics === undefined;
 
   return (
     <div className="min-h-full bg-background flex flex-col">
@@ -56,49 +51,29 @@ export default memo(function OverviewPage() {
         {/* Row 1: Key Metrics Cards */}
         <OverviewCards data={metrics || null} loading={loading} />
 
-        {/* Row 2: Main Workspace Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Task Calendar/Kanban Widget */}
-          <div className="lg:col-span-2 h-full">
-            {loading ? (
-              <div className="skeleton-shimmer h-[580px] rounded-[10px] border border-border" />
-            ) : (
-              <CalendarWidget events={calendarTasks} />
-            )}
-          </div>
+        {/* Row 2: Detailed summaries. Three equal columns now that the task
+            calendar has its own page — reachable from the Brain pane. */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {/* Reminders & Alerts */}
+          {loading || !metrics || !workspaceId ? (
+            <div className="skeleton-shimmer h-[280px] rounded-[10px] border border-border" />
+          ) : (
+            <RemindersSummary reminders={metrics.reminders} workspaceId={workspaceId} />
+          )}
 
-          {/* Right Column: Detailed Summaries */}
-          <div className="lg:col-span-1 flex flex-col gap-6">
-            {/* Reminders & Alerts */}
-            <div>
-              {loading || !metrics || !workspaceId ? (
-                <div className="skeleton-shimmer h-[280px] rounded-[10px] border border-border" />
-              ) : (
-                <RemindersSummary
-                  reminders={metrics.reminders}
-                  workspaceId={workspaceId}
-                />
-              )}
-            </div>
+          {/* Finances: Accounts & Budgets */}
+          {loading || !metrics ? (
+            <div className="skeleton-shimmer h-[260px] rounded-[10px] border border-border" />
+          ) : (
+            <FinanceSummary finances={metrics.finances} />
+          )}
 
-            {/* Finances: Accounts & Budgets */}
-            <div>
-              {loading || !metrics ? (
-                <div className="skeleton-shimmer h-[260px] rounded-[10px] border border-border" />
-              ) : (
-                <FinanceSummary finances={metrics.finances} />
-              )}
-            </div>
-
-            {/* Vehicles: Services & PUC / Insurance warnings */}
-            <div>
-              {loading || !metrics ? (
-                <div className="skeleton-shimmer h-[240px] rounded-[10px] border border-border" />
-              ) : (
-                <VehiclesSummary vehicles={metrics.vehicles} />
-              )}
-            </div>
-          </div>
+          {/* Vehicles: Services & PUC / Insurance warnings */}
+          {loading || !metrics ? (
+            <div className="skeleton-shimmer h-[240px] rounded-[10px] border border-border" />
+          ) : (
+            <VehiclesSummary vehicles={metrics.vehicles} />
+          )}
         </div>
       </div>
     </div>

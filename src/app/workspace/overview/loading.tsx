@@ -24,16 +24,11 @@ export default function OverviewLoading() {
           ))}
         </div>
 
-        {/* Main grid: CalendarWidget (col-span-2) + 3 right summaries */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="skeleton-shimmer h-[580px] rounded-[10px] border border-border" />
-          </div>
-          <div className="lg:col-span-1 flex flex-col gap-6">
-            <div className="skeleton-shimmer h-[280px] rounded-[10px] border border-border" />
-            <div className="skeleton-shimmer h-[260px] rounded-[10px] border border-border" />
-            <div className="skeleton-shimmer h-[240px] rounded-[10px] border border-border" />
-          </div>
+        {/* Main grid: reminders, finance, vehicles summaries */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="skeleton-shimmer h-[280px] rounded-[10px] border border-border" />
+          <div className="skeleton-shimmer h-[260px] rounded-[10px] border border-border" />
+          <div className="skeleton-shimmer h-[240px] rounded-[10px] border border-border" />
         </div>
       </div>
     </div>

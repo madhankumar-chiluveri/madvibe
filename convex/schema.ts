@@ -760,16 +760,86 @@ export default defineSchema({
     .index("by_vehicleId", ["vehicleId"]),
 
   // ── MADFIT Fitness & Nutrition ────────────────────────
+  // Per-user profile + body metrics. The `progress`/`completedDates`/`weightLog`
+  // fields are LEGACY (pre-session-logging) and kept optional so existing
+  // documents still validate. `madfit.migrateLegacyState` drains them into the
+  // real tables below; nothing new should ever write to them.
   madfitState: defineTable({
     userId: v.string(),
-    progress: v.string(), // Serialized JSON string of exercise toggle state
-    completedDates: v.array(v.string()), // Array of "YYYY-MM-DD" completion dates
-    weightLog: v.array(
-      v.object({
-        v: v.number(), // Weight value in kg
-        d: v.string(), // Logged display date
-      })
+    // Body metrics
+    currentWeightKg: v.optional(v.number()),
+    startWeightKg: v.optional(v.number()),
+    goalWeightKg: v.optional(v.number()),
+    heightCm: v.optional(v.number()),
+    legacyMigratedAt: v.optional(v.number()),
+    // Legacy — do not write
+    progress: v.optional(v.string()),
+    completedDates: v.optional(v.array(v.string())),
+    weightLog: v.optional(
+      v.array(
+        v.object({
+          v: v.number(),
+          d: v.string(),
+        })
+      )
     ),
     updatedAt: v.number(),
   }).index("by_userId", ["userId"]),
+
+  // One row per user per calendar date — the workout session record.
+  madfitSessions: defineTable({
+    userId: v.string(),
+    date: v.string(), // "YYYY-MM-DD", generated client-side so it respects local TZ
+    dayKey: v.string(), // "Monday" … which program day was performed
+    planVersion: v.string(), // PLAN_VERSION at time of training
+    status: v.union(
+      v.literal("in_progress"),
+      v.literal("completed")
+    ),
+    completedSets: v.number(), // denormalised counter for cheap list rendering
+    totalSets: v.number(), // planned set count for that day
+    // True once the user explicitly closed the session out. Stops a later set
+    // edit from silently reopening a day that already counted toward the streak.
+    finishedManually: v.optional(v.boolean()),
+    durationSec: v.optional(v.number()), // wall-clock first set → finish
+    rpe: v.optional(v.number()), // 1–10 perceived effort, set on finish
+    notes: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_userId_date", ["userId", "date"])
+    .index("by_userId", ["userId"])
+    .index("by_userId_status", ["userId", "status"]),
+
+  // One row per completed set. This is what makes progressive overload
+  // visible — reps and load are tracked per set, not per session.
+  madfitSetLogs: defineTable({
+    userId: v.string(),
+    sessionId: v.id("madfitSessions"),
+    date: v.string(),
+    exerciseId: v.string(), // stable slug from src/lib/madfit-program.ts
+    exerciseName: v.string(), // denormalised so history survives plan edits
+    setIndex: v.number(), // 0-based
+    reps: v.optional(v.number()),
+    weightKg: v.optional(v.number()),
+    durationSec: v.optional(v.number()), // for timed holds/intervals
+    loggedAt: v.number(),
+  })
+    .index("by_sessionId", ["sessionId"])
+    .index("by_session_exercise", ["sessionId", "exerciseId"])
+    .index("by_userId_exercise", ["userId", "exerciseId"])
+    .index("by_userId_date", ["userId", "date"]),
+
+  // One row per weigh-in. Unique per (userId, date) — logging twice on the
+  // same day replaces that day's reading rather than appending noise.
+  madfitWeightLogs: defineTable({
+    userId: v.string(),
+    date: v.string(), // "YYYY-MM-DD"
+    weightKg: v.number(),
+    note: v.optional(v.string()),
+    loggedAt: v.number(),
+  })
+    .index("by_userId_date", ["userId", "date"])
+    .index("by_userId", ["userId"]),
 });

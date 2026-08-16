@@ -8,10 +8,10 @@ export default function FitLoading() {
       </div>
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 pt-5 space-y-6">
-        {/* 4-tab bar — grid-cols-4, p-1, rounded-2xl bg-muted/40 */}
-        <div className="grid grid-cols-4 gap-1.5 p-1 rounded-2xl bg-muted/40 border border-border">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="skeleton-shimmer h-[42px] rounded-xl" />
+        {/* 5-tab bar — Today · Plan · Progress · Eat · Learn */}
+        <div className="grid grid-cols-5 gap-1 p-1 rounded-2xl bg-muted/40 border border-border">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton-shimmer h-[44px] rounded-xl" />
           ))}
         </div>
 

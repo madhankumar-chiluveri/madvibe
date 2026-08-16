@@ -17,6 +17,7 @@ import Link from "next/link";
 import {
   Archive,
   BookOpen,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   Database,
@@ -814,6 +815,7 @@ function SpaceSection({
 function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const router = useRouter();
   const params = useParams<{ pageId?: string }>();
+  const pathname = usePathname();
   const { setCommandPaletteOpen } = useAppStore();
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState("");
@@ -951,6 +953,12 @@ function KBSidebarContent({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
           label="Search"
           onClick={() => setCommandPaletteOpen(true)}
           kbd="Ctrl K"
+        />
+        <NavItem
+          icon={<CalendarDays className="h-4 w-4" />}
+          label="Task Calendar"
+          active={pathname === "/workspace/tasks"}
+          onClick={() => router.push("/workspace/tasks")}
         />
       </div>
 
