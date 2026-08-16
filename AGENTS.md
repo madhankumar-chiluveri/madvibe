@@ -76,6 +76,7 @@ GMAIL_FROM_NAME=MadVibe Security
 - `madfitState.progress` / `completedDates` / `weightLog` are **legacy** and optional. `madfit.bootstrap` drains them into the real tables on first load and is idempotent via `legacyMigratedAt`. Nothing should write to them again.
 - Date strings are generated client-side (`ymd()` in `src/lib/madfit-utils.ts`) so they follow the user's local timezone. Streaks are computed on the client for the same reason.
 - Charts on this route load via `next/dynamic` (`weight-chart.tsx`) to keep recharts off the initial bundle.
+- **Form-video policy**: only set `video` on a `FitExercise` after fetching the URL and reading its title back to confirm it demonstrates that movement. Never paste a YouTube id from memory — ids are opaque, a wrong one silently teaches bad form under load. When no specific clip can be confirmed, set `videoSearch` instead; `formVideoUrl()` turns it into a live YouTube search that cannot rot. Entries with neither (sleep, meal prep, walking) render no Form button.
 
 #### Task Calendar model
 - `overview.getWorkspaceCalendarTasks` emits **one event per (row × date property)**, so a row with both a Created and a Completed date appears twice. Every React key must therefore include `datePropertyId` — use `eventKey()` from `src/components/tasks/task-event.ts`.

@@ -7,6 +7,8 @@ import {
   COOLDOWN,
   DAY_ACCENT,
   WARMUP,
+  formVideoUrl,
+  isSearchFallback,
   type FitBlock,
   type FitDay,
   type FitExercise,
@@ -15,9 +17,10 @@ import { shortDate } from "@/lib/madfit-utils";
 import {
   ChevronDown,
   History,
-  Link2,
   PlayCircle,
+  PlaySquare,
   RotateCcw,
+  Search,
   Timer,
   Trash2,
 } from "lucide-react";
@@ -272,6 +275,7 @@ function ExerciseRow({
   handlers?: SetHandlers;
 }) {
   const done = logs.length >= exercise.sets;
+  const formUrl = formVideoUrl(exercise);
 
   return (
     <div
@@ -299,14 +303,23 @@ function ExerciseRow({
           <span className="whitespace-nowrap text-[12.5px] font-extrabold tabular-nums text-[#C96442]">
             {exercise.sets > 1 ? `${exercise.sets} × ${exercise.reps}` : exercise.reps}
           </span>
-          {exercise.video && (
+          {formUrl && (
             <a
-              href={exercise.video}
+              href={formUrl}
               target="_blank"
               rel="noopener noreferrer"
+              title={
+                isSearchFallback(exercise)
+                  ? "Search YouTube for a form demo"
+                  : `Form reference for ${exercise.name}`
+              }
               className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[10px] font-bold text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Link2 className="h-3 w-3" />
+              {isSearchFallback(exercise) ? (
+                <Search className="h-3 w-3" />
+              ) : (
+                <PlaySquare className="h-3 w-3" />
+              )}
               Form
             </a>
           )}

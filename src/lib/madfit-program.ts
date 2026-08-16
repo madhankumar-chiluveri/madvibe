@@ -26,8 +26,18 @@ export type FitExercise = {
   restSec: number;
   restLabel: string;
   cue: string;
-  /** Form-reference short, opened in a new tab. */
+  /**
+   * A specific form-reference video, opened in a new tab. Only set when the
+   * URL has actually been confirmed to resolve to a demo of THIS movement —
+   * an unchecked link is worse than none, because bad form under load is how
+   * people get hurt.
+   */
   video?: string;
+  /**
+   * Fallback when no specific video could be confirmed: a YouTube search term.
+   * Resolves live, so it cannot rot the way a pinned video id can.
+   */
+  videoSearch?: string;
 };
 
 export type FitBlock = {
@@ -163,6 +173,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Neutral grip (palms facing in), ribs tucked down.",
+            video: "https://www.youtube.com/shorts/YTUZcWDVX_0",
           },
           {
             id: "deficit-pushup",
@@ -173,6 +184,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 60,
             restLabel: "60s",
             cue: "Hands on the dumbbells for a deeper chest stretch.",
+            video: "https://www.youtube.com/watch?v=q3W9s4VqiO0",
           },
         ],
       },
@@ -190,6 +202,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "High plank; pull one dumbbell across the body without shifting the hips.",
+            videoSearch: "plank dumbbell drag through core form",
           },
         ],
       },
@@ -258,6 +271,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "All the way down, halfway up, back down, then stand. That is one rep.",
+            video: "https://www.youtube.com/watch?v=3Q8i79Kd_EM",
           },
           {
             id: "single-leg-glute-bridge",
@@ -268,6 +282,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 45,
             restLabel: "45s",
             cue: "Drive through the heel, hold 2s at the top contraction.",
+            video: "https://www.youtube.com/watch?v=VUl8R0kn6v4",
           },
         ],
       },
@@ -285,6 +300,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Lower the opposite arm and leg while pressing the lower back into the mat.",
+            video: "https://www.youtube.com/watch?v=bxn9FBrt4-A",
           },
         ],
       },
@@ -327,6 +343,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 15,
             restLabel: "15s",
             cue: "Steady, controlled knee drive — not a sprint.",
+            video: "https://www.youtube.com/shorts/fpmWW6iXfes",
           },
           {
             id: "db-skater-lunge",
@@ -337,6 +354,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 15,
             restLabel: "15s",
             cue: "Lateral step back, loading the front outside hip.",
+            video: "https://www.youtube.com/watch?v=Z9FKHUQ_gYw",
           },
           {
             id: "plank-shoulder-tap",
@@ -347,6 +365,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 60,
             restLabel: "60s",
             cue: "Keep the hips completely stationary. 60s rest closes the round.",
+            video: "https://www.youtube.com/watch?v=gKA5LBy7WAI",
           },
         ],
       },
@@ -364,6 +383,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Controlled rotation — touch the dumbbell beside each hip.",
+            video: "https://www.youtube.com/watch?v=p_dPOhhgovg",
           },
           {
             id: "side-plank-hip-pulse",
@@ -374,6 +394,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Hips high, pulse from the obliques, not the lower back.",
+            video: "https://www.youtube.com/watch?v=9AntSHKxHlA",
           },
         ],
       },
@@ -417,6 +438,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 45,
             restLabel: "45s",
             cue: "Palms face each other throughout; 3-second lowering tempo.",
+            video: "https://www.youtube.com/watch?v=nTpvm8NbTLU",
           },
         ],
       },
@@ -435,6 +457,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Lie on the mat, keep elbows pinned high, lower the DBs beside the ears.",
+            video: "https://www.youtube.com/watch?v=rIg-CEDW6Bg",
           },
           {
             id: "prone-cobra-rear-delt-fly",
@@ -445,6 +468,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 45,
             restLabel: "45s",
             cue: "Lie chest down on the mat, squeeze the shoulder blades together.",
+            video: "https://www.youtube.com/watch?v=CI4YSJjkHiI",
           },
         ],
       },
@@ -462,6 +486,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Slow 2-second rotation per side; opposite elbow to knee.",
+            video: "https://www.youtube.com/watch?v=1we3bh9uhqY",
           },
         ],
       },
@@ -493,6 +518,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Step back, drive through the front heel.",
+            video: "https://www.youtube.com/watch?v=RZKXLMxPF_I",
           },
           {
             id: "db-floor-press-bridge",
@@ -503,6 +529,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Press the dumbbells while holding the hips up in a glute bridge.",
+            video: "https://www.youtube.com/watch?v=6lNcBEXOH5U",
           },
           {
             id: "db-renegade-row",
@@ -513,6 +540,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Plank position row; brace the core to prevent twisting.",
+            video: "https://www.youtube.com/watch?v=NTl_ALR8Tlc",
           },
           {
             id: "db-push-press",
@@ -523,6 +551,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 30,
             restLabel: "30s",
             cue: "Dip the knees slightly and use the legs to punch the weights up.",
+            video: "https://www.youtube.com/watch?v=J5Uuw0vTB3U",
           },
           {
             id: "hollow-body-hold",
@@ -533,6 +562,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 60,
             restLabel: "60s",
             cue: "Lower back pinned flat, toes pointed. 60s rest closes the round.",
+            video: "https://www.youtube.com/watch?v=0yPin8hSc8o",
           },
         ],
       },
@@ -572,6 +602,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 0,
             restLabel: "—",
             cue: "Cat-cow, world's-greatest-stretch, hip openers, shoulder rolls.",
+            video: "https://www.youtube.com/watch?v=aRVFt79LqCM",
           },
           {
             id: "recovery-stretch",
@@ -581,6 +612,7 @@ export const PROGRAM: Record<string, FitDay> = {
             restSec: 0,
             restLabel: "—",
             cue: "Hold easy stretches, breathe deep, release the tight spots.",
+            video: "https://www.youtube.com/watch?v=7BEhZLHfL2Q",
           },
         ],
       },
@@ -659,4 +691,26 @@ export function daySetCount(dayKey: string): number {
 export function isTrainingDay(dayKey: string): boolean {
   const t = getDay(dayKey).type;
   return t !== "rest" && t !== "recovery";
+}
+
+/**
+ * Where the "Form" button points.
+ *
+ * Prefers the confirmed video; otherwise sends the user to a live YouTube
+ * search. Returns null for entries where a form demo is meaningless — sleep,
+ * meal prep, going for a walk — so those render no button at all.
+ */
+export function formVideoUrl(exercise: FitExercise): string | null {
+  if (exercise.video) return exercise.video;
+  if (exercise.videoSearch) {
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(
+      exercise.videoSearch
+    )}`;
+  }
+  return null;
+}
+
+/** True when the link is a live search rather than a specific vetted clip. */
+export function isSearchFallback(exercise: FitExercise): boolean {
+  return !exercise.video && !!exercise.videoSearch;
 }
