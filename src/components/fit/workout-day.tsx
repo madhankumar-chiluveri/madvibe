@@ -7,6 +7,7 @@ import {
   COOLDOWN,
   DAY_ACCENT,
   WARMUP,
+  exerciseDetails,
   formVideoUrl,
   isSearchFallback,
   type FitBlock,
@@ -17,12 +18,14 @@ import { shortDate } from "@/lib/madfit-utils";
 import {
   ChevronDown,
   History,
+  Info,
   PlayCircle,
   PlaySquare,
   RotateCcw,
   Search,
   Timer,
   Trash2,
+  Wind,
 } from "lucide-react";
 
 export type SetLog = {
@@ -261,6 +264,13 @@ function LastPerformanceLine({
   );
 }
 
+/** Label tint per detail kind — "Avoid" has to read as a warning, not a note. */
+const DETAIL_TONE: Record<"setup" | "avoid" | "why", string> = {
+  setup: "text-muted-foreground",
+  avoid: "text-[#C0563A]",
+  why: "text-[#7F9270]",
+};
+
 function ExerciseRow({
   exercise,
   logs,
@@ -274,35 +284,53 @@ function ExerciseRow({
   interactive: boolean;
   handlers?: SetHandlers;
 }) {
+  const [showDetails, setShowDetails] = useState(false);
   const done = logs.length >= exercise.sets;
   const formUrl = formVideoUrl(exercise);
+  const details = exerciseDetails(exercise);
+  const detailsId = `${exercise.id}-details`;
 
   return (
     <div
       className={cn(
-        "rounded-xl border p-3.5 transition-colors",
+        "rounded-xl border p-3 transition-colors sm:p-3.5",
         done
           ? "border-[#7F9270]/40 bg-[#7F9270]/[0.07]"
           : "border-border bg-card/65"
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h5
-            className={cn(
-              "text-sm font-bold leading-snug",
-              done ? "text-muted-foreground" : "text-foreground"
-            )}
-          >
-            {exercise.name}
-          </h5>
-          <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{exercise.cue}</p>
-          {last && <LastPerformanceLine entry={last} />}
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <span className="whitespace-nowrap text-[12.5px] font-extrabold tabular-nums text-[#C96442]">
-            {exercise.sets > 1 ? `${exercise.sets} × ${exercise.reps}` : exercise.reps}
+      {/* Name takes the full row minus a short badge, so long movement names
+          wrap naturally instead of being crushed by a nowrap rep target. */}
+      <div className="flex items-start justify-between gap-2">
+        <h5
+          className={cn(
+            "min-w-0 flex-1 text-sm font-bold leading-snug",
+            done ? "text-muted-foreground" : "text-foreground"
+          )}
+        >
+          {exercise.name}
+        </h5>
+        <span className="shrink-0 whitespace-nowrap rounded-lg bg-[#C96442]/10 px-2 py-1 text-[12px] font-extrabold tabular-nums text-[#C96442]">
+          {exercise.sets > 1 ? `${exercise.sets} × ${exercise.reps}` : exercise.reps}
+        </span>
+      </div>
+
+      <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">{exercise.cue}</p>
+
+      {exercise.breath && (
+        <p className="mt-1.5 flex gap-1.5 text-[11.5px] leading-snug text-[#7E96A8]">
+          <Wind className="mt-[2px] h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            <span className="sr-only">Breathing: </span>
+            {exercise.breath}
           </span>
+        </p>
+      )}
+
+      {last && <LastPerformanceLine entry={last} />}
+
+      {(formUrl || details.length > 0) && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {formUrl && (
             <a
               href={formUrl}
@@ -313,7 +341,7 @@ function ExerciseRow({
                   ? "Search YouTube for a form demo"
                   : `Form reference for ${exercise.name}`
               }
-              className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/30 px-2 py-1 text-[10px] font-bold text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border border-border bg-muted/30 px-2.5 text-[11px] font-bold text-muted-foreground transition-colors hover:text-foreground"
             >
               {isSearchFallback(exercise) ? (
                 <Search className="h-3 w-3" />
@@ -323,8 +351,46 @@ function ExerciseRow({
               Form
             </a>
           )}
+          {details.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowDetails((s) => !s)}
+              aria-expanded={showDetails}
+              aria-controls={detailsId}
+              className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border border-border bg-muted/30 px-2.5 text-[11px] font-bold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Info className="h-3 w-3" />
+              Details
+              <ChevronDown
+                className={cn("h-3 w-3 transition-transform", showDetails && "rotate-180")}
+              />
+            </button>
+          )}
         </div>
-      </div>
+      )}
+
+      {showDetails && details.length > 0 && (
+        <dl
+          id={detailsId}
+          className="mt-2 space-y-2 rounded-lg border border-border/70 bg-muted/25 p-2.5"
+        >
+          {details.map((d) => (
+            <div key={d.key}>
+              <dt
+                className={cn(
+                  "text-[10px] font-black uppercase tracking-wider",
+                  DETAIL_TONE[d.key]
+                )}
+              >
+                {d.label}
+              </dt>
+              <dd className="mt-0.5 text-[11.5px] leading-relaxed text-muted-foreground">
+                {d.text}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
 
       <SetRail
         exercise={exercise}
@@ -373,9 +439,11 @@ function BlockGroup({
 
   return (
     <section className="space-y-2">
-      <div className="flex items-start justify-between gap-2 px-1">
-        <h4 className="text-sm font-extrabold text-foreground">{block.label}</h4>
-        <span className="shrink-0 rounded-md border border-border bg-muted px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground">
+      {/* Stacks on phones: the meta string is long enough that keeping it on
+          one row with the label crushes both. Side-by-side from sm up. */}
+      <div className="flex flex-col gap-1 px-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <h4 className="text-sm font-extrabold leading-snug text-foreground">{block.label}</h4>
+        <span className="self-start rounded-md border border-border bg-muted px-2 py-0.5 text-[10px] font-extrabold leading-relaxed text-muted-foreground sm:shrink-0 sm:text-right">
           {block.meta}
         </span>
       </div>
@@ -383,7 +451,7 @@ function BlockGroup({
       {block.superset ? (
         // The bracket is structural, not decorative: it marks the two movements
         // that are performed back-to-back before any rest is taken.
-        <div className="relative pl-4">
+        <div className="relative pl-3 sm:pl-4">
           <span
             aria-hidden="true"
             className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-gradient-to-b from-[#CE6A47] to-[#DC9447]"
@@ -531,8 +599,8 @@ export function WorkoutDayCard({
       </button>
 
       {open && (
-        <div className="animate-fade-in space-y-5 p-4 sm:p-5">
-          <p className="rounded-xl border border-border bg-muted/25 p-3.5 text-sm font-semibold leading-relaxed text-foreground/80">
+        <div className="animate-fade-in space-y-5 p-3 sm:p-5">
+          <p className="rounded-xl border border-border bg-muted/25 p-3 text-[13px] font-semibold leading-relaxed text-foreground/80 sm:p-3.5 sm:text-sm">
             {day.blurb}
           </p>
 
