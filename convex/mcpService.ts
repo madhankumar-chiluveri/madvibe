@@ -796,14 +796,16 @@ export const updateRow = internalMutation({
     await checkRowAccess(ctx, args.id, args.userId, "editor");
 
     const row = await ctx.db.get(args.id);
-    if (row) {
-      const database = await ctx.db.get(row.databaseId);
-      if (database && database.properties) {
-        args.data = handleStatusAndCompletionDates(database.properties, args.data, row.data);
-      }
+    if (!row) throw new Error("Row not found");
+
+    let updatedData = { ...(row.data ?? {}), ...(args.data ?? {}) };
+
+    const database = await ctx.db.get(row.databaseId);
+    if (database && database.properties) {
+      updatedData = handleStatusAndCompletionDates(database.properties, updatedData, row.data);
     }
 
-    await ctx.db.patch(args.id, { data: args.data });
+    await ctx.db.patch(args.id, { data: updatedData });
   },
 });
 

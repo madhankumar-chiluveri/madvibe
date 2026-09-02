@@ -14,6 +14,7 @@ import {
 } from "@/components/tasks/task-calendar-views";
 import { TaskDetailSheet } from "@/components/tasks/task-detail-sheet";
 import {
+  DEFAULT_FILTERS,
   EMPTY_FILTERS,
   TaskFilterBar,
   TaskToolbar,
@@ -37,7 +38,7 @@ export default function TasksPage() {
 
   const [view, setView] = useState<CalendarView>("month");
   const [anchor, setAnchor] = useState(() => new Date());
-  const [filters, setFilters] = useState<TaskFilters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<TaskEvent | null>(null);
 
@@ -81,7 +82,15 @@ export default function TasksPage() {
         if (filters.space !== "all" && e.spaceName !== filters.space) return false;
         if (filters.database !== "all" && e.databaseName !== filters.database) return false;
         if (filters.status !== "all" && (e.status ?? "No Status") !== filters.status) return false;
-        if (filters.dateType !== "all" && e.datePropertyName !== filters.dateType) return false;
+        if (filters.dateType !== "all") {
+          const filterLower = filters.dateType.toLowerCase();
+          const propLower = (e.datePropertyName ?? "").toLowerCase();
+          if (filterLower === "completed date" || filterLower === "completion date") {
+            if (propLower !== "completed date" && propLower !== "completion date") return false;
+          } else if (e.datePropertyName !== filters.dateType) {
+            return false;
+          }
+        }
         return true;
       }),
     [allEvents, filters]

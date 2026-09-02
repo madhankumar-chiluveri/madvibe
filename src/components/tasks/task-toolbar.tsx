@@ -25,6 +25,13 @@ export interface TaskFilters {
   dateType: string;
 }
 
+export const DEFAULT_FILTERS: TaskFilters = {
+  space: "all",
+  database: "all",
+  status: "all",
+  dateType: "Completed Date",
+};
+
 export const EMPTY_FILTERS: TaskFilters = {
   space: "all",
   database: "all",
@@ -33,10 +40,16 @@ export const EMPTY_FILTERS: TaskFilters = {
 };
 
 export const hasActiveFilters = (f: TaskFilters) =>
-  f.space !== "all" || f.database !== "all" || f.status !== "all" || f.dateType !== "all";
+  f.space !== DEFAULT_FILTERS.space ||
+  f.database !== DEFAULT_FILTERS.database ||
+  f.status !== DEFAULT_FILTERS.status ||
+  f.dateType !== DEFAULT_FILTERS.dateType;
 
 export const activeFilterCount = (f: TaskFilters) =>
-  Object.values(f).filter((v) => v !== "all").length;
+  (f.space !== DEFAULT_FILTERS.space ? 1 : 0) +
+  (f.database !== DEFAULT_FILTERS.database ? 1 : 0) +
+  (f.status !== DEFAULT_FILTERS.status ? 1 : 0) +
+  (f.dateType !== DEFAULT_FILTERS.dateType ? 1 : 0);
 
 /* ── Jump to month ───────────────────────────────────────────────────────── */
 
@@ -160,11 +173,11 @@ export function TaskFilterBar({
       />
       {hasActiveFilters(filters) && (
         <button
-          onClick={() => onChange(EMPTY_FILTERS)}
+          onClick={() => onChange(DEFAULT_FILTERS)}
           className="inline-flex h-9 items-center gap-1 rounded-lg px-2 text-[11px] font-bold text-notion-red-text transition-colors hover:bg-muted"
         >
           <X className="h-3 w-3" />
-          Clear
+          Reset
         </button>
       )}
     </div>
